@@ -1451,6 +1451,8 @@ namespace detail{
 		void native_interface::move_window(native_window_type wd, int x, int y)
 		{
 #if defined(NANA_WINDOWS)
+			if constexpr (dpi_debugging) std::cout << "   ---  move_window(x,y):\n";
+			auto p = scale_to_dpi(wd, x, y);
 			::RECT r;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), &r);
 			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
@@ -1460,18 +1462,18 @@ namespace detail{
 				::GetWindowRect(owner, &owner_rect);
 				::POINT pos = {owner_rect.left, owner_rect.top};
 				::ScreenToClient(owner, &pos);
-				x += (owner_rect.left - pos.x);
-				y += (owner_rect.top - pos.y);
+				p.x += (owner_rect.left - pos.x);
+				p.y += (owner_rect.top - pos.y);
 			}
 
 			
 			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
 				nana::internal_revert_guard irg;
-				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.right - r.left, r.bottom - r.top, true);
+				::MoveWindow(reinterpret_cast<HWND>(wd), p.x, p.y, r.right - r.left, r.bottom - r.top, true);
 			}
 			else
-				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.right - r.left, r.bottom - r.top, true);
+				::MoveWindow(reinterpret_cast<HWND>(wd), p.x, p.y, r.right - r.left, r.bottom - r.top, true);
 
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
@@ -1524,8 +1526,9 @@ namespace detail{
 		{
 #if defined(NANA_WINDOWS)
 			
-			int x = r.x;
-			int y = r.y;
+			if constexpr (dpi_debugging) std::cout << "   ---  move_window(rectangle):\n";
+			auto scaled_r = scale_to_dpi(wd, r);
+
 			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
 			if(owner)
 			{
@@ -1533,8 +1536,8 @@ namespace detail{
 				::GetWindowRect(owner, &owner_rect);
 				::POINT pos = {owner_rect.left, owner_rect.top};
 				::ScreenToClient(owner, &pos);
-				x += (owner_rect.left - pos.x);
-				y += (owner_rect.top - pos.y);
+				scaled_r.x += (owner_rect.left - pos.x);
+				scaled_r.y += (owner_rect.top - pos.y);
 			}
 
 			RECT client, wd_area;
@@ -1546,10 +1549,12 @@ namespace detail{
 			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
 				nana::internal_revert_guard irg;
-				return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.width + ext_w, r.height + ext_h, true));
+				return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), scaled_r.x, scaled_r.y, 
+											  scaled_r.width + ext_w, scaled_r.height + ext_h, true));
 			}
 			
-			return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.width + ext_w, r.height + ext_h, true));
+			return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), scaled_r.x, scaled_r.y, 
+										  scaled_r.width + ext_w, scaled_r.height + ext_h, true));
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
 			long supplied;
@@ -1742,6 +1747,8 @@ namespace detail{
 		bool native_interface::window_size(native_window_type wd, const size& sz)
 		{
 #if defined(NANA_WINDOWS)
+			if constexpr (dpi_debugging) std::cout << "   ---  window_size(sz):\n";
+			auto p = scale_to_dpi(wd, static_cast<int>(sz.width), static_cast<int>(sz.height));
 			::RECT r;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), &r);
 			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
@@ -1757,10 +1764,10 @@ namespace detail{
 			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
 				nana::internal_revert_guard irg;
-				return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, static_cast<int>(sz.width), static_cast<int>(sz.height), true));
+				return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, p.x, p.y, true));
 			}
 
-			return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, static_cast<int>(sz.width), static_cast<int>(sz.height), true));
+			return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, p.x, p.y, true));
 #elif defined(NANA_X11)
 			auto disp = restrict::spec.open_display();
 			nana::detail::platform_scope_guard psg;
