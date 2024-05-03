@@ -728,9 +728,13 @@ namespace detail{
 			wd_area.right -= wd_area.left;
 			wd_area.bottom -= wd_area.top;
 
+			// unscale to App scale
 			window_result result = { reinterpret_cast<native_window_type>(native_wd),
-										static_cast<unsigned>(client.right), static_cast<unsigned>(client.bottom),
-										static_cast<unsigned>(wd_area.right - client.right), static_cast<unsigned>(wd_area.bottom - client.bottom)};
+										static_cast<unsigned>(MulDiv(client.right,                   96, dpi)), 
+				                        static_cast<unsigned>(MulDiv(client.bottom,                  96, dpi)),
+										static_cast<unsigned>(MulDiv(wd_area.right - client.right,   96, dpi)), 
+				                        static_cast<unsigned>(MulDiv(wd_area.bottom - client.bottom, 96, dpi))
+			                       };
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 
