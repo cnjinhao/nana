@@ -886,20 +886,33 @@ namespace detail{
 		native_window_type native_interface::create_child_window(native_window_type parent, const rectangle& r)
 		{
 			if(nullptr == parent) return nullptr;
-#if defined(NANA_WINDOWS)
+  #if defined(NANA_WINDOWS)
 			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
+			std::size_t dpi = native_interface::window_dpi(parent);
+
+			if constexpr (dpi_debugging)
+				std::cout << "create_child_window():   orig rect= " << r.x     << ", " << r.y      << 
+											   " with size= " << r.width << ", " << r.height << std::endl;
+			nana::rectangle scaled_r = r;
+			scaled_r.x      = MulDiv(r.x,      static_cast<int>(dpi), 96);
+			scaled_r.y      = MulDiv(r.y,      static_cast<int>(dpi), 96);
+			scaled_r.width  = MulDiv(r.width,  static_cast<int>(dpi), 96);
+			scaled_r.height = MulDiv(r.height, static_cast<int>(dpi), 96);
+
+			if constexpr (dpi_debugging)
+				std::cout << "create_child_window(): scaled rect= " << scaled_r.x     << ", " << scaled_r.y      << 
+											   " with size= " << scaled_r.width << ", " << scaled_r.height << std::endl;
+
 			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilities for variation
 										L"NanaWindowInternal",
 										L"Nana Child Window",	// Title Text
 										WS_CHILD | WS_VISIBLE | WS_TABSTOP  | WS_CLIPSIBLINGS,
-										r.x, r.y, r.width, r.height,
+										scaled_r.x, scaled_r.y, scaled_r.width, scaled_r.height,
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop
 										0, windows_module_handle(), 0);
 
-			if constexpr (dpi_debugging) // print for debuging the position of creation of the window pt
-				std::cout << "create_child_window(): in " << r.x << ", " << r.y << " with size= " << r.width << ", " << r.height << std::endl;
 
-#elif defined(NANA_X11)
+  #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 
 			XSetWindowAttributes win_attr;
@@ -969,7 +982,7 @@ namespace detail{
 				::XChangeProperty(disp, handle, ab.net_wm_state, XA_ATOM, 32, PropModeAppend,
 						reinterpret_cast<unsigned char*>(const_cast<Atom*>(&ab.net_wm_state_skip_taskbar)), 1);
 			}
-#endif
+  #endif
 			return reinterpret_cast<native_window_type>(handle);
 		}
 
