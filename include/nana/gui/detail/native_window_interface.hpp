@@ -49,8 +49,8 @@ namespace detail
 		/// Invokes a function in the thread of the specified window.
 		static void affinity_execute(native_window_type, bool post, std::function<void()>&&);
 
+		static nana::size	primary_monitor_size(); ///< already 'DPI' scaled size
 		/// \todo: generalize dpi to v2 awareness 
-		static nana::size	primary_monitor_size();
 		static rectangle screen_area_from_point(const point&);
 		static window_result create_window(native_window_type, bool nested, const rectangle&, const appearance&);
 		static native_window_type create_child_window(native_window_type, const rectangle&);
@@ -103,7 +103,7 @@ namespace detail
 		static native_window_type find_window(int x, int y);
 		static nana::size check_track_size(nana::size sz, unsigned extra_width, unsigned extra_height, bool true_for_max);
 
-		static void start_dpi_awareness();
+		static void start_dpi_awareness(bool aware = false);
 		static std::size_t window_dpi(native_window_type);  ///< if the window is not DPI aware return the system DPI 
 		static std::size_t system_dpi();					///< get the DPI of the main monitor
 	};

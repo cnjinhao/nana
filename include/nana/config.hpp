@@ -23,6 +23,16 @@
 #ifndef NANA_CONFIG_HPP
 #define NANA_CONFIG_HPP
 
+
+#ifndef NANA_dpi_aware  // uncomment your option: true to try experimental DPI aware nana
+    #define NANA_dpi_aware false
+	//#define NANA_dpi_aware true 
+#endif // NANA_dpi_aware 
+inline bool config_dpi_aware = NANA_dpi_aware;
+
+/// \todo: replace by #ifdef DPI_DEBUGGING or just fully eliminate
+static constexpr bool dpi_debugging = false;  ///< set to true to print DPI relates values for debugging
+
 #include "c++defines.hpp"
 
 //The following basic configurations are ignored when NANA_IGNORE_CONF is defined.
