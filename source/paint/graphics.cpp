@@ -259,7 +259,7 @@ namespace paint
 		}
 	//end class font
 
-	//class graphics
+	//class graphics. /// \todo add dpi, scale, and/or wd/widget to the graphics constructor
 		struct graphics::implementation
 		{
 			std::shared_ptr<::nana::detail::drawable_impl_type> platform_drawable;
@@ -267,8 +267,21 @@ namespace paint
 			drawable_type	handle{ nullptr };
 			::nana::size	size;
 			pixel_buffer	pxbuf;
-			bool changed{ false };
+			bool            changed{ false };
+			int             dpi  { 96   };
+			float           scale{ 1.0f };
 		};
+
+		void graphics::set_dpi(int dpi)
+        {
+            if (dpi == impl_->dpi) return;
+			auto sz = nana::detail::unscale_dpi(impl_->size, impl_->dpi);
+			impl_->dpi = dpi;
+        	auto info = typeface().info();
+			nana::paint::font ft{ info.value(), static_cast<std::size_t>(dpi) };
+			typeface(ft);
+			make(sz);
+        }
 
 		graphics::graphics()
 			: impl_(new implementation)
@@ -355,8 +368,9 @@ namespace paint
 				impl_.swap(other.impl_);
 		}
 
-		void graphics::make(const ::nana::size& sz)
+		void graphics::make(const ::nana::size& sz_)
 		{
+			auto sz = nana::detail::scale_to_dpi(sz_, impl_->dpi);
 			if (impl_->handle == nullptr || impl_->size != sz)
 			{
 				if (sz.empty())

@@ -131,6 +131,7 @@ namespace nana
 			 */
 			void make(const ::nana::size& sz);
 			void resize(const ::nana::size&);
+			void set_dpi(int dpi);
 			void typeface(const font&);						///< Selects a specified font type into the graphics object.
 			font typeface() const;
 
