@@ -37,7 +37,6 @@ namespace nana
 namespace detail{
 
   #if defined(NANA_WINDOWS)
-
     nana::point scale_to_dpi(int x, int y, int dpi)
     {
         auto  scaled_p = nana::point(MulDiv(x, dpi, 96), 
@@ -134,6 +133,40 @@ namespace detail{
         }
         return scaled_r;
     }
+
+	nana::size scale_to_dpi(const nana::size& sz, int dpi)
+    {
+	    auto scaled_sz = nana::size(MulDiv(sz.width,  dpi, 96), 
+										     MulDiv(sz.height, dpi, 96));
+	    if constexpr (dpi_debugging)
+	    {
+			std::cout << "   orig size= " << sz.width        << ", " << sz.height        << '\n';
+			std::cout << " scaled size= " << scaled_sz.width << ", " << scaled_sz.height << '\n';
+		}
+	    return scaled_sz;
+	}
+	nana::size scale_to_dpi(native_window_type wd, const nana::size& sz)
+    {
+	    int dpi = static_cast<int>(native_interface::window_dpi(wd));
+	    return scale_to_dpi(sz, dpi);
+	}
+	nana::size unscale_dpi(const nana::size& sz, int dpi)
+    {
+	    auto scaled_sz = nana::size(MulDiv(sz.width,  96, dpi), 
+										     MulDiv(sz.height, 96, dpi));
+	    if constexpr (dpi_debugging)
+	    {
+			std::cout << " unscaled size= " << scaled_sz.width << ", " << scaled_sz.height << '\n';
+		}
+	    return scaled_sz;
+	}
+	nana::size unscale_dpi(native_window_type wd, const nana::size& sz)
+    {
+	    int dpi = static_cast<int>(native_interface::window_dpi(wd));
+	    return unscale_dpi(sz, dpi);
+	}
+
+
 
 	struct DPI_AWARENESS_CONTEXT___ { int unused; }; ///< introduce named dummy type, avoid including windows.h
 	typedef struct DPI_AWARENESS_CONTEXT___* DPI_AWARENESS_CONTEXT_; ///< introduce named dummy pointer type
