@@ -234,7 +234,6 @@ namespace detail
 		restrict::imm_get_composition_string = reinterpret_cast<restrict::imm_get_composition_string_type>(
 				::GetProcAddress(imm32, "ImmGetCompositionStringW"));
 
-		/// \todo: generalize dpi to v2 awareness
 		platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
 	}
 
@@ -814,13 +813,21 @@ namespace detail
 				}
 				break;
 			case WM_DPICHANGED:  /// \todo: generalize dpi to v2 awareness
-				wd_manager.update_dpi(msgwnd);
+				
 				{
 				
 				auto r = reinterpret_cast<const RECT*>(lParam);
 				auto dpi_x = HIWORD(wParam);
 				auto dpi_y = LOWORD(wParam);
-				
+
+				if constexpr (dpi_debugging) 
+				{
+					std::cout << "WM_DPICHANGED: dpi_x = " << dpi_x  << ", dpi_y = " << dpi_y << '\n';
+					std::cout << "SetWindowPos: " << r->left << ", r->top = " << r->top << 
+						              ", size = " << r->right - r->left << ", " << r->bottom - r->top << '\n';
+				}
+				platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
+				wd_manager.update_dpi(msgwnd);  /// \todo: pass dpi = dpi_x to update_dpi
 				::SetWindowPos(root_window,
 					NULL,
 					r->left,

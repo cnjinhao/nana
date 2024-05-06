@@ -1375,11 +1375,7 @@ namespace detail
 			if (!available(wd))
 				return;
 
-			auto info = wd->drawer.graphics.typeface().info();
-
-			nana::paint::font ft{ info.value(), native_interface::window_dpi(wd->root) };
-
-			wd->drawer.graphics.typeface(ft);
+			wd->drawer.graphics.set_dpi(native_interface::window_dpi(wd->root));
 
 			for (auto child : wd->children)
 			{
