@@ -14,6 +14,7 @@
 #define NANA_GUI_DETAIL_NATIVE_WINDOW_INTERFACE_HPP
 
 #include <functional>
+#include <iostream>
 
 #include "../basis.hpp"
 #include <nana/paint/image.hpp>
@@ -22,6 +23,24 @@ namespace nana
 {
 namespace detail
 {
+  #if defined(NANA_WINDOWS)
+    nana::point scale_to_dpi(int x, int y, int dpi);
+	nana::point scale_to_dpi(native_window_type wd, int x, int y);
+	nana::point unscale_dpi(native_window_type wd, int x, int y);
+    // create helper function to scale nana::rectangle to dpi
+    nana::rectangle scale_to_dpi(const nana::rectangle& r, int dpi);
+	nana::rectangle scale_to_dpi(native_window_type wd, const nana::rectangle& r);
+	nana::rectangle unscale_dpi(const nana::rectangle& r, int dpi);
+	// create helper function to scale ::RECT to dpi
+	//::RECT scale_to_dpi(const ::RECT& r, int dpi);
+	//::RECT scale_to_dpi(native_window_type wd, const ::RECT& r);
+	//::RECT unscale_dpi(const ::RECT& r, int dpi);
+
+	nana::size scale_to_dpi(const nana::size& sz, int dpi);
+	nana::size scale_to_dpi(native_window_type wd, const nana::size& sz);
+	nana::size unscale_dpi(const nana::size& sz, int dpi);
+	nana::size unscale_dpi(native_window_type wd, const nana::size& sz);
+#endif
 
 	struct native_interface
 	{
