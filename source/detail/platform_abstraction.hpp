@@ -64,20 +64,20 @@ namespace nana
 		/// \todo: generalize dpi to v2 awareness
 
 		/// 'manuallay' set the current system DPI, this is used for DPI scaling.
-		static void set_current_dpi(std::size_t dpi);
-		static std::size_t current_dpi();
+		static void set_current_dpi(int dpi);
+		static int current_dpi();
 
-		static int dpi_scale(int scalar);
-		static nana::size dpi_scale(nana::size size);
-		static nana::point dpi_scale(nana::point point);
+		static int         dpi_scale(int scalar);
+		static nana::size  dpi_scale(const nana::size&   size);
+		static nana::point dpi_scale(const nana::point& point);
 
-		static int dpi_scale(window wd, int scalar);
+		static int          dpi_scale(window wd, int          scalar);
 		static unsigned int dpi_scale(window wd, unsigned int scalar);
-		static nana::size dpi_scale(window wd, nana::size size);
-		static nana::point dpi_scale(window wd, nana::point point);
+		static nana::size   dpi_scale(window wd, nana::size     size);
+		static nana::point  dpi_scale(window wd, nana::point   point);
 
 		/// Open the font, if ttf is specified, it ignores the font family name of font_info and creates the font using truetype file.
-		static std::shared_ptr<font> open_font(const font_info&, std::size_t dpi, const path_type& ttf);
+		static std::shared_ptr<font> open_font(const font_info&, int dpi, const path_type& ttf);
 		static void font_resource(bool try_add, const path_type& ttf);
 
 		static unsigned screen_dpi(bool x_requested);

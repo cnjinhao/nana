@@ -125,13 +125,14 @@ namespace paint
 		}
 
 		/// \todo: generalize dpi to v2 awareness
-		font::font(const font_info& fi, std::size_t dpi):
+		font::font(const font_info& fi, int dpi):
 			impl_(new impl_type)
 		{
 			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), {});
 		}
+
 		/// \todo: generalize dpi to v2 awareness
-		font::font(const std::string& font_family, double size_pt, const font_style& fs, std::size_t dpi):
+		font::font(const std::string& font_family, double size_pt, const font_style& fs, int dpi):
 			impl_(new impl_type)
 		{
 			font_info fi;
@@ -142,7 +143,7 @@ namespace paint
 		}
 
 		/// \todo: generalize dpi to v2 awareness
-		font::font(double size_pt, const path_type& ttf, const font_style& fs, std::size_t dpi) :
+		font::font(double size_pt, const path_type& ttf, const font_style& fs, int dpi) :
 			impl_(new impl_type)
 		{
 			font_info fi;
@@ -278,7 +279,7 @@ namespace paint
 			auto sz = nana::detail::unscale_dpi(impl_->size, impl_->dpi);
 			impl_->dpi = dpi;
         	auto info = typeface().info();
-			nana::paint::font ft{ info.value(), static_cast<std::size_t>(dpi) };
+			nana::paint::font ft{ info.value(), dpi };
 			typeface(ft);
 			make(sz);
         }

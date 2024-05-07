@@ -45,21 +45,21 @@ namespace nana
 			/// creates a font object.
 			/// @param info Specifies the font family, size and styles.
 			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
-			font(const font_info& info, std::size_t dpi = 0);
+			font(const font_info& info, int dpi = 0);
 
 			/// creates a font object.
 			/// @param name The font family.
 			/// @param size_pt The font size.
 			/// @param fs The font style.
 			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
-			font(const ::std::string& name, double size_pt, const font_style& fs = {}, std::size_t dpi = 0);
+			font(const ::std::string& name, double size_pt, const font_style& fs = {}, int dpi = 0);
 
 			/// creates a font object with a truetype font file.
 			/// @param size_pt The font size.
 			/// @param truetype The path to a truetype font file
 			/// @param fs The font style.
 			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
-			font(double size_pt, const path_type& truetype, const font_style& fs = {}, std::size_t dpi = 0);
+			font(double size_pt, const path_type& truetype, const font_style& fs = {}, int dpi = 0);
 
 			~font();
 			bool empty() const;

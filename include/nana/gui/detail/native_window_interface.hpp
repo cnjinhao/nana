@@ -122,8 +122,8 @@ namespace detail
 		static nana::size check_track_size(nana::size sz, unsigned extra_width, unsigned extra_height, bool true_for_max);
 
 		static void start_dpi_awareness(bool aware = false);
-		static std::size_t window_dpi(native_window_type);  ///< if the window is not DPI aware return the system DPI 
-		static std::size_t system_dpi();					///< get the DPI of the main monitor
+		static int window_dpi(native_window_type);  ///< if the window is not DPI aware return the system DPI 
+		static int system_dpi();					///< get the DPI of the main monitor
 	};
 
 

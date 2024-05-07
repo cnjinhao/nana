@@ -761,7 +761,7 @@ namespace nana
 			}
 		}
 
-		std::shared_ptr<font_interface> open_font(font_info fi, std::size_t dpi, const path_type& ttf)
+		std::shared_ptr<font_interface> open_font(font_info fi, int dpi, const path_type& ttf)
 		{
 			if (0 == dpi)
 			{
@@ -1157,7 +1157,7 @@ namespace nana
 	struct platform_runtime
 	{
 		platform_abstraction::revertible_mutex mutex;
-		std::size_t		dpi{ 0 };
+		int    		dpi{ 0 };
 		std::shared_ptr<font_interface> font;
 		font_service font_svc;
 	};
@@ -1340,13 +1340,13 @@ namespace nana
 		return r.font;
 	}
 
-	void platform_abstraction::set_current_dpi(std::size_t dpi)
+	void platform_abstraction::set_current_dpi(int dpi)
 	{
 		platform_storage().dpi = dpi;
 	}
 
 	/// \todo: generalize dpi to v2 awareness
-	std::size_t platform_abstraction::current_dpi()
+	int platform_abstraction::current_dpi()
 	{
 		return platform_storage().dpi;
 	}

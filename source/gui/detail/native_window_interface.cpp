@@ -2305,7 +2305,7 @@ namespace detail{
          #endif
 		}
 
-		std::size_t native_interface::window_dpi(native_window_type wd)  /// \todo: add bool x_requested = true)
+		int native_interface::window_dpi(native_window_type wd)  /// \todo: add bool x_requested = true)
 		{
 #ifdef NANA_WINDOWS
 			
@@ -2315,20 +2315,20 @@ namespace detail{
 				return system_dpi();
 
 			if (wdpi_fns().GetDpiForWindow)  // how to get x_dpi or y_dpi?
-				return wdpi_fns().GetDpiForWindow(hwnd);
+				return static_cast<int>(wdpi_fns().GetDpiForWindow(hwnd));
 						
 			if (wdpi_fns().GetDpiForMonitor)
 			{
 				HMONITOR pmonitor = ::MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
 				UINT x_dpi, y_dpi;
 				if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
-					return  x_dpi;  // x_requested ? x_dpi, y_dpi
+					return  static_cast<int>(x_dpi);  // x_requested ? x_dpi, y_dpi
 			}
 
 			HDC hdc = ::GetDC(hwnd);  // the old way. Works in any Windows version
 			if (hdc)
 			{
-				auto dpi = static_cast<std::size_t>(::GetDeviceCaps(hdc, LOGPIXELSX)); // x_requested ? LOGPIXELSX : LOGPIXELSY
+				auto dpi = ::GetDeviceCaps(hdc, LOGPIXELSX); // x_requested ? LOGPIXELSX : LOGPIXELSY
 				::ReleaseDC(nullptr, hdc);
 				return dpi;
 			}
@@ -2338,7 +2338,7 @@ namespace detail{
 			return system_dpi();
 		}
 
-		std::size_t native_interface::system_dpi()
+		int native_interface::system_dpi()
 		{
   #ifdef NANA_WINDOWS
 
@@ -2350,19 +2350,19 @@ namespace detail{
 				HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
 				UINT x_dpi, y_dpi;
 				if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
-					return  x_dpi;  //  x_dpi != y_dpi ??
+					return  static_cast<int>(x_dpi);  //  x_dpi != y_dpi ??
 			}
 			if (wdpi_fns().GetDpiForSystem)  
 			{
 				if constexpr (dpi_debugging) std::cout << "GetDpiForSystem" << std::endl;
-				return wdpi_fns().GetDpiForSystem();
+				return static_cast<int>(wdpi_fns().GetDpiForSystem());
 			}
 
 			if constexpr (dpi_debugging) std::cout << "GetDeviceCaps" << std::endl;
 
 			//When DPI-aware APIs are not supported by the running Windows, it returns the system DPI
 			auto hdc = ::GetDC(nullptr);
-			auto dpi = static_cast<std::size_t>(::GetDeviceCaps(hdc, LOGPIXELSX));
+			auto dpi = ::GetDeviceCaps(hdc, LOGPIXELSX);
 			::ReleaseDC(nullptr, hdc);
 			return dpi;
 
