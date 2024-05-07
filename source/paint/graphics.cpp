@@ -177,12 +177,15 @@ namespace paint
 			return impl_->real_font->font_info().family;
 		}
 
-		double font::size(bool fixed) const
+		double font::size(bool fixed, std::size_t dpi) const
 		{
 			double size_pt = (empty() ? 0.0 : impl_->real_font->font_info().size_pt);
 
 			if (fixed && (0.0 == size_pt))
 				return platform_abstraction::font_default_pt();
+
+			if (!dpi) dpi = platform_abstraction::current_dpi();
+            size_pt = size_pt * dpi / 96.0;
 
 			return size_pt;
 		}

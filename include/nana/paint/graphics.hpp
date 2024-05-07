@@ -72,7 +72,7 @@ namespace nana
 			* @param fixed Indicates whether to return a fixed font size. If this parameter is false, the method may return zero for default system font size. If the parameter is true, the method returns a fixed size of default font size if the font size that assigned by constructor is zero.
 			* @return The font size, in point.
 			*/
-			double size(bool fixed = false) const;
+			double size(bool fixed = false, std::size_t dpi = 0) const;
 
 			bool bold() const;
 			unsigned weight() const;
