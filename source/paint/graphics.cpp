@@ -591,10 +591,14 @@ namespace paint
 				::GetTextExtentExPoint(impl_->handle->context, text.data(), static_cast<int>(text.size()), 0, 0, dx, &extents);
 
 				pxbuf[0] = (text[0] == '\t' ? tab_pixels : dx[0]);
+				// unscale_dpi
+				pxbuf[0] = platform_abstraction::unscale_dpi(pxbuf[0], impl_->dpi);
 
 				for (std::size_t i = 1; i < text.size(); ++i)
 				{
 					pxbuf[i] = (text[i] == '\t' ? tab_pixels : dx[i] - dx[i - 1]);
+					// unscale_dpi
+					pxbuf[i] = platform_abstraction::unscale_dpi(pxbuf[i], impl_->dpi);
 				}
 				delete[] dx;
 #elif defined(NANA_X11) && defined(NANA_USE_XFT)
