@@ -273,7 +273,7 @@ namespace paint
 			pixel_buffer	pxbuf;
 			bool            changed{ false };
 			int             dpi  { 96   };
-			float           scale{ 1.0f };
+			float           scale{ 1.0f };  /// \todo:
 		};
 
 		void graphics::set_dpi(int dpi)
@@ -377,7 +377,7 @@ namespace paint
 
 		void graphics::make(const ::nana::size& sz_)
 		{
-			auto sz = nana::detail::scale_to_dpi(sz_, impl_->dpi);
+			auto sz = platform_abstraction::dpi_scale(sz_, impl_->dpi);
 			if (impl_->handle == nullptr || impl_->size != sz)
 			{
 				if (sz.empty())
@@ -487,8 +487,8 @@ namespace paint
 					impl_->handle = dw.get();
 					impl_->size = sz;
 
-					impl_->handle->string.tab_pixels = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
-					impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" ", 1).width;
+					impl_->handle->string.tab_pixels        = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
+					impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" " , 1).width;
 				}
 			}
 
@@ -515,8 +515,8 @@ namespace paint
 				::SelectObject(impl_->handle->context, reinterpret_cast<HFONT>(f.impl_->real_font->native_handle()));
 #endif
 
-				impl_->handle->string.tab_pixels = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
-				impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" ", 1).width;
+				impl_->handle->string.tab_pixels        = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
+				impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" " , 1).width;
 
 				if (impl_->changed == false)
 					impl_->changed = true;
@@ -548,7 +548,7 @@ namespace paint
 		}
 #endif
 		
-		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const  /// \todo: scale_dpi before? not used?
+		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const  /// \todo: scale dpi ? not used?
 		{
 			end = std::clamp(end, static_cast<std::size_t>(0), static_cast<std::size_t>(text.size()));
 
@@ -576,11 +576,11 @@ namespace paint
 			return sz;
 		}
 
-		std::unique_ptr<unsigned[]> graphics::glyph_pixels(std::wstring_view text) const
+		std::unique_ptr<unsigned[]> graphics::glyph_pixels(std::wstring_view text) const   ///\todo: return vector?
 		{
 			if (nullptr == impl_->handle || nullptr == impl_->handle->context) return {};
 
-			auto pxbuf = std::unique_ptr<unsigned[]>{ new unsigned[text.size() ? text.size() : 1] };
+			auto pxbuf = std::unique_ptr<unsigned[]>{ new unsigned[text.size() ? text.size() : 1] };  ///\todo: vector?
 
 			if (!text.empty())
 			{
