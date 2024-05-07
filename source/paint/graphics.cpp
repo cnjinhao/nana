@@ -628,7 +628,7 @@ namespace paint
 						sz.height = t.height;
 				}
 			}
-			return sz;
+			return platform_abstraction::unscale_dpi(sz, impl_->dpi) ;
 		}
 #ifdef __cpp_char8_t
 		::nana::size graphics::bidi_extent_size(std::u8string_view text) const
