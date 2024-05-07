@@ -687,12 +687,13 @@ namespace paint
 		void graphics::line_begin(int x, int y)
 		{
 			if(!impl_->handle)	return;
+			auto p = platform_abstraction::dpi_scale(point(x,y), impl_->dpi);
+
 #if defined(NANA_WINDOWS)
-			::MoveToEx(impl_->handle->context, x, y, 0);
+			::MoveToEx(impl_->handle->context, p.x, p.y, 0);
 
 #elif defined(NANA_X11)
-			impl_->handle->line_begin_pos.x = x;
-			impl_->handle->line_begin_pos.y = y;
+			impl_->handle->line_begin_pos = p;
 #endif
 		}
 
