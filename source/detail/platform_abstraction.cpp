@@ -1157,7 +1157,7 @@ namespace nana
 	struct platform_runtime
 	{
 		platform_abstraction::revertible_mutex mutex;
-		int    		dpi{ 0 };
+		int    		dpi{ 96 };
 		std::shared_ptr<font_interface> font;
 		font_service font_svc;
 	};
