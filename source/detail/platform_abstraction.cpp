@@ -1351,26 +1351,20 @@ namespace nana
 		return platform_storage().dpi;
 	}
 
-	int platform_abstraction::dpi_scale(int size)
+	int platform_abstraction::dpi_scale(int scalar)
 	{
-		double dpiScale = static_cast<double>(current_dpi() / 96.0);
-
-		return static_cast<int>(size * dpiScale);
+		return dpi_scale(scalar, current_dpi());
 	}
 
-	nana::size platform_abstraction::dpi_scale(nana::size size)
+	nana::size platform_abstraction::dpi_scale(const nana::size& size)
 	{
-		double dpiScale = static_cast<double>(current_dpi() / 96.0);
-
-		return { static_cast<size::value_type>(size.width * dpiScale), static_cast<size::value_type>(size.height * dpiScale) };
+		return dpi_scale(size, current_dpi());
 	}
 
-	nana::point platform_abstraction::dpi_scale(nana::point point)
-	{
-		double dpiScale = static_cast<double>(current_dpi() / 96.0);
-
-		return { static_cast<nana::point::value_type>(point.x * dpiScale), static_cast<nana::point::value_type>(point.y * dpiScale) };
-	}
+	nana::point platform_abstraction::dpi_scale(const nana::point& point)
+    {
+        return dpi_scale(point, current_dpi());
+    }
 
 	int platform_abstraction::dpi_scale(window wd, int scalar)
 	{
@@ -1400,12 +1394,120 @@ namespace nana
 		return { static_cast<nana::point::value_type>(point.x * dpiScale), static_cast<nana::point::value_type>(point.y * dpiScale) };
 	}
 
-	std::shared_ptr<platform_abstraction::font> platform_abstraction::open_font(const font_info& fi, std::size_t dpi, const path_type& ttf)
+	std::shared_ptr<platform_abstraction::font> platform_abstraction::open_font(const font_info& fi, int dpi, const path_type& ttf)
 	{
 		nana::internal_scope_guard lock;
 		return platform_storage().font_svc.open_font(fi, dpi, ttf);
 	}
 
+	/// dpi scaling for int
+	int platform_abstraction::dpi_scale(const int scalar, int dpi)
+    {
+        return static_cast<int>(long long (dpi) * scalar / 96);
+    }
+	int platform_abstraction::dpi_transform(int& scalar, int dpi)
+    {
+        return scalar = static_cast<int>(long long (dpi) * scalar / 96);
+    }
+	int platform_abstraction::unscale_dpi(const int scalar, int dpi)
+    {
+        return static_cast<int>(long long (scalar) * 96 / dpi);
+    }
+	int platform_abstraction::untransform_dpi(int& scalar, int dpi)
+	{
+	    return scalar = static_cast<int>(long long (scalar) * 96 / dpi);
+	}
+	/// dpi scaling for unsigned int
+	unsigned int platform_abstraction::dpi_scale(const unsigned int scalar, int dpi)
+    {
+        return static_cast<unsigned int>(long long (dpi) * scalar / 96);
+    }
+	unsigned int platform_abstraction::dpi_transform(unsigned int& scalar, int dpi)
+    {
+        return scalar = static_cast<unsigned int>(long long (dpi) * scalar / 96);
+    }
+	unsigned int platform_abstraction::unscale_dpi(const unsigned int scalar, int dpi)
+    {
+        return static_cast<unsigned int>(long long (scalar) * 96 / dpi);
+    }
+	unsigned int platform_abstraction::untransform_dpi(unsigned int& scalar, int dpi)
+    {
+        return scalar = static_cast<unsigned int>(long long (scalar) * 96 / dpi);
+    }
+	
+	/// dpi scaling for nana::size
+	nana::size platform_abstraction::dpi_scale(const nana::size& sz, int dpi)
+    {
+        return { static_cast<size::value_type>(long long (dpi) * sz.width  / 96), 
+			     static_cast<size::value_type>(long long (dpi) * sz.height / 96) };
+    }
+	nana::size platform_abstraction::dpi_transform(nana::size& sz, int dpi)
+    {
+        sz.width  = static_cast<size::value_type>(long long (dpi) * sz.width  / 96);
+		sz.height = static_cast<size::value_type>(long long (dpi) * sz.height / 96);
+		return sz;
+    }
+	nana::size platform_abstraction::unscale_dpi(const nana::size& sz, int dpi)
+    {
+        return { static_cast<size::value_type>(long long (sz.width)  * 96 / dpi), 
+		         static_cast<size::value_type>(long long (sz.height) * 96 / dpi) };
+    }
+	nana::size platform_abstraction::untransform_dpi(nana::size& sz, int dpi)
+    {
+        sz.width  = static_cast<size::value_type>(long long (sz.width)  * 96 / dpi);
+		sz.height = static_cast<size::value_type>(long long (sz.height) * 96 / dpi);
+		return sz;
+    }
+
+	/// dpi scaling for nana::point
+	nana::point platform_abstraction::dpi_scale(const nana::point& pt, int dpi)
+    {
+        return { static_cast<nana::point::value_type>(long long (dpi) * pt.x / 96), 
+		         static_cast<nana::point::value_type>(long long (dpi) * pt.y / 96) };
+    }
+	nana::point platform_abstraction::dpi_transform(nana::point& pt, int dpi)
+    {
+        pt.x = static_cast<nana::point::value_type>(long long (dpi) * pt.x / 96);
+		pt.y = static_cast<nana::point::value_type>(long long (dpi) * pt.y / 96);
+		return pt;
+    }
+	nana::point platform_abstraction::unscale_dpi(const nana::point& pt, int dpi)
+    {
+        return { static_cast<nana::point::value_type>(long long (pt.x) * 96 / dpi), 
+	             static_cast<nana::point::value_type>(long long (pt.y) * 96 / dpi) };
+    }
+    nana::point platform_abstraction::untransform_dpi(nana::point& pt, int dpi)
+    {
+        pt.x = static_cast<nana::point::value_type>(long long (pt.x) * 96 / dpi);
+		pt.y = static_cast<nana::point::value_type>(long long (pt.y) * 96 / dpi);
+		return pt;
+    }
+	
+	/// dpi scaling for nana::rectangle
+    nana::rectangle platform_abstraction::dpi_scale(const nana::rectangle& r, int dpi)
+    {
+        return nana::rectangle{ dpi_scale(r.position(), dpi), 
+			                    dpi_scale(r.dimension(), dpi) };
+    }
+	nana::rectangle platform_abstraction::dpi_transform(nana::rectangle& r, int dpi)
+    {
+        r.position (dpi_scale( r.position(), dpi));
+		r.dimension(dpi_scale(r.dimension(), dpi));
+		return r;
+    }
+	nana::rectangle platform_abstraction::unscale_dpi(const nana::rectangle& r, int dpi)
+    {
+        return nana::rectangle{ unscale_dpi(r.position() , dpi), 
+		                        unscale_dpi(r.dimension(), dpi) };
+    }
+	nana::rectangle platform_abstraction::untransform_dpi(nana::rectangle& r, int dpi)
+    {
+        r.position (unscale_dpi( r.position(), dpi));	
+		r.dimension(unscale_dpi(r.dimension(), dpi));
+		return r;
+    }
+	
+	
 	void platform_abstraction::font_resource(bool try_add, const path_type& ttf)
 	{
 #ifdef NANA_WINDOWS

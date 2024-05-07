@@ -76,6 +76,37 @@ namespace nana
 		static nana::size   dpi_scale(window wd, nana::size     size);
 		static nana::point  dpi_scale(window wd, nana::point   point);
 
+		/// dpi scaling for int
+        static int          dpi_scale      (const int  scalar, int dpi);
+		static int          dpi_transform  (int&       scalar, int dpi);
+		static int          unscale_dpi    (const int  scalar, int dpi);
+		static int          untransform_dpi(int&       scalar, int dpi);
+
+		/// dpi scaling for unsigned int
+		static unsigned int dpi_scale      (const unsigned int scalar, int dpi);
+		static unsigned int dpi_transform  (unsigned int&      scalar, int dpi);
+		static unsigned int unscale_dpi    (const unsigned int scalar, int dpi);
+		static unsigned int untransform_dpi(unsigned int&      scalar, int dpi);
+
+		/// dpi scaling for nana::size
+		static nana::size   dpi_scale      (const nana::size& size, int dpi);
+		static nana::size   dpi_transform  (nana::size&       size, int dpi);
+		static nana::size   unscale_dpi    (const nana::size& size, int dpi);
+		static nana::size   untransform_dpi(nana::size&       size, int dpi);
+
+		/// dpi scaling for nana::point
+		static nana::point  dpi_scale      (const nana::point& point, int dpi);
+		static nana::point  dpi_transform  (nana::point&       point, int dpi);
+		static nana::point  unscale_dpi    (const nana::point& point, int dpi);
+		static nana::point  untransform_dpi(nana::point&       point, int dpi);
+
+		/// dpi scaling for nana::rectangle
+		static nana::rectangle dpi_scale      (const nana::rectangle& rect, int dpi);
+		static nana::rectangle dpi_transform  (nana::rectangle&       rect, int dpi);
+		static nana::rectangle unscale_dpi    (const nana::rectangle& rect, int dpi);
+		static nana::rectangle untransform_dpi(nana::rectangle&       rect, int dpi);
+
+
 		/// Open the font, if ttf is specified, it ignores the font family name of font_info and creates the font using truetype file.
 		static std::shared_ptr<font> open_font(const font_info&, int dpi, const path_type& ttf);
 		static void font_resource(bool try_add, const path_type& ttf);
