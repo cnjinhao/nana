@@ -132,7 +132,8 @@ namespace nana
 			void make(const ::nana::size& sz);
 			void resize(const ::nana::size&);
 			void set_dpi(int dpi);
-			void typeface(const font&);						///< Selects a specified font type into the graphics object.
+			int  get_dpi() const;
+			void typeface(const font&);			///< Selects a specified font type into the graphics object.  \todo: dpi?
 			font typeface() const;
 
 			::nana::size text_extent_size(std::string_view text) const;  ///< unscaled: user-side

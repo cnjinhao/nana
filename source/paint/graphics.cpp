@@ -283,7 +283,10 @@ namespace paint
 			typeface(ft);
 			make(sz);
         }
-
+		int graphics::get_dpi() const
+        {
+            return impl_->dpi;
+        }
 		graphics::graphics()
 			: impl_(new implementation)
 		{}

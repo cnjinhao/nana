@@ -278,7 +278,7 @@ namespace nana
 					{
 						paint::font::font_style fs;
 						fs.weight = (bold ? 800 : 400);
-						transient_.current_font = paint::font{ name, fontsize, fs };
+						transient_.current_font = paint::font{ name, fontsize, fs, graph.get_dpi() };  /// \todo: set dpi ?? system dpi will be used.
 						graph.typeface(transient_.current_font);
 					}
 					transient_.current_fblock = fp;
