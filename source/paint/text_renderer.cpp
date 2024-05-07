@@ -52,6 +52,7 @@ namespace nana
 					std::vector<nana::size> word_metrics;
 					for (auto & ent : reordered)
 					{
+						/// \todo: dpi scale ??
 						auto word_sz = detail::text_extent_size(drawable, ent.begin, ent.end - ent.begin);
 						word_metrics.push_back(word_sz);
 
@@ -164,6 +165,7 @@ namespace nana
 
 					for(auto & i : reordered)
 					{
+						/// \todo: dpi scale ??
 						auto word_sz = detail::text_extent_size(drawable, i.begin, i.end - i.begin);
 						
 						word_metrics.emplace_back(word_sz);
@@ -382,6 +384,7 @@ namespace nana
 
 					for(auto & i : reordered)
 					{
+						/// \todo: dpi scale ??
 						auto word_sz = detail::text_extent_size(drawable, i.begin, i.end - i.begin);
 						word_metrics.emplace_back(word_sz);
 						string_px += word_sz.width;

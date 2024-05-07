@@ -1,26 +1,26 @@
-/*
+/**
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/detail/native_paint_interface.cpp
- *	@contributors:	dareg
+ *	@file nana/paint/detail/native_paint_interface.cpp
+ *	@contributors	dareg
  */
-
-#include "../../detail/platform_spec_selector.hpp"
-#include <nana/paint/detail/native_paint_interface.hpp>
-#include <nana/paint/pixel_buffer.hpp>
-#include <nana/gui/layout_utility.hpp>
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_X11)
 	#include <X11/Xlib.h>
 #endif
+
+#include "../../detail/platform_spec_selector.hpp"
+#include <nana/paint/detail/native_paint_interface.hpp>
+#include <nana/paint/pixel_buffer.hpp>
+#include <nana/gui/layout_utility.hpp>
 
 namespace nana
 {
@@ -37,13 +37,13 @@ namespace paint
 namespace detail
 {
 
-	nana::size drawable_size(drawable_type dw)
+	nana::size drawable_size(drawable_type dw)  ///< todo: dpi: system side? 
 	{
 		if(0 == dw) return nana::size();
 #if defined(NANA_WINDOWS)
 		BITMAP bmp;
 		::GetObject(dw->pixmap, sizeof bmp, &bmp);
-		return nana::size(bmp.bmWidth, bmp.bmHeight);
+		return nana::size(bmp.bmWidth, bmp.bmHeight);   ///<  dpi: system side 
 #elif defined(NANA_X11)
         nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
         Window root;
@@ -106,7 +106,7 @@ namespace detail
 		return bgcolor;
 	}
 
-	void blend(drawable_type dw, const rectangle& area, pixel_color_t color, double fade_rate)
+	void blend(drawable_type dw, const rectangle& area, pixel_color_t color, double fade_rate)  ///< todo: dpi: user or system side?
 	{
 		if (fade_rate <= 0)
 			return;
@@ -139,10 +139,10 @@ namespace detail
 				i->value = (px_r | px_g | px_b);
 			}
 		}
-		pixbuf.paste(nana::rectangle(r.x, 0, r.width, r.height), dw, point{r.x, r.y});
+		pixbuf.paste(nana::rectangle(r.x, 0, r.width, r.height), dw, point{r.x, r.y});  ///< todo: dpi: system side? 
 	}
 
-	nana::size real_text_extent_size(drawable_type dw, const wchar_t* text, std::size_t len)
+	nana::size real_text_extent_size(drawable_type dw, const wchar_t* text, std::size_t len)  ///< todo: take string_view? dpi:  system side 
 	{
 		if (dw && text && len)
 		{
@@ -166,7 +166,7 @@ namespace detail
 		return {};
 	}
 
-	nana::size real_text_extent_size(drawable_type dw, const char* text, std::size_t len)
+	nana::size real_text_extent_size(drawable_type dw, const char* text, std::size_t len)  ///< todo: take string_view? dpi: user or system side?
 	{
 		if (dw && text && len)
 		{
@@ -193,7 +193,7 @@ namespace detail
 	}
 
 
-	nana::size text_extent_size(drawable_type dw, const char * text, std::size_t len)
+	nana::size text_extent_size(drawable_type dw, const char * text, std::size_t len)  ///< todo: take string_view? dpi: user or system side?
 	{
 		if (nullptr == dw || nullptr == text || 0 == len)
 			return{};
@@ -202,7 +202,7 @@ namespace detail
 
 		auto const end = text + len;
 		int tabs = 0;
-		for (; text != end; ++text)
+		for (; text != end; ++text)   ///< todo: is this UNICODE 'safe'?
 		{
 			if (*text == '\t')
 				++tabs;
@@ -212,7 +212,7 @@ namespace detail
 		return extents;
 	}
 
-	nana::size text_extent_size(drawable_type dw, const wchar_t * text, std::size_t len)
+	nana::size text_extent_size(drawable_type dw, const wchar_t * text, std::size_t len)  ///< todo: take string_view? dpi: user or system side?
 	{
 		if (nullptr == dw || nullptr == text || 0 == len)
 			return{};
@@ -231,7 +231,7 @@ namespace detail
 		return extents;
 	}
 
-	void draw_string(drawable_type dw, const nana::point& pos, const wchar_t * str, std::size_t len)
+	void draw_string(drawable_type dw, const nana::point& pos, const wchar_t * str, std::size_t len)  ///< todo: take string_view? dpi: user or system side?
 	{
 #if defined(NANA_WINDOWS)
 		::TextOut(dw->context, pos.x, pos.y, str, static_cast<int>(len));

@@ -906,7 +906,7 @@ namespace nana
 
 				if (0 == font_height)
 				{
-					auto correspond_dpi = detail::native_interface::system_dpi();
+					auto correspond_dpi = detail::native_interface::system_dpi(); /// \todo OK
 					fi.size_pt = static_cast<double>(std::abs(metrics.lfMessageFont.lfHeight) * 72 / correspond_dpi);
 					font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
 				}
@@ -931,7 +931,7 @@ namespace nana
 			std::wstring wfont_family = nana::detail::to_nstring(fi.family);
 
 			//Translate pt to px
-			auto hDC = ::GetDC(nullptr);
+			auto hDC = ::GetDC(nullptr);  /// \todo OK??
 			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
 			::ReleaseDC(nullptr, hDC);
 
@@ -1153,7 +1153,7 @@ namespace nana
 
 		//end class revertible_mutex
 
-    /// \todo: generalize dpi to v2 awareness
+    /// \todo: generalize dpi to v2 awareness. Set for each monitor
 	struct platform_runtime
 	{
 		platform_abstraction::revertible_mutex mutex;

@@ -214,7 +214,7 @@ namespace nana
 			void _m_set_default(const ::nana::paint::font& ft, const ::nana::color& fgcolor)
 			{
 				def_.font_name = ft.name();
-				def_.font_size = ft.size();
+				def_.font_size = ft.size(); /// \todo: set dpi ?? system dpi will be used.
 				def_.font_bold = ft.bold();
 				def_.fgcolor = fgcolor;
 

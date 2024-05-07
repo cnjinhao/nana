@@ -135,10 +135,10 @@ namespace nana
 			void typeface(const font&);						///< Selects a specified font type into the graphics object.
 			font typeface() const;
 
-			::nana::size text_extent_size(std::string_view text) const;
-			::nana::size text_extent_size(std::wstring_view text) const;
+			::nana::size text_extent_size(std::string_view text) const;  ///< unscaled: user-side
+			::nana::size text_extent_size(std::wstring_view text) const;  ///< unscaled: user-side
 #ifdef __cpp_char8_t
-			::nana::size text_extent_size(std::u8string_view text) const;
+			::nana::size text_extent_size(std::u8string_view text) const;  ///< unscaled: user-side
 #endif
 
 			///Only supports the wide string, because it is very hard to specify the begin and end position in a UTF-8 string.
@@ -151,16 +151,18 @@ namespace nana
 			 */
 			std::unique_ptr<unsigned[]> glyph_pixels(std::wstring_view text) const;
 
-			::nana::size	bidi_extent_size(std::string_view utf8_text) const;
-			::nana::size	bidi_extent_size(std::wstring_view text) const;
+			::nana::size	bidi_extent_size(std::string_view utf8_text) const; ///< unscaled: user-side
+			::nana::size	bidi_extent_size(std::wstring_view text) const; ///< unscaled: user-side
 #ifdef __cpp_char8_t
-			::nana::size 	bidi_extent_size(std::u8string_view text) const;
+			::nana::size 	bidi_extent_size(std::u8string_view text) const; ///< unscaled: user-side
 #endif
 
 			bool text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const;
 
 			void line_begin(int x, int y);
 
+
+			/// \todo: how to manage scaling here??
 			void bitblt(int x, int y, const graphics& source);     ///<   Transfers the source to the specified point.
 			void bitblt(const ::nana::rectangle& r_dst, native_window_type src);  ///< Transfers the color data corresponding to r_dst from the src window to this graphics.
 			void bitblt(const ::nana::rectangle& r_dst, native_window_type src, const point& p_src);  ///< Transfers the color data corresponding to r_dst from the src window at point p_src to this graphics.

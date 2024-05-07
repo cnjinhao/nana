@@ -493,7 +493,7 @@ namespace paint
 		void graphics::resize(const ::nana::size& sz)
 		{
 			graphics duplicate(std::move(*this));
-			make(sz);
+			make(sz);  // this will scale the size to the dpi
 			bitblt(0, 0, duplicate);
 		}
 
@@ -504,7 +504,7 @@ namespace paint
 			impl_->font_shadow = f;
 			if(impl_->handle && (false == f.empty()))
 			{
-				impl_->handle->font = f.impl_->real_font;
+				impl_->handle->font = f.impl_->real_font; /// \todo: scale_dpi before?  
 #if defined(NANA_WINDOWS)
 				::SelectObject(impl_->handle->context, reinterpret_cast<HFONT>(f.impl_->real_font->native_handle()));
 #endif
@@ -542,7 +542,7 @@ namespace paint
 		}
 #endif
 		
-		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const
+		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const  /// \todo: scale_dpi before? not used?
 		{
 			end = std::clamp(end, static_cast<std::size_t>(0), static_cast<std::size_t>(text.size()));
 
@@ -611,7 +611,7 @@ namespace paint
 				auto const reordered = unicode_reorder(text.data(), text.size());
 				for (auto & i : reordered)
 				{
-					nana::size t = text_extent_size(std::wstring_view(i.begin, i.end - i.begin));
+					nana::size t = text_extent_size(std::wstring_view(i.begin, i.end - i.begin));   /// user-side
 
 					sz.width += t.width;
 					if (sz.height < t.height)
