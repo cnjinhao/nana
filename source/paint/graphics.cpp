@@ -533,12 +533,12 @@ namespace paint
 		size graphics::text_extent_size(std::string_view text) const
 		{
 			throw_not_utf8(text);
-			return detail::text_extent_size(impl_->handle, text.data(), text.length());
+			return platform_abstraction::unscale_dpi(detail::text_extent_size(impl_->handle, text.data(), text.length()), impl_->dpi) ;
 		}
 
 		size graphics::text_extent_size(std::wstring_view text) const
 		{
-			return detail::text_extent_size(impl_->handle, text.data(), text.length());
+			return platform_abstraction::unscale_dpi(detail::text_extent_size(impl_->handle, text.data(), text.length()), impl_->dpi) ;
 		}
 
 #ifdef __cpp_char8_t
@@ -573,7 +573,7 @@ namespace paint
 #elif defined(NANA_X11)
 			sz = text_extent_size(text.substr(begin, end - begin));
 #endif
-			return sz;
+			return platform_abstraction::unscale_dpi(sz, impl_->dpi) ;
 		}
 
 		std::unique_ptr<unsigned[]> graphics::glyph_pixels(std::wstring_view text) const   ///\todo: return vector?
