@@ -644,9 +644,13 @@ namespace paint
 #if defined(NANA_WINDOWS)
 				::TEXTMETRIC tm;
 				::GetTextMetrics(impl_->handle->context, &tm);
-				ascent = static_cast<unsigned>(tm.tmAscent);
-				descent = static_cast<unsigned>(tm.tmDescent);
-				internal_leading = static_cast<unsigned>(tm.tmInternalLeading);
+				// uscale_dpi before
+				ascent = static_cast<unsigned>(tm.tmAscent);   
+				ascent  = platform_abstraction::unscale_dpi(ascent, impl_->dpi) ; 
+				descent = static_cast<unsigned>(tm.tmDescent); 
+				descent = platform_abstraction::unscale_dpi(descent, impl_->dpi) ; 
+				internal_leading = static_cast<unsigned>(tm.tmInternalLeading);  
+				internal_leading = platform_abstraction::unscale_dpi(internal_leading, impl_->dpi) ; 
 				return true;
 #elif defined(NANA_X11)
 				if(impl_->handle->font)
