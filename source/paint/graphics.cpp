@@ -699,16 +699,18 @@ namespace paint
 
 		void graphics::bitblt(int x, int y, const graphics& src)
 		{
-			nana::rectangle r(src.size());
+			nana::rectangle r(src.size()); // unscaled to user-side
 			r.x = x;
 			r.y = y;
 			bitblt(r, src);
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst, native_window_type src)
+		void graphics::bitblt(const nana::rectangle& r_dst_, native_window_type src)
 		{
 			if(impl_->handle)
 			{
+				auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);  /// todo: use platform_abstraction
+
 #if defined(NANA_WINDOWS)
 				HDC dc = ::GetDC(reinterpret_cast<HWND>(src));
 				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, dc, 0, 0, SRCCOPY);
@@ -722,11 +724,13 @@ namespace paint
 			}
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst, native_window_type src, const nana::point& p_src)
+		void graphics::bitblt(const nana::rectangle& r_dst_, native_window_type src, const nana::point& p_src)  /// \todo: scale_dpi before? unused?
 		{
 			if(impl_->handle)
 			{
+				auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);  /// todo: use platform_abstraction
 #if defined(NANA_WINDOWS)
+				
 				HDC dc = ::GetDC(reinterpret_cast<HWND>(src));
 				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, dc, p_src.x, p_src.y, SRCCOPY);
 				::ReleaseDC(reinterpret_cast<HWND>(src), dc);
@@ -739,10 +743,11 @@ namespace paint
 			}
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst, const graphics& src)
+		void graphics::bitblt(const nana::rectangle& r_dst_, const graphics& src)
 		{
 			if(impl_->handle && src.impl_->handle)
 			{
+                auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);  /// todo: use platform_abstraction
 #if defined(NANA_WINDOWS)
 				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, src.impl_->handle->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
