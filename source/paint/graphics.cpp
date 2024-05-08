@@ -792,19 +792,19 @@ namespace paint
 
 				nana::rectangle r{ blend_graph_point, blend_r.dimension() };
 
-				graph_px.attach(graph.impl_->handle, r);
-				graph_px.blend(r, impl_->handle, blend_r.position(), 1 - fade_rate);
+				graph_px.attach(graph.impl_->handle, r);                                  /// \todo: scale dpi ?
+				graph_px.blend(r, impl_->handle, blend_r.position(), 1 - fade_rate);  /// \todo: scale dpi ?
 
 				if (graph.impl_->changed == false) graph.impl_->changed = true;
 			}
 		}
 
-		void graphics::blur(const nana::rectangle& r, std::size_t radius)
+		void graphics::blur(const nana::rectangle& r, std::size_t radius) /// \todo: scale dpi ?
 		{
 			if(impl_->handle)
 			{
 				pixel_buffer pixbuf(impl_->handle, 0, 0);
-				pixbuf.blur(r, radius);
+				pixbuf.blur(r, radius);                        /// \todo: scale dpi ?
 				pixbuf.paste(impl_->handle, point{});
 			}
 		}
@@ -995,15 +995,16 @@ namespace paint
 		}
 
 		unsigned graphics::width() const{
-			return impl_->size.width;
+			return platform_abstraction::unscale_dpi(impl_->size.width, impl_->dpi);
 		}
 
 		unsigned graphics::height() const{
-			return impl_->size.height;
+			return platform_abstraction::unscale_dpi(impl_->size.height, impl_->dpi);
 		}
 
-		nana::size graphics::size() const{
-			return this->impl_->size;
+		nana::size graphics::size() const
+		{
+			return platform_abstraction::unscale_dpi(impl_->size, impl_->dpi);
 		}
 
 		void graphics::setsta()
