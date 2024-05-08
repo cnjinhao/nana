@@ -250,7 +250,7 @@ namespace nana
 			//bool found_data = false;
 			if (simple_mode_)
 			{
-				auto hovered_wd = api::find_window(point(pt.x, pt.y));
+				auto hovered_wd = api::find_window_from_system_screen_point(point(pt.x, pt.y));
 
 				if ((hovered_wd && (hovered_wd == this->current_source())) || this->has(this->current_source(), hovered_wd))
 					*req_effect &= DROPEFFECT_COPY;
@@ -1029,7 +1029,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 
 			if (has_dropped)
 			{
-				auto drop_wd = api::find_window(api::cursor_position());
+				auto drop_wd = api::find_window_cursor();
 				auto i = impl_->targets.find(drop_wd);
 				if ((impl_->targets.end() != i) && i->second)
 					i->second();

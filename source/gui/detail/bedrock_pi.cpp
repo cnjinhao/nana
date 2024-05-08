@@ -248,12 +248,10 @@ namespace nana
 				auto * thrd = get_thread_context(wd->thread_id);
 				if (nullptr == thrd) return;
 
-				auto pos = native_interface::cursor_position();
-				auto native_handle = native_interface::find_window(pos.x, pos.y);
-				if (!native_handle)
-					return;
+				nana::point pos;
+				auto native_handle = native_interface::find_cursor_window(pos);
+				if (!native_handle) return;
 
-				native_interface::calc_window_point(native_handle, pos);
 				if (wd != wd_manager().find_window(native_handle, pos))
 					return;
 

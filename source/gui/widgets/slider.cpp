@@ -431,7 +431,7 @@ namespace nana
 				{
 					api::release_capture(other_.wd);
 
-					if (other_.wd != api::find_window(api::cursor_position()))
+					if (other_.wd != api::find_window_cursor())
 					{
 						slider_state_.mouse_state = ::nana::mouse_action::normal;
 						attr_.is_draw_adorn = false;

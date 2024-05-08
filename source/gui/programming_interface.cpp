@@ -1552,9 +1552,17 @@ namespace api
 		return restrict::wd_manager().calc_window_point(wd, pos);
 	}
 
-	window find_window(const nana::point& pos)
+	window find_window_cursor() ///<Finds a window which the cursor is over.
+    {
+        ::nana::point pos;
+		auto wd = interface_type::find_cursor_window(pos);
+        return restrict::wd_manager().find_window(wd, pos, true);
+    }
+
+
+	window find_window_from_system_screen_point(const nana::point& pos)
 	{
-		auto wd = interface_type::find_window(pos.x, pos.y);
+		auto wd = interface_type::find_window_from_system_screen_point(pos);
 		if(wd)
 		{
 			::nana::point clipos{pos};

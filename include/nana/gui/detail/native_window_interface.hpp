@@ -123,8 +123,12 @@ namespace detail
 		static native_window_type get_focus_window();
 		static bool calc_screen_point(native_window_type wd, nana::point& window_point);
 		static bool calc_window_point(native_window_type wd, nana::point& screen_point);
+		static bool transform_screen_system_point_into_window_sytem_point(native_window_type wd, nana::point& screen_system_point);
 
-		static native_window_type find_window(int x, int y);
+		static native_window_type find_window_from_system_screen_point(const nana::point& system_screen_point);   
+		/// point will be the position of cursor the returned window, but if no window under cursor, the point will be on screen point 
+		static native_window_type find_cursor_window(nana::point& point);  
+
 		static nana::size check_track_size(nana::size sz, unsigned extra_width, unsigned extra_height, bool true_for_max);
 
 		static void start_dpi_awareness(bool aware = false);

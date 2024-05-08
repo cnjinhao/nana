@@ -716,7 +716,7 @@ namespace detail{
 						               MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, int(dpi)));
 			if constexpr (dpi_debugging) 
 				std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
-						
+			
 			sz = nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, UINT(dpi)), 
 						    wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, UINT(dpi)));
 			if constexpr (dpi_debugging) 
@@ -760,7 +760,7 @@ namespace detail{
 					{
 						return unscale_dpi(rectangle(mi.rcWork.left,                   mi.rcWork.top,
 										             mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top),
-										   x_dpi);
+										   x_dpi); 
 					}
 				}
 			}
@@ -1715,8 +1715,8 @@ namespace detail{
 			{
 				switch(action_if_no_wd_after)
 				{
-				case z_order_action::bottom : wa = HWND_BOTTOM;	break;
-				case z_order_action::top: wa = HWND_TOP;		break;
+				case z_order_action::bottom : wa = HWND_BOTTOM;	    break;
+				case z_order_action::top:     wa = HWND_TOP;		break;
 				case z_order_action::topmost: wa = HWND_TOPMOST;	break;
 				case z_order_action::foreground:
 					::SetForegroundWindow(reinterpret_cast<HWND>(wd));
@@ -1816,14 +1816,14 @@ namespace detail{
 			auto p = scale_to_dpi(wd, static_cast<int>(sz.width), static_cast<int>(sz.height));
 			::RECT r;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), &r);
-			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
+			HWND owner  = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
 			HWND parent = ::GetParent(reinterpret_cast<HWND>(wd));
 			if(parent && (parent != owner))
 			{
 				::POINT pos = {r.left, r.top};
 				::ScreenToClient(parent, &pos);
 				r.left = pos.x;
-				r.top = pos.y;
+				r.top  = pos.y;
 			}
 
 			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
@@ -1832,7 +1832,7 @@ namespace detail{
 				return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, p.x, p.y, true));
 			}
 
-			return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, p.x, p.y, true));
+			return     (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, p.x, p.y, true));
 #elif defined(NANA_X11)
 			auto disp = restrict::spec.open_display();
 			nana::detail::platform_scope_guard psg;
@@ -1902,7 +1902,7 @@ namespace detail{
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
 				wchar_t * wstr = new wchar_t[title.length() + 1];
-				std::wcscpy(wstr, title.c_str());
+				std::wcscpy(wstr, title.c_str());   
 				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_set_window_text, reinterpret_cast<WPARAM>(wstr), 0);
 			}
 			else
@@ -2209,9 +2209,13 @@ namespace detail{
 #endif
 			return false;
 		}
-
 		bool native_interface::calc_window_point(native_window_type wd, nana::point& pos)
 		{
+			platform_abstraction::dpi_transform(pos, system_dpi());
+			if (!transform_screen_system_point_into_window_sytem_point(wd, pos)) return false;
+			platform_abstraction::untransform_dpi(pos, window_dpi(wd));
+			return true;
+		}
 		nana::point	native_interface::cursor_window_position(native_window_type wd)
         {
             auto pos = cursor_sytem_position();
@@ -2219,9 +2223,11 @@ namespace detail{
             return platform_abstraction::untransform_dpi(pos, window_dpi(wd));
         }
 
+		bool native_interface::transform_screen_system_point_into_window_sytem_point(native_window_type wd, nana::point& pos)
+		{
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging) 
-				std::wcout << "   ---  calc_window_point() " << window_caption(wd) << ":\n";
+				std::wcout << "   ---  transform_screen_system_point_into_window_sytem_point() " << window_caption(wd) << ":\n";
 
 			POINT point = {pos.x, pos.y};
 			if(::ScreenToClient(reinterpret_cast<HWND>(wd), &point))
@@ -2243,10 +2249,10 @@ namespace detail{
 			return false;
 		}
 
-		native_window_type native_interface::find_window(int x, int y)
+		native_window_type native_interface::find_window_from_system_screen_point(const nana::point& p)
 		{
 #if defined(NANA_WINDOWS)
-			POINT pos = {x, y};
+			POINT pos = {p.x, p.y};
 			return reinterpret_cast<native_window_type>(::WindowFromPoint(pos));
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
@@ -2255,7 +2261,7 @@ namespace detail{
 			Window wd = root;
 			Window child = 0;
 			int dropx = 0, dropy = 0;
-			while(True == ::XTranslateCoordinates(restrict::spec.open_display(), root, wd, x, y, &dropx, &dropy, &child))
+			while(True == ::XTranslateCoordinates(restrict::spec.open_display(), root, wd, p.x, p.y, &dropx, &dropy, &child))
 			{
 				if(0 == child) break;
 				wd = child;
@@ -2263,6 +2269,15 @@ namespace detail{
 			return reinterpret_cast<native_window_type>(wd);
 #endif
 		}
+		native_window_type native_interface::find_cursor_window(nana::point& point)
+        {
+            auto pos = cursor_sytem_position();
+			auto wd = find_window_from_system_screen_point(pos);
+			if (wd)
+				calc_window_point(wd, point);
+			platform_abstraction::untransform_dpi(point, window_dpi(wd));
+            return wd;
+        }
 
 		nana::size native_interface::check_track_size(nana::size sz, unsigned ext_width, unsigned ext_height, bool true_for_max)
 		{

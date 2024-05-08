@@ -471,7 +471,8 @@ namespace api
 	bool calc_screen_point(window, point&);   ///<Converts window coordinates to screen coordinates
 	bool calc_window_point(window, point&);   ///<Converts screen coordinates to window coordinates.
 
-	window find_window(const nana::point& mspos);
+	window find_window_from_system_screen_point(const nana::point& system_screen_point); ///<Finds a window from the LOW LEVEL system screen point.
+	window find_window_cursor();             ///<Finds a window which the cursor is over.
 
 	bool is_window_zoomed(window, bool ask_for_max);  ///<Tests a window whether it is maximized or minimized.
 

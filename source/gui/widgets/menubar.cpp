@@ -669,7 +669,7 @@ namespace nana
 			auto const native_handle = api::root(this->handle());
 			if (native_handle)
 			{
-				auto wd = api::find_window(api::cursor_position());
+				auto wd = api::find_window_cursor();
 				if (wd == this->handle())
 					return true;
 
