@@ -29,6 +29,7 @@
 #endif
 
 #include "../../paint/image_accessor.hpp"
+#include <cstring>
 
 
 
@@ -684,6 +685,7 @@ namespace detail{
 	/// this result is used to calculate the area available to draw with may be smaller than the monitor size
 	nana::size native_interface::primary_monitor_size()
 	{
+		nana::size sz{0, 0};
   #if defined(NANA_WINDOWS)
 
 		if (wdpi_fns().GetDpiForMonitor && !wdpi_fns().GetDpiForWindow) // priorize possible x_dpi != y_dpi. Really?? 
@@ -712,25 +714,30 @@ namespace detail{
 
 		if (false) //wdpi_fns().GetSystemMetricsForDpi) // do not scale ?
         {
-		    nana::size sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), 96, int(dpi)),
-						               MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, int(dpi)));
 			if constexpr (dpi_debugging) 
-				std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
+				std::cout << "primary_monitor_size() with GetSystemMetrics: \n" ;
+		    
+			sz = nana::size(::GetSystemMetrics(SM_CXSCREEN),
+					        ::GetSystemMetrics(SM_CYSCREEN));
+            sz = unscale_dpi(sz, dpi);
+						
 			
 			sz = nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, UINT(dpi)), 
 						    wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, UINT(dpi)));
 			if constexpr (dpi_debugging) 
-				std::cout << "primary_monitor_size() with GetSystemMetricsForDpi: size= " << sz.width << " x " << sz.height << std::endl;
+				std::cout << "primary_monitor_size() with GetSystemMetricsForDpi: size= " 
+				          << sz.width << " x " << sz.height << std::endl;
 			
 			return sz;
         }
 
-		nana::size sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), 96, int(dpi)),
-						           MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, int(dpi)));
+		sz = nana::size(::GetSystemMetrics(SM_CXSCREEN), 
+						::GetSystemMetrics(SM_CYSCREEN));
+
 		if constexpr (dpi_debugging) 
-			std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
+			std::cout << "primary_monitor_size() with GetSystemMetrics: \n" ;
 			
-		return sz;
+		return unscale_dpi(sz, dpi);  /// \todo: use platform_abstraction::unscale_dpi() instead, to include X11 ? 
 
   #elif defined(NANA_X11)
 		nana::detail::platform_scope_guard psg;
@@ -761,6 +768,7 @@ namespace detail{
 						return unscale_dpi(rectangle(mi.rcWork.left,                   mi.rcWork.top,
 										             mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top),
 										   x_dpi); 
+						/// \todo: use platform_abstraction::unscale_dpi() instead, to include X11 ? 
 					}
 				}
 			}
@@ -1018,6 +1026,7 @@ namespace detail{
 		native_window_type native_interface::create_child_window(native_window_type parent, const rectangle& r)
 		{
 			if(nullptr == parent) return nullptr;
+			/// \todo: use platform_abstraction::dpi_scale(r, dpi) instead, to include X11 ? 
   #if defined(NANA_WINDOWS)
 
 			if constexpr (dpi_debugging) std::cout << "   ---  create_child_window():\n";
@@ -1031,7 +1040,6 @@ namespace detail{
 										scaled_r.x, scaled_r.y, scaled_r.width, scaled_r.height,
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop
 										0, windows_module_handle(), 0);
-
 
   #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
@@ -1581,6 +1589,7 @@ namespace detail{
 
 		bool native_interface::move_window(native_window_type wd, const rectangle& r)
 		{
+			/// \todo: use platform_abstraction::dpi_scale(r, dpi) instead, to include X11 ? 
 #if defined(NANA_WINDOWS)
 			
 			if constexpr (dpi_debugging) std::cout << "   ---  move_window(rectangle):\n";
@@ -1809,23 +1818,27 @@ namespace detail{
 			return fm_extents;
 		}
 
-		bool native_interface::window_size(native_window_type wd, const size& sz)
+		bool native_interface::window_size(native_window_type wd, const size& sz)       ///< change to new_size if possible
 		{
+			/// \todo: use platform_abstraction::dpi_scale(sz, dpi) instead, to include X11 ? 
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging) std::cout << "   ---  window_size(sz):\n";
 			auto p = scale_to_dpi(wd, static_cast<int>(sz.width), static_cast<int>(sz.height));
+
 			::RECT r;
-			::GetWindowRect(reinterpret_cast<HWND>(wd), &r);
+			::GetWindowRect(reinterpret_cast<HWND>(wd), &r);    // original position
+
 			HWND owner  = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
 			HWND parent = ::GetParent(reinterpret_cast<HWND>(wd));
-			if(parent && (parent != owner))
+			if(parent && (parent != owner))  // ?
 			{
-				::POINT pos = {r.left, r.top};
+				::POINT pos = {r.left, r.top};                      // original system? position
 				::ScreenToClient(parent, &pos);
-				r.left = pos.x;
+				r.left = pos.x;                                     // now, relative to parent
 				r.top  = pos.y;
 			}
 
+			// move to the original position but with the new size
 			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
 				nana::internal_revert_guard irg;
