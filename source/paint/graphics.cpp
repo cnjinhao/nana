@@ -709,7 +709,7 @@ namespace paint
 		{
 			if(impl_->handle)
 			{
-				auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);  /// todo: use platform_abstraction
+				auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);  
 
 #if defined(NANA_WINDOWS)
 				HDC dc = ::GetDC(reinterpret_cast<HWND>(src));
@@ -747,7 +747,7 @@ namespace paint
 		{
 			if(impl_->handle && src.impl_->handle)
 			{
-                auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);  /// todo: use platform_abstraction
+                auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi); 
 #if defined(NANA_WINDOWS)
 				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, src.impl_->handle->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
@@ -759,10 +759,11 @@ namespace paint
 			}
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst, const graphics& src, const nana::point& p_src)
+		void graphics::bitblt(const nana::rectangle& r_dst_, const graphics& src, const nana::point& p_src)
 		{
 			if(impl_->handle && src.impl_->handle)
 			{
+				 auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi); 
 #if defined(NANA_WINDOWS)
 				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, src.impl_->handle->context, p_src.x, p_src.y, SRCCOPY);
 #elif defined(NANA_X11)
