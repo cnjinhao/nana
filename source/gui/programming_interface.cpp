@@ -617,7 +617,7 @@ namespace api
 
 	::nana::point cursor_position()
 	{
-		return interface_type::cursor_position();
+		return interface_type::cursor_screen_position();
 	}
 	/// generalized to dpi awareness v2
 	::nana::rectangle make_center(unsigned width, unsigned height) noexcept

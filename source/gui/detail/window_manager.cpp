@@ -1108,7 +1108,7 @@ namespace detail
 			if (!this->available(wd))
 				return;
 
-			nana::point pos = native_interface::cursor_position();
+			nana::point pos = native_interface::cursor_screen_position();
 			auto & attr_cap = attr_.capture.history;
 
 			if (captured)

@@ -1992,7 +1992,12 @@ namespace detail{
 #endif
 		}
 
-		nana::point native_interface::cursor_position()
+		nana::point native_interface::cursor_screen_position()
+		{
+			return platform_abstraction::unscale_dpi(cursor_sytem_position(), system_dpi());
+		}
+
+		nana::point native_interface::cursor_sytem_position()
 		{
 #if defined(NANA_WINDOWS)
 			// return system point, unscaled
@@ -2207,6 +2212,13 @@ namespace detail{
 
 		bool native_interface::calc_window_point(native_window_type wd, nana::point& pos)
 		{
+		nana::point	native_interface::cursor_window_position(native_window_type wd)
+        {
+            auto pos = cursor_sytem_position();
+            transform_screen_system_point_into_window_sytem_point(wd, pos);
+            return platform_abstraction::untransform_dpi(pos, window_dpi(wd));
+        }
+
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging) 
 				std::wcout << "   ---  calc_window_point() " << window_caption(wd) << ":\n";

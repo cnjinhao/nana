@@ -106,6 +106,9 @@ namespace detail
 		static void	window_caption (native_window_type wd, const native_string_type& title);
 		static native_string_type	window_caption(native_window_type wd);
 		static void	capture_window (native_window_type wd, bool capture);
+		static nana::point	cursor_sytem_position ();                             ///< return system point, scaled system-side
+		static nana::point	cursor_screen_position();                             ///< return unscaled point (user-side) for whole screen
+		static nana::point	cursor_window_position(native_window_type wd);        ///< return unscaled point (user-side) for wd
 
 		static native_window_type get_window   (native_window_type    wd, window_relationship);
 		static native_window_type parent_window(native_window_type child, native_window_type new_parent, bool returns_previous);
