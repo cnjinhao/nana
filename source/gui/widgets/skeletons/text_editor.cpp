@@ -1,14 +1,14 @@
-/*
+/**
 *	A text editor implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/widgets/skeletons/text_editor.cpp
-*	@contributors: Ariel Vina-Rodriguez, Oleg Smolsky
+*	@file  nana/gui/widgets/skeletons/text_editor.cpp
+*	@contributors  Ariel Vina-Rodriguez, Oleg Smolsky
 */
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>

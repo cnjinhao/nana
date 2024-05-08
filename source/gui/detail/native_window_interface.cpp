@@ -50,7 +50,7 @@ namespace detail{
     }
 	nana::point scale_to_dpi(native_window_type wd, int x, int y)
     {
-		int dpi = static_cast<int>(native_interface::window_dpi(wd));
+		int dpi = native_interface::window_dpi(wd);
 		return scale_to_dpi(x, y, dpi);
     }
 	nana::point unscale_dpi(native_window_type wd, int x, int y)
@@ -361,6 +361,7 @@ namespace detail{
 	//This function is defined in bedrock_windows.cpp
 	HINSTANCE windows_module_handle();
 
+	/// A map to return the HICON associated with a window
 	class tray_manager
 	{
 		struct window_extra_t
@@ -611,6 +612,7 @@ namespace detail{
 		}
   #endif
 
+    /// Invokes a function in the thread of the specified window.
 	void native_interface::affinity_execute(native_window_type native_handle, bool post, std::function<void()>&& fn)
 	{
 		if (!fn)
@@ -678,7 +680,7 @@ namespace detail{
   #endif	
 	}
 
-	/// generalized to Windows dpi awareness v2 to return already 'DPI' scaled size
+	/// generalized to Windows dpi awareness v2 to return already 'DPI' unscaled (user-side) size
 	/// this result is used to calculate the area available to draw with may be smaller than the monitor size
 	nana::size native_interface::primary_monitor_size()
 	{
@@ -689,7 +691,7 @@ namespace detail{
             // get the main monitor HWND
             HWND primary_monitor = ::GetDesktopWindow();
             HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
-            UINT x_dpi, y_dpi;
+            UINT x_dpi, y_dpi; // here x_dpi != y_dpi
             if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
 			{
 				if constexpr (dpi_debugging) 
@@ -699,7 +701,7 @@ namespace detail{
 					return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, x_dpi),
 									  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, y_dpi));  //  x_dpi != y_dpi ?? 
 
-				else // fallback to GetSystemMetrics
+				else // fallback to GetSystemMetrics: here x_dpi != y_dpi
 					return nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), 96, x_dpi),
 									  MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, y_dpi));
 			}
@@ -737,20 +739,20 @@ namespace detail{
   #endif
 	}
     	/// \todo: generalize dpi to v2 awareness 
-		rectangle native_interface::screen_area_from_point(const point& pos) ///< unused ?
+		rectangle native_interface::screen_area_from_system_point(const point& system_point) ///< unused ?
 		{
 #if defined(NANA_WINDOWS)
 			// led assume somehow coordinates in the united global big and 'fake'-96 DPI sytem monitor are provided 
 			// in pos (POINT structure that specifies the point of interest in virtual-screen coordinates.)
 			if(wdpi_fns().MonitorFromPoint)
 			{
-				POINT native_pos = {pos.x, pos.y};
+				POINT native_pos = {system_point.x, system_point.y};
 				HMONITOR monitor = wdpi_fns().MonitorFromPoint(native_pos, 2 /*MONITOR_DEFAULTTONEAREST*/);
 				UINT x_dpi, y_dpi;
                 if (S_OK == wdpi_fns().GetDpiForMonitor(monitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
 				{
 					if constexpr (dpi_debugging) 
-						std::cout << "screen_area_from_point(): DPI= " << x_dpi << " x " << y_dpi << std::endl;
+						std::cout << "screen_area_from_system_point(): DPI= " << x_dpi << " x " << y_dpi << std::endl;
 					MONITORINFO mi;
 					mi.cbSize = sizeof mi;
  
@@ -771,6 +773,7 @@ namespace detail{
 		//platform-dependent
 		native_interface::window_result native_interface::create_window(native_window_type owner, bool nested, const rectangle& r, const appearance& app)
 		{
+			/// \todo: use platform_abstraction::dpi_scale(r, dpi) instead, to include X11 ? 
 #if defined(NANA_WINDOWS)
 			DWORD style = WS_SYSMENU | WS_CLIPCHILDREN;
 			DWORD style_ex= WS_EX_NOPARENTNOTIFY;
@@ -857,7 +860,7 @@ namespace detail{
 			wd_area.right -= wd_area.left;
 			wd_area.bottom -= wd_area.top;
 
-			// unscale to App scale
+			// unscale from system coordinates to App scale
 			window_result result = { reinterpret_cast<native_window_type>(native_wd),
 										static_cast<unsigned>(MulDiv(client.right,                   96, dpi)), 
 				                        static_cast<unsigned>(MulDiv(client.bottom,                  96, dpi)),
@@ -1458,6 +1461,7 @@ namespace detail{
 
 		nana::point native_interface::window_position(native_window_type wd)
 		{
+			/// \todo: use platform_abstraction::unscale_dpi(p, dpi) instead, to include X11 ? 
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging)
 				std::wcout << "   ---  window_position() " << window_caption(wd) << ":\n";
@@ -1502,6 +1506,7 @@ namespace detail{
 
 		void native_interface::move_window(native_window_type wd, int x, int y)
 		{
+			/// \todo: use platform_abstraction::dpi_scale(p, dpi) instead, to include X11 ? 
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging) std::wcout << "   ---  move_window(x,y):" << window_caption(wd) << "\n";
 			auto p = scale_to_dpi(wd, x, y);
@@ -1716,8 +1721,7 @@ namespace detail{
 				case z_order_action::foreground:
 					::SetForegroundWindow(reinterpret_cast<HWND>(wd));
 					return;
-				default:
-					wa = HWND_NOTOPMOST;
+				default:    				  wa = HWND_NOTOPMOST;
 				}
 			}
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
@@ -1759,6 +1763,7 @@ namespace detail{
 		native_interface::frame_extents native_interface::window_frame_extents(native_window_type wd)
 		{
 			frame_extents fm_extents{0, 0, 0, 0};
+			/// \todo: use platform_abstraction::unscale_dpi(fm, dpi) instead, to include X11 ? 
 
 	#if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging)
@@ -1867,6 +1872,7 @@ namespace detail{
 
 		void native_interface::get_window_rect(native_window_type wd, rectangle& r) ///< unused ?
 		{
+			/// \todo: use platform_abstraction::unscale_dpi(r, dpi) instead, to include X11 ? 
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging)
 				std::wcout << "   ---  get_window_rect() " << window_caption(wd) << ":\n";
@@ -1933,7 +1939,7 @@ namespace detail{
 
 				::GetWindowText(reinterpret_cast<HWND>(wd), &(str[0]), static_cast<int>(str.size()));
 
-				//Remove the null terminator writtien by GetWindowText
+				//"Remove" the null terminator writtien by GetWindowText
 				str.resize(length);
 			}
 

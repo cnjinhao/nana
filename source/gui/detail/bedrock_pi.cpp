@@ -1,13 +1,14 @@
-/*
+/**
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/detail/bedrock_pi.cpp
+*	@file nana/gui/detail/bedrock_pi.cpp
+*   @contributors  Jinhao, Ariel Vina-Rodriguez
 */
 
 #include "../../detail/platform_spec_selector.hpp"
@@ -245,8 +246,7 @@ namespace nana
 			if (wd_manager().available(wd))
 			{
 				auto * thrd = get_thread_context(wd->thread_id);
-				if (nullptr == thrd)
-					return;
+				if (nullptr == thrd) return;
 
 				auto pos = native_interface::cursor_position();
 				auto native_handle = native_interface::find_window(pos.x, pos.y);
