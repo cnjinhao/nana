@@ -148,9 +148,9 @@ namespace nana
 
 				if (label_pos.x > data.position)
 				{
-					for (::nana::size::value_type l = 0; l < arrow_size.height; ++l)
+					for (::nana::size::value_type L = 0; L < arrow_size.height; ++L)
 					{
-						auto ptr = arrow_pxbuf + l * arrow_size.width;
+						auto ptr = arrow_pxbuf + L * arrow_size.width;
 
 						for (::nana::size::value_type x = 0; x < arrow_size.width / 2; ++x)
 							std::swap(ptr[x], ptr[(arrow_size.width - 1) - x]);

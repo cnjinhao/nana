@@ -1,7 +1,7 @@
 /**
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -12,12 +12,13 @@
 #ifndef NANA_GUI_PLACE_PARTS_HPP
 #define NANA_GUI_PLACE_PARTS_HPP
 
+#include <stdexcept>
+#include <deque>
+
 #include <nana/gui/widgets/form.hpp>
 #include <nana/gui/widgets/tabbar.hpp>
 #include <nana/gui/element.hpp>
 #include <nana/paint/text_renderer.hpp>
-#include <stdexcept>
-#include <deque>
 
 namespace nana
 {
@@ -584,7 +585,7 @@ namespace nana
 					return px;
 				}
 
-				return get_value(0, dm, to_system_px);
+				return get_value(0, dm, to_system_px);    /// \todo: to_system_px?
 			}
 
 			int integer() const noexcept
@@ -766,27 +767,27 @@ namespace nana
 
 					if (0 == it)	//top
 					{
-						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height), dm, true));
+						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height), dm, true));  /// \todo: dpi to_system_px?
 						r.y += px;
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != ib)	//bottom
 					{
-						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height), dm, true));
+						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height), dm, true));  /// \todo: dpi to_system_px?
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != il)	//left
 					{
-						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width), dm, true));
+						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width), dm, true));  /// \todo: dpi to_system_px?
 						r.x += px;
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 
 					if (-1 != ir)	//right
 					{
-						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width), dm, true));
+						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width), dm, true));  /// \todo: dpi to_system_px?
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 				}

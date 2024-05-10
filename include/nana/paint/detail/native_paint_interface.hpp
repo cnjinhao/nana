@@ -33,10 +33,10 @@ namespace detail
 	void blend(drawable_type dw, const nana::rectangle& r, pixel_color_t bdcolor, double fade_rate);
 
 	/// \todo: take string_view? dpi: system side? all pos/size dpi scaled. Need to be unscaled to be pass to user side.
-	nana::size real_text_extent_size(drawable_type, const char*, std::size_t len);
-	nana::size real_text_extent_size(drawable_type, const wchar_t*, std::size_t len);
-	nana::size text_extent_size(drawable_type, const char*, std::size_t len);
-	nana::size text_extent_size(drawable_type, const wchar_t*, std::size_t len);
+	nana::size real_text_extent_size(drawable_type, const char*, std::size_t len);  ///< dpi: system side \todo: take string_view? 
+	nana::size real_text_extent_size(drawable_type, const wchar_t*, std::size_t len);   ///< dpi: system side \todo: take string_view?  
+	nana::size text_extent_size(drawable_type, const char*, std::size_t len);  ///< dpi: system side \todo: take string_view? 
+	nana::size text_extent_size(drawable_type, const wchar_t*, std::size_t len);  ///< dpi: system side \todo: take string_view? 
 
 	void draw_string(drawable_type, const nana::point&, const wchar_t *, std::size_t len);
 }//end namespace detail

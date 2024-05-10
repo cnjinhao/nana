@@ -843,7 +843,8 @@ namespace nana{	namespace paint
 	pixel_color_t pixel_buffer::pixel(int x, int y) const
 	{
 		auto sp = storage_.get();
-		if(sp && 0 <= x && x < static_cast<int>(sp->pixel_size.width) && 0 <= y && y < static_cast<int>(sp->pixel_size.height))
+		if(sp && 0 <= x && x < static_cast<int>(sp->pixel_size.width ) 
+		      && 0 <= y && y < static_cast<int>(sp->pixel_size.height))
 			return *reinterpret_cast<const pixel_color_t*>(reinterpret_cast<const char*>(sp->raw_pixel_buffer + x) + y * sp->bytes_per_line);
 
 		return pixel_color_t();

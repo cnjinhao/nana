@@ -709,7 +709,7 @@ namespace detail{
 			}
         }
 
-		std::size_t dpi = native_interface::system_dpi();  // originaly got from UINT or int: safe to get back to that
+		int dpi = native_interface::system_dpi();  // originaly got from UINT or int: safe to get back to that
 		if constexpr (dpi_debugging) std::cout << "primary_monitor_size(): DPI= " << dpi << std::endl;
 
 		if (false) //wdpi_fns().GetSystemMetricsForDpi) // do not scale ?

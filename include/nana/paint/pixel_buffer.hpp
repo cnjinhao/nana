@@ -1,25 +1,26 @@
-/*
+/**
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/pixel_buffer.hpp
+ *	@file nana/paint/pixel_buffer.hpp
  */
 
 #ifndef NANA_PAINT_PIXEL_BUFFER_HPP
 #define NANA_PAINT_PIXEL_BUFFER_HPP
 
-#include <nana/gui/basis.hpp>
-#include <memory>
 #include <filesystem>
+#include <memory>
+
+#include <nana/gui/basis.hpp>
 
 namespace nana{	namespace paint
 {
-	/// Alpha blend operations
+	/// Alpha blend operations \todo: decide to put before or after scaling
 	enum class alpha_methods
 	{
 		straight_alpha,	///< DestColor = SrcColor * SrcAlpha + DestColor * (1 - SrcAlpha), DestAlpha = SrcAlpha * SrcAlpha + (1 - SrcAlpha) * DestAlpha
