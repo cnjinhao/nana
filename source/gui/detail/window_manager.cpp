@@ -634,6 +634,7 @@ namespace detail
 			const bool size_changed = (r.width != wd->dimension.width || r.height != wd->dimension.height);
 			if(category::flags::root != wd->other.category)
 			{
+				// wd is not a root window: move the window and its children (the system will not move any of then)
 				//Move child widgets
 				if(r.x != wd->pos_owner.x || r.y != wd->pos_owner.y)
 				{

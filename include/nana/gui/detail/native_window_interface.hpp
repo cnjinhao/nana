@@ -73,7 +73,7 @@ namespace detail
 		static rectangle screen_area_from_system_point(const point& system_point);  ///< unused ?
 
 		static window_result create_window(native_window_type owner, bool nested, const rectangle& r, const appearance& ap);
-		static native_window_type create_child_window(native_window_type owner, const rectangle& r);
+		static native_window_type create_child_window(native_window_type owner, const rectangle& r);  ///< unused ?
 
 #if defined(NANA_X11)
 		static void set_modal(native_window_type);

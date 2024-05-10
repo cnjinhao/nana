@@ -269,7 +269,7 @@ namespace paint
 			std::shared_ptr<::nana::detail::drawable_impl_type> platform_drawable;
 			font			font_shadow;
 			drawable_type	handle{ nullptr };
-			::nana::size	size;
+			::nana::size	size;  ///< system-side size, dpi-scaled
 			pixel_buffer	pxbuf;
 			bool            changed{ false };
 			int             dpi  { 96   };
@@ -514,7 +514,7 @@ namespace paint
 #if defined(NANA_WINDOWS)
 				::SelectObject(impl_->handle->context, reinterpret_cast<HFONT>(f.impl_->real_font->native_handle()));
 #endif
-
+				/// scaled, system-side size
 				impl_->handle->string.tab_pixels        = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
 				impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" " , 1).width;
 

@@ -782,6 +782,7 @@ namespace detail{
 		native_interface::window_result native_interface::create_window(native_window_type owner, bool nested, const rectangle& r, const appearance& app)
 		{
 			/// \todo: use platform_abstraction::dpi_scale(r, dpi) instead, to include X11 ? 
+
 #if defined(NANA_WINDOWS)
 			DWORD style = WS_SYSMENU | WS_CLIPCHILDREN;
 			DWORD style_ex= WS_EX_NOPARENTNOTIFY;
@@ -1023,7 +1024,7 @@ namespace detail{
 			return result;
 		}
 
-		native_window_type native_interface::create_child_window(native_window_type parent, const rectangle& r)
+		native_window_type native_interface::create_child_window(native_window_type parent, const rectangle& r) ///< unused ?
 		{
 			if(nullptr == parent) return nullptr;
 			/// \todo: use platform_abstraction::dpi_scale(r, dpi) instead, to include X11 ? 

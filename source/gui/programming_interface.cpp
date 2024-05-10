@@ -624,7 +624,7 @@ namespace api
 	{
 		auto screen = interface_type::primary_monitor_size();
 	    if constexpr (dpi_debugging)
-			std::cout << "API::make_center() on screen: (" << screen.width << ", " << screen.height << ") " << std::endl;
+			std::cout << "API::make_center() on screen: (" << screen.width << ", " << screen.height << ")\n ";
 		return{
 			static_cast<int>(width  > screen.width  ? 0 : (screen.width  - width ) >> 1),
 			static_cast<int>(height > screen.height ? 0 : (screen.height - height) >> 1),

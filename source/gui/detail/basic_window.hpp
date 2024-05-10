@@ -1,7 +1,7 @@
 /**
  *	A Basic Window Widget Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,6 +13,7 @@
 
 #ifndef NANA_GUI_DETAIL_BASIC_WINDOW_HPP
 #define NANA_GUI_DETAIL_BASIC_WINDOW_HPP
+
 #include <nana/push_ignore_diagnostic>
 #include <nana/gui/detail/drawer.hpp>
 #include <nana/gui/detail/events_holder.hpp>
@@ -145,9 +146,9 @@ namespace nana::detail
 #if defined(NANA_POSIX)
 		point	pos_native;
 #endif
-		point	pos_root;	///< coordinates of the root window
-		point	pos_owner;
-		size	dimension;
+		point	pos_root;	   ///< coordinates of the root window  \todo: dpi? user or system-side ?
+		point	pos_owner;     ///< coordinates of the owner window \todo: dpi? user or system-side ?
+		size	dimension;     ///< size of thes window             \todo: dpi? user or system-side ?
 		::nana::size	min_track_size;
 		::nana::size	max_track_size;
 

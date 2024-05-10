@@ -11,6 +11,9 @@
 *   @contributors  Jinhao, Ariel Vina-Rodriguez
 */
 
+#include <sstream>
+#include <algorithm>
+
 #include "../../detail/platform_spec_selector.hpp"
 #include "basic_window.hpp"
 #include "bedrock_types.hpp"
@@ -22,9 +25,6 @@
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
-
-#include <sstream>
-#include <algorithm>
 
 namespace nana
 {

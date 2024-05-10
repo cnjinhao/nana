@@ -485,19 +485,21 @@ namespace nana
 			display_metrics(window wd) :
 				dpi(api::window_dpi(wd))
 			{
-				auto font_info = api::typeface(wd).info();
+				auto font_info = api::typeface(wd).info();    // ask dinamicaly and not keee here?
 				if (font_info)
-					font_px = font_info->size_pt * dpi / 72;
+					font_px = (font_info->size_pt * dpi) / 72.0;
 			}
 		};
 
-		//number_t is used for storing a number type variable
-		//such as integer, real and percent. Essentially, percent is a typo of real.
+		/// storing a number type variable, such as integer, real and percent, where essentially, percent is a type of real.
 		class number_t
 		{
 		public:
 			enum class kind{ none, integer, real, percent };
-			enum class units{medium, px, em};
+			enum class units{ medium, ///< scalable?    Copilot: The default unit, it is used for the value of margin, padding, and gap.
+				              px,     ///< fixed in px? Copilot: The pixel unit,   it is used for the value of width, height, and size.
+				              em      ///< in font px?  Copilot: The em unit,      it is used for the value of font-size.
+			                };
 
 			number_t()
 			{

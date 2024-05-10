@@ -358,7 +358,7 @@ namespace api
 	bool window_text_editor_editable(window);
 	::std::optional<rectangle> window_text_editor_rectangle(window wd, bool including_scrollbars);
 	::std::optional<rectangle> window_rectangle(window);
-	bool get_window_rectangle(window, rectangle&);
+	bool get_window_rectangle(window, rectangle& r_in_parent);        ///< the window rectangle in parent coordinates
 	bool track_window_size(window, const size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
 	void window_enabled(window, bool);
 	bool window_enabled(window);

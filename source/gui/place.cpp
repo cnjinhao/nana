@@ -407,7 +407,7 @@ namespace nana
 				return sp;
 			}
 
-			//Parses unit. It returns unit string and modifies the sp to the next character of unit string if it parses successfully.
+			/// Parses unit, It returns unit string and modifies the sp to the next character of unit string if it parses successfully.
 			std::string _m_unit(const char*& sp) noexcept
 			{
 				auto const start = sp;

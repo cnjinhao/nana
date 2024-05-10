@@ -1,13 +1,13 @@
-/*
+/**
 *	A Basic Window Widget Definition
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/detail/basic_window.cpp
+*	@file nana/gui/detail/basic_window.cpp
 */
 
 #include "basic_window.hpp"
