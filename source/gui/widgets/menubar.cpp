@@ -102,10 +102,11 @@ namespace nana
 				this->close_menu();
 				state.behave = behavior::none;
 
-				auto pos = api::cursor_position();
-				api::calc_window_point(widget_ptr->handle(), pos);
+				::nana::point pos;
+                if (api::find_window_cursor(pos))
 					state.active = find(pos);
-
+				else
+					state.active = npos;
 				return true;
 			}
 
