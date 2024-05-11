@@ -1364,7 +1364,11 @@ namespace detail
 					wd_manager.size(msgwnd, size(pmdec.size.width, pmdec.size.height), true, true);
 				break;
 			case WM_MOVE:
-				brock.event_move(msgwnd, (int)(short) LOWORD(lParam), (int)(short) HIWORD(lParam));
+				{
+                    point p  ( (int)(short) LOWORD(lParam), 
+							   (int)(short) HIWORD(lParam));
+					brock.event_move(msgwnd, p.x, p.y);
+                }
 				break;
 			case WM_PAINT:
 				{
