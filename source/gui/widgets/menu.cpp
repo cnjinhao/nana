@@ -87,9 +87,9 @@ namespace nana
 			void background(graph_reference graph, window wd) override
 			{
 				nana::size sz = graph.size();
-				unsigned int left_width = platform_abstraction::dpi_scale(wd, 30u);
-				unsigned int unit = platform_abstraction::dpi_scale(wd, 1u);
-				sz.width -= left_width;
+				unsigned int left_width = 30u;    ///\todo: DPI? platform_abstraction::dpi_scale(wd, 30u);
+				unsigned int       unit =  1u;    ///\todo: DPI? platform_abstraction::dpi_scale(wd, 1u);
+				sz.width  -= left_width;
 				sz.height -= 2;
 				graph.rectangle(false, colors::gray_border);
 				graph.rectangle({ 1, 1, left_width - 2, sz.height }, true, static_cast<color_rgb>(0xf6f6f6));
@@ -423,28 +423,29 @@ namespace nana
 					return;
 
 				_m_adjust_window_size();
-
+				///\todo use scheme: and for DPI  scale(px) = platform_abstraction::dpi_scale(widget_->handle(), px)
+ 
 				auto renderer = mbuilder_->renderer().get();
 				renderer->background(graph, *widget_);
 
-				auto two = platform_abstraction::dpi_scale(widget_->handle(), 2u);
-				auto splitter_h = _m_splitter_height();
+				auto two       = 2u;                         ///\todo: DPI? platform_abstraction::dpi_scale(widget_->handle(), 2u);
+				auto splitter_h= _m_splitter_height();
 				const unsigned item_h_px = _m_item_height();
-				const unsigned image_px = item_h_px - platform_abstraction::dpi_scale(widget_->handle(), 2u);
+				const unsigned image_px  = item_h_px - 2u;             ///\todo: DPI? platform_abstraction::dpi_scale(widget_->handle(), 2u);
 				nana::rectangle item_r(two, two, graph_->width() - two * 2, item_h_px);
 
-				unsigned strpixels = item_r.width - platform_abstraction::dpi_scale(widget_->handle(), 60u);
+				unsigned strpixels       = item_r.width - 60u;         ///\todo: DPI? platform_abstraction::dpi_scale(widget_->handle(), 60u);
 
 				int text_top_off = static_cast<int>(item_h_px - graph.text_extent_size(L"jh({[").height) / 2;
 
-				auto unit = platform_abstraction::dpi_scale(widget_->handle(), 1u);
+				auto unit = 1u;                             ///\todo: DPI?  platform_abstraction::dpi_scale(widget_->handle(), 1u);
 				std::size_t pos = 0;
 				for (auto & m : menu_->items)
 				{
 					auto item_ptr = m.get();
 					if (item_ptr->flags.splitter)
 					{
-						graph_->line({ item_r.x + platform_abstraction::dpi_scale(widget_->handle(), 40), item_r.y }, { static_cast<int>(graph.width()) - 1, item_r.y }, colors::gray_border);
+						graph_->line({ item_r.x + 40 /*platform_abstraction::dpi_scale(widget_->handle(), 40)*/, item_r.y }, { static_cast<int>(graph.width()) - 1, item_r.y }, colors::gray_border);
 						item_r.y += static_cast<int>(splitter_h) + unit;
 						++pos;
 						continue;
@@ -460,16 +461,16 @@ namespace nana
 					auto text = api::transform_shortkey_text(item_ptr->text, hotkey, &hotkey_pos);
 
 					if (item_ptr->image.empty() == false)
-						renderer->item_image(graph, nana::point(item_r.x + platform_abstraction::dpi_scale(widget_->handle(), 5), item_r.y + static_cast<int>(item_h_px - image_px) / 2 - platform_abstraction::dpi_scale(widget_->handle(), 2)), image_px, item_ptr->image);
+						renderer->item_image(graph, nana::point(item_r.x + 5 , item_r.y + static_cast<int>(item_h_px - image_px) / 2 - 2 ), image_px, item_ptr->image);
 
-					renderer->item_text(graph, nana::point(item_r.x + platform_abstraction::dpi_scale(widget_->handle(), 40), item_r.y + text_top_off), text, strpixels, attr);
+					renderer->item_text(graph, nana::point(item_r.x + 40 , item_r.y + text_top_off), text, strpixels, attr);
 
 					item_ptr->hotkey = hotkey;
 					if (hotkey && item_ptr->flags.enabled)
-						api::dev::draw_shortkey_underline(*graph_, text, hotkey, hotkey_pos, { item_r.x + platform_abstraction::dpi_scale(widget_->handle(), 40), item_r.y + text_top_off }, colors::black);
+						api::dev::draw_shortkey_underline(*graph_, text, hotkey, hotkey_pos, { item_r.x + 40 , item_r.y + text_top_off }, colors::black);
 
 					if (item_ptr->linked.menu_ptr)
-						renderer->sub_arrow(graph, nana::point(graph_->width() - platform_abstraction::dpi_scale(widget_->handle(), 20u), item_r.y), item_h_px, attr);
+						renderer->sub_arrow(graph, nana::point(graph_->width() - 20 , item_r.y), item_h_px, attr);
 
 					item_r.y += item_r.height + unit;
 
@@ -668,8 +669,8 @@ namespace nana
 
 			std::size_t _m_get_index_by_pos(int x, int y) const
 			{
-				int border_x = platform_abstraction::dpi_scale(widget_->handle(), detail_.border.x);
-				int border_y = platform_abstraction::dpi_scale(widget_->handle(), detail_.border.y);
+				int border_x = detail_.border.x; ///\todo dpi?? platform_abstraction::dpi_scale(widget_->handle(), detail_.border.x);
+				int border_y = detail_.border.y; ///\todo dpi?? platform_abstraction::dpi_scale(widget_->handle(), detail_.border.y);
 				if(	(x < border_x) ||
 					(x > static_cast<int>(graph_->width()) - border_x) ||
 					(y < border_y) ||
@@ -678,7 +679,7 @@ namespace nana
 
 				int pos = border_y;
 				std::size_t index = 0;
-				int unit = platform_abstraction::dpi_scale(widget_->handle(), 1);
+				int unit = 1; ///platform_abstraction::dpi_scale(widget_->handle(), 1);
 				for (auto & m : menu_->items)
 				{
 					unsigned h = (m->flags.splitter ? _m_splitter_height() : _m_item_height());
@@ -695,7 +696,7 @@ namespace nana
 
 			unsigned _m_item_height() const
 			{
-				return platform_abstraction::dpi_scale(widget_->handle(), menu_->item_pixels);
+				return menu_->item_pixels; // platform_abstraction::dpi_scale(widget_->handle(), menu_->item_pixels);
 			}
 
 			unsigned int _m_splitter_height() const
@@ -706,7 +707,7 @@ namespace nana
 			nana::size _m_client_size() const
 			{
 				nana::size size;
-				auto unit = platform_abstraction::dpi_scale(widget_->handle(), 1u);
+				auto unit = 1u; // platform_abstraction::dpi_scale(widget_->handle(), 1u);
 				if (menu_->items.size())
 				{
 					for (auto & m : menu_->items)
@@ -721,7 +722,7 @@ namespace nana
 							++size.height;
 					}
 
-					size.width += platform_abstraction::dpi_scale(widget_->handle(), 35u + 40u);
+					size.width += 35u + 40u ; // platform_abstraction::dpi_scale(widget_->handle(), 35u + 40u);
 					size.height = static_cast<unsigned>(menu_->items.size() - size.height) * _m_item_height() + size.height * _m_splitter_height() + static_cast<unsigned>(menu_->items.size() - 1) * unit;
 				}
 
@@ -735,9 +736,9 @@ namespace nana
 			{
 				nana::size size = _m_client_size();
 
-				unsigned int two = platform_abstraction::dpi_scale(widget_->handle(), 2u);
-				size.width += platform_abstraction::dpi_scale(widget_->handle(), detail_.border.x) * 2u;
-				size.height += platform_abstraction::dpi_scale(widget_->handle(), detail_.border.y) * 2u;
+				constexpr unsigned int two = 2u;        // platform_abstraction::dpi_scale(widget_->handle(), 2u);
+				size.width  += detail_.border.x * 2u;   // platform_abstraction::dpi_scale(widget_->handle(), detail_.border.x) * 2u;
+				size.height += detail_.border.y * 2u;   // platform_abstraction::dpi_scale(widget_->handle(), detail_.border.y) * 2u;
 
 				widget_->size(size);
 
