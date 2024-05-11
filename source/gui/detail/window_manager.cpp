@@ -1376,7 +1376,8 @@ namespace detail
 			if (!available(wd))
 				return;
 
-			wd->drawer.graphics.set_dpi(native_interface::window_dpi(wd->root));
+			wd->dpi = native_interface::window_dpi(wd->root);
+			wd->drawer.graphics.set_dpi(wd->dpi);
 
 			for (auto child : wd->children)
 			{
@@ -1521,6 +1522,7 @@ namespace detail
 			{
 				wd->parent = for_new;
 				wd->root = for_new->root;
+				wd->dpi = for_new->dpi;
 				wd->root_graph = for_new->root_graph;
 				wd->root_widget = for_new->root_widget;
 
@@ -1544,6 +1546,7 @@ namespace detail
 						else
 						{
 							child->root = wd->root;
+							child->dpi = wd->dpi;
 							child->root_graph = wd->root_graph;
 							child->root_widget = wd->root_widget;
 							set_pos_root(child, delta_pos);

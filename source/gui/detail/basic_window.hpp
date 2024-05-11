@@ -151,6 +151,7 @@ namespace nana::detail
 		size	dimension;     ///< size of thes window             \todo: dpi? user or system-side ?
 		::nana::size	min_track_size;
 		::nana::size	max_track_size;
+		int dpi{ 96 };	      ///< \todo: DPI of the window, cached value of the root, root_widget's and root_graph.
 
 		bool	visible;
 

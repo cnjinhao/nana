@@ -259,6 +259,7 @@ namespace nana
 				if(category::flags::root == this->other.category)
 				{
 					this->root = wd;
+					this->dpi = native_interface::window_dpi(wd);  ///< \todo: cache the dpi??
 					dimension.width = width;
 					dimension.height = height;
 					this->extra_width = extra_width;
@@ -404,6 +405,7 @@ namespace nana
 					owner = nullptr;
 					root_widget = wd->root_widget;
 					root = wd->root;
+					dpi = wd->dpi;
 					root_graph = wd->root_graph;
 					index = static_cast<unsigned>(wd->children.size());
 					wd->children.emplace_back(this);
