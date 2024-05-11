@@ -1,4 +1,4 @@
-/*
+/**
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
@@ -7,10 +7,10 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/native_window_interface.cpp
+ *	@file nana/gui/detail/native_window_interface.cpp
  */
 
-
+#include <cstring>
 #include <iostream>  // for print_monitor_dpi() for debugging
 
 #include "../../detail/platform_spec_selector.hpp"
@@ -29,7 +29,6 @@
 #endif
 
 #include "../../paint/image_accessor.hpp"
-#include <cstring>
 
 
 

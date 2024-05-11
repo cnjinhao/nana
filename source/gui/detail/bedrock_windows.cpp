@@ -174,8 +174,7 @@ namespace detail
 		std::map<int, std::function<void()>> accel_commands;
 	};
 
-	//class bedrock defines a static object itself to implement a static singleton
-	//here is the definition of this object
+	/// class bedrock defines a static object itself to implement a static singleton, here is the definition of this object
 	bedrock bedrock::bedrock_object;
 
 	static LRESULT WINAPI Bedrock_WIN32_WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -192,22 +191,22 @@ namespace detail
 		:	pi_data_(new pi_data),
 			impl_(new private_impl)
 	{
-		detail::native_interface::start_dpi_awareness(config_dpi_aware);
+		native_interface::start_dpi_awareness(config_dpi_aware);
 
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
 		WNDCLASSEX wincl;
-		wincl.hInstance = windows_module_handle();
+		wincl.hInstance     = windows_module_handle();
 		wincl.lpszClassName = L"NanaWindowInternal";
-		wincl.lpfnWndProc = &Bedrock_WIN32_WindowProc;
-		wincl.style = CS_DBLCLKS | CS_OWNDC;
-		wincl.cbSize = sizeof(wincl);
-		wincl.hIcon = ::LoadIcon (0, IDI_APPLICATION);
-		wincl.hIconSm = wincl.hIcon;
-		wincl.hCursor = ::LoadCursor (0, IDC_ARROW);
-		wincl.lpszMenuName = 0;
-		wincl.cbClsExtra = 0;
-		wincl.cbWndExtra = 0;
+		wincl.lpfnWndProc   = &Bedrock_WIN32_WindowProc;
+		wincl.style         = CS_DBLCLKS | CS_OWNDC;
+		wincl.cbSize        = sizeof(wincl);
+		wincl.hIcon         = ::LoadIcon (0, IDI_APPLICATION);
+		wincl.hIconSm       = wincl.hIcon;
+		wincl.hCursor       = ::LoadCursor (0, IDC_ARROW);
+		wincl.lpszMenuName  = 0;
+		wincl.cbClsExtra    = 0;
+		wincl.cbWndExtra    = 0;
 		wincl.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
 
 		::RegisterClassEx(&wincl);
@@ -571,11 +570,12 @@ namespace detail
 		arg.shift = pmdec.mouse.button.shift;
 	}
 
-	//trivial_message
-	//	The Windows messaging always sends a message to the window thread queue when the calling is in other thread.
-	//If messages can be finished without expecting Nana's window manager, the trivail_message function would
-	//handle those messages. This is a method to avoid a deadlock, that calling waits for the handling and they require
-	//Nana's window manager.
+
+	///	The Windows messaging always sends a message to the window thread queue when the calling is in other thread.
+	/// 
+	/// If messages can be finished without expecting Nana's window manager, the trivail_message function would
+	/// handle those messages. This is a method to avoid a deadlock, that calling waits for the handling and they require
+	/// Nana's window manager.
 	bool trivial_message(HWND wd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT & ret)
 	{
 		bedrock & bedrock = bedrock::instance();
@@ -603,7 +603,7 @@ namespace detail
 			return true;
 		case nana::detail::messages::remote_flush_surface:
 			{
-				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);
+				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);  //lParam   \todo: system-side dpi ok
 				bedrock.wd_manager().map(reinterpret_cast<basic_window*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
 				::UpdateWindow(wd);
 				::HeapFree(::GetProcessHeap(), 0, stru);

@@ -460,7 +460,7 @@ namespace detail
 			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) == false)	return;
 
-			rectangle update_area(wd->pos_owner, wd->dimension);
+			rectangle update_area(wd->pos_owner, wd->dimension); // user-side ?
 
 			auto parent = wd->parent;
 			if (parent)
@@ -837,10 +837,11 @@ namespace detail
 				bedrock::instance().flush_surface(wd, forced, update_area);
 		}
 
-		//update
-		//@brief:	update is used for displaying the screen-off buffer.
-		//			Because of a good efficiency, if it is called in an event procedure and the event procedure window is the
-		//			same as update's, update would not map the screen-off buffer and just set the window for lazy refresh
+
+		/// for displaying the screen-off buffer.
+		///
+		/// for better efficiency, if it is called in an event procedure and the event procedure window is the
+		/// same as update's, update would not map the screen-off buffer and just set the window for lazy refresh
 		bool window_manager::update(basic_window* wd, bool redraw, bool forced, const rectangle* update_area)
 		{
 			internal_scope_guard lock;
