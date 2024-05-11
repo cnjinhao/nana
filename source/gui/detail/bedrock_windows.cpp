@@ -569,8 +569,11 @@ namespace detail
 		arg.upwards = (pmdec.mouse.button.wheel_delta >= 0);
 		arg.distance = static_cast<unsigned>(arg.upwards ? pmdec.mouse.button.wheel_delta : -pmdec.mouse.button.wheel_delta);
 
-		arg.pos.x = static_cast<int>(point.x) - wd->pos_root.x;
-		arg.pos.y = static_cast<int>(point.y) - wd->pos_root.y;
+		arg.pos.x = static_cast<int>(point.x);  /// \todo: is system-side dpi to user-side ok here?
+		arg.pos.y = static_cast<int>(point.y);
+		platform_abstraction::untransform_dpi(arg.pos, wd->dpi);
+		arg.pos -= wd->pos_root;
+
 		arg.left_button = pmdec.mouse.button.left;
 		arg.mid_button = pmdec.mouse.button.middle;
 		arg.right_button = pmdec.mouse.button.right;
