@@ -1514,6 +1514,7 @@ namespace detail{
 		void native_interface::move_window(native_window_type wd, int x, int y)
 		{
 			/// \todo: use platform_abstraction::dpi_scale(p, dpi) instead, to include X11 ? 
+			/// \todo: no need to set wd->position, etc?
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging) std::wcout << "   ---  move_window(x,y):" << window_caption(wd) << "\n";
 			auto p = scale_to_dpi(wd, x, y);

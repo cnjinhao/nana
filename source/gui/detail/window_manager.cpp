@@ -474,8 +474,8 @@ namespace detail
 				update_area.y += parent->pos_owner.y;
 				parent = parent->parent;
 			}
-
-			update(parent, false, false, &update_area);
+			update_area = unscale_dpi(update_area, wd->dpi);
+			update(parent, false, false, &update_area); // system-side
 		}
 
 		void window_manager::destroy_handle(basic_window* wd)
@@ -829,12 +829,12 @@ namespace detail
 			return nullptr;
 		}
 
-		//Copy the root buffer that wnd specified into DeviceContext
+		/// Copy the root buffer that wd specified into DeviceContext
 		void window_manager::map(basic_window* wd, bool forced, const rectangle* update_area)
 		{
 			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
-				bedrock::instance().flush_surface(wd, forced, update_area);
+				bedrock::instance().flush_surface(wd, forced, update_area); // used to PostMessage, no dpi scaling needed
 		}
 
 

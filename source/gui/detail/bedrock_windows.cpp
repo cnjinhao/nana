@@ -318,11 +318,13 @@ namespace detail
 		return bedrock_object;
 	}
 
+	/// uses *update_area for direct call to PostMessage: \todo: dpi_scale ?? no: obtained directly from lParam (all system-side)
 	void bedrock::flush_surface(basic_window* wd, bool forced, const rectangle* update_area)
 	{
 		if (nana::system::this_thread_id() != wd->thread_id)
 		{
-			auto stru = reinterpret_cast<detail::messages::map_thread*>(::HeapAlloc(::GetProcessHeap(), 0, sizeof(detail::messages::map_thread)));
+			auto stru = reinterpret_cast<detail::messages::map_thread*>(
+				::HeapAlloc(::GetProcessHeap(), 0, sizeof(detail::messages::map_thread)));
 			if (stru)
 			{
 				stru->forced = forced;
@@ -331,10 +333,13 @@ namespace detail
 				if (update_area)
 				{
 					stru->ignore_update_area = false;
-					stru->update_area = *update_area;
+					stru->update_area = *update_area;  ///\todo: dpi_scale ?? no: obtained directly from lParam to be PostMessage (system-side)
 				}
 
-				if (FALSE == ::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::remote_flush_surface, reinterpret_cast<WPARAM>(wd), reinterpret_cast<LPARAM>(stru)))
+				if (FALSE == ::PostMessage(reinterpret_cast<HWND>(wd->root), 
+										   nana::detail::messages::remote_flush_surface, 
+										   reinterpret_cast<WPARAM>(wd), 
+										   reinterpret_cast<LPARAM>(stru))   )
 					::HeapFree(::GetProcessHeap(), 0, stru);
 			}
 		}
