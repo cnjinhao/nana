@@ -35,8 +35,8 @@ namespace nana
 				shortkey_pos(shortkey_pos)
 			{}
 
-			std::string		text;	///< Transformed text, the shortkey character has been processed.
-			wchar_t			shortkey;
+			std::string		text;	       ///< Transformed text, the shortkey character has been processed.
+			wchar_t			shortkey;      ///\todo: char ?
 			std::size_t		shortkey_pos;
 			::nana::menu	menu_obj;
 			::nana::point	pos;
@@ -86,7 +86,7 @@ namespace nana
 					api::register_shortkey(*widget_ptr, shortkey);
 
 
-				if (shortkey && shortkey < 0x61)
+				if (shortkey && shortkey < 0x61)  ///\todo: to upper case?
 					shortkey += (0x61 - 0x41);
 
 				auto & last = items.emplace_back(new item_type{std::move(transformed_text), shortkey, shortkey_pos});
@@ -104,7 +104,7 @@ namespace nana
 
 				auto pos = api::cursor_position();
 				api::calc_window_point(widget_ptr->handle(), pos);
-				state.active = find(pos);
+					state.active = find(pos);
 
 				return true;
 			}
@@ -187,7 +187,7 @@ namespace nana
 			std::size_t find(const ::nana::point& pos)
 			{
 				auto menubar_size = widget_ptr->size();
-				int offset = platform_abstraction::dpi_scale(widget_ptr->handle(), 2);
+				int offset = 2;                        ///\todo DPI ? platform_abstraction::dpi_scale(widget_ptr->handle(), 2);
 				if ((offset <= pos.x) && (offset <= pos.y) && (pos.y < menubar_size.height))
 				{
 					int item_x = offset;
@@ -295,15 +295,15 @@ namespace nana
 				item_renderer ird{ *ess_->widget_ptr, graph };
 
 				auto menubar_size = ess_->widget_ptr->size();
-				nana::point item_pos = platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), nana::point{ 2, 2 });
-				nana::size item_s(0, menubar_size.height - platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 2));
+				nana::point item_pos = nana::point{ 2, 2 };     ///\todo DPI ? platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), nana::point{ 2, 2 });
+				nana::size item_s(0, menubar_size.height - 2 ); ///\todo DPI ? platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 2)
 
 				unsigned long index = 0;
 
 				for (auto pm : ess_->items)
 				{
 					auto text_s = graph.text_extent_size(pm->text);
-					item_s.width = text_s.width + platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 16);
+					item_s.width = text_s.width + 16;           ///\todo DPI ? platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 16);
 
 					pm->pos = item_pos;
 					pm->size = item_s;
@@ -315,16 +315,18 @@ namespace nana
 					if (state::selected == item_state)
 					{
 						int x = item_pos.x + item_s.width;
-						int y1 = item_pos.y + platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 2), y2 = item_pos.y + item_s.height - platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 1);
-						graph.line({ x, y1 }, { x, y2 }, bgcolor.blend(colors::gray_border, 0.6));
-						graph.line({ x + platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 1), y1 }, { x + platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 1), y2 }, bgcolor.blend(colors::button_face_shadow_end, 0.5));
+						int y1 = item_pos.y + 2, 
+							y2 = item_pos.y + 1;               ///\todo DPI ? item_s.height - platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 1);
+
+						graph.line({ x    , y1 }, { x    , y2 }, bgcolor.blend(colors::gray_border           , 0.6));
+						graph.line({ x + 1, y1 }, { x + 1, y2 }, bgcolor.blend(colors::button_face_shadow_end, 0.5));
 					}
 
 					//Draw text, the text is transformed from orignal for hotkey character
 					int text_top_off = (item_s.height - text_s.height) / 2;
-					ird.caption({ item_pos.x + platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 8), item_pos.y + text_top_off }, nana::detail::to_nstring(pm->text));
+					ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, nana::detail::to_nstring(pm->text));
 
-					api::dev::draw_shortkey_underline(graph, pm->text, pm->shortkey, pm->shortkey_pos, { item_pos.x + platform_abstraction::dpi_scale(ess_->widget_ptr->handle(), 8), item_pos.y + text_top_off }, ird.scheme_ptr()->text_fgcolor);
+					api::dev::draw_shortkey_underline(graph, pm->text, pm->shortkey, pm->shortkey_pos, { item_pos.x + 8, item_pos.y + text_top_off }, ird.scheme_ptr()->text_fgcolor);
 
 					item_pos.x += pm->size.width;
 					++index;
