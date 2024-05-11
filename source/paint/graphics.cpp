@@ -185,7 +185,7 @@ namespace paint
 				return platform_abstraction::font_default_pt();
 
 			if (!dpi) dpi = platform_abstraction::current_dpi();
-            size_pt = size_pt * dpi / 96.0;
+            size_pt = size_pt * 96.0 / dpi;
 
 			return size_pt;
 		}
