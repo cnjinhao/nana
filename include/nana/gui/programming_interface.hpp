@@ -473,6 +473,7 @@ namespace api
 
 	window find_window_from_system_screen_point(const nana::point& system_screen_point); ///<Finds a window from the LOW LEVEL system screen point.
 	window find_window_cursor();             ///<Finds a window which the cursor is over.
+	window find_window_cursor(point&);       ///<Finds a window which the cursor is over pointint point to window coordinates.
 
 	bool is_window_zoomed(window, bool ask_for_max);  ///<Tests a window whether it is maximized or minimized.
 

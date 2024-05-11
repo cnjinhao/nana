@@ -1555,10 +1555,14 @@ namespace api
 	window find_window_cursor() ///<Finds a window which the cursor is over.
     {
         ::nana::point pos;
+        return find_window_cursor(pos);
+    }
+	
+	window find_window_cursor(::nana::point& pos) ///<Finds a window which the cursor is over.
+    {
 		auto wd = interface_type::find_cursor_window(pos);
         return restrict::wd_manager().find_window(wd, pos, true);
     }
-
 
 	window find_window_from_system_screen_point(const nana::point& pos)
 	{
