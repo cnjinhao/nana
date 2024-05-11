@@ -801,6 +801,7 @@ namespace detail
 			auto msgwnd = root_wd;
 
 			detail::bedrock::root_guard rw_guard{ brock, root_wd };
+			::nana::point pos;
 
 			switch (message)
 			{
@@ -1051,12 +1052,13 @@ namespace detail
 				//mouse_click, mouse_up
 			case WM_LBUTTONUP:
 			case WM_MBUTTONUP:
-			case WM_RBUTTONUP:
+			case WM_RBUTTONUP: 
 				//Ignore mouse events when a window has been pressed by pressing spacebar
 				if (pressed_wd_space)
 					break;
-
-				msgwnd = wd_manager.find_window(native_window, { pmdec.mouse.x, pmdec.mouse.y });
+				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));
+				msgwnd = wd_manager.find_window(native_window, pos);
 				if (nullptr == msgwnd)
 					break;
 
@@ -1110,8 +1112,10 @@ namespace detail
 				//Ignore mouse events when a window has been pressed by pressing spacebar
 				if (pressed_wd_space)
 					break;
-
-				msgwnd = wd_manager.find_window(native_window, {pmdec.mouse.x, pmdec.mouse.y});
+				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));
+				msgwnd = wd_manager.find_window(native_window, pos);
+				//msgwnd = wd_manager.find_window(native_window, {pmdec.mouse.x, pmdec.mouse.y});
 				if (wd_manager.available(hovered_wd) && (msgwnd != hovered_wd))
 				{
 					brock.event_msleave(hovered_wd);
@@ -1128,7 +1132,7 @@ namespace detail
 				else if(msgwnd)
 				{
 					bool prev_captured_inside;
-					if(wd_manager.capture_window_entered(pmdec.mouse.x, pmdec.mouse.y, prev_captured_inside))
+					if(wd_manager.capture_window_entered(pos.x, pos.y, prev_captured_inside))
 					{
 						event_code evt_code;
 						if(prev_captured_inside)
