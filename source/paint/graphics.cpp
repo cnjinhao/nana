@@ -1208,9 +1208,11 @@ namespace paint
 		}
 #endif
 
-		void graphics::line(const nana::point& pos1, const nana::point& pos2)
+		void graphics::line(const nana::point& pos1_, const nana::point& pos2_)
 		{
 			if (!impl_->handle)	return;
+			auto pos1 = platform_abstraction::dpi_scale(pos1_, impl_->dpi);
+			auto pos2 = platform_abstraction::dpi_scale(pos2_, impl_->dpi);
 #if defined(NANA_WINDOWS)
 			if (pos1 != pos2)
 			{
@@ -1243,9 +1245,10 @@ namespace paint
 			line_to(pos);
 		}
 
-		void graphics::line_to(const point& pos)
+		void graphics::line_to(const point& pos_)
 		{
 			if (!impl_->handle)	return;
+			auto pos = platform_abstraction::dpi_scale(pos_, impl_->dpi);
 #if defined(NANA_WINDOWS)
 			auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, impl_->handle->bgcolor_native));
 
