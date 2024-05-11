@@ -476,14 +476,13 @@ namespace nana
 			}moves_;
 		};//class dockarea
 
-		/// \todo: generalize dpi to v2 awareness
+		/// \todo: eliminate this ?!
 		struct display_metrics
 		{
-			std::size_t dpi;
+			std::size_t dpi{96u};
 			double font_px{ 0 };
 
-			display_metrics(window wd) :
-				dpi(api::window_dpi(wd))
+			display_metrics(window wd)  /// \todo: dpi to_system_px?: dpi(api::window_dpi(wd))
 			{
 				auto font_info = api::typeface(wd).info();    // ask dinamicaly and not keee here?
 				if (font_info)
@@ -546,12 +545,12 @@ namespace nana
 					return 0;
 				}
 				
-				if (to_system_px)
+				if (to_system_px) /// \todo: eliminate ?
 				{
 					switch (unit_)
 					{
 					case units::medium:
-						return val * dm.dpi / 96;
+						return val; /// \todo: ? * dm.dpi / 96;
 					case units::px:
 						return val;
 					case units::em:
@@ -565,9 +564,9 @@ namespace nana
 					case units::medium:
 						return val;
 					case units::px:
-						return val * 96 / dm.dpi;
+						return val; /// \todo: ? * 96 / dm.dpi;
 					case units::em:
-						return val * dm.font_px * 96 / dm.dpi;
+						return val * dm.font_px; /// \todo: ? * 96 / dm.dpi;
 					}
 				}
 				return 0;
