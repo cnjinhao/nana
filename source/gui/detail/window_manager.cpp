@@ -573,7 +573,7 @@ namespace detail
 			return attr_.capture.window;
 		}
 
-		//move the wnd and its all children window, x and y is a relatively coordinate for wnd's parent window
+		// move the wnd and all its children window, x and y are relative coordinate to wnd's parent window
 		bool window_manager::move(basic_window* wd, int x, int y, bool passive)
 		{
 			internal_scope_guard lock;

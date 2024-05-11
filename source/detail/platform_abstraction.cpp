@@ -866,7 +866,7 @@ namespace nana
 				);
 		}
 
-		// Returns the DPI-dependent font size, in pixels
+		/// Returns the DPI-dependent font size, in pixels \todo: ??
 		static font_height_type _m_set_default_values(font_info& fi, std::size_t dpi)
 		{
 #ifdef NANA_WINDOWS
