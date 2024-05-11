@@ -619,6 +619,7 @@ namespace api
 	{
 		return interface_type::cursor_screen_position();
 	}
+
 	/// generalized to dpi awareness v2
 	::nana::rectangle make_center(unsigned width, unsigned height) noexcept
 	{
@@ -911,9 +912,10 @@ namespace api
 
 	nana::size window_size(window wd)
 	{
-		nana::rectangle r;
-		api::get_window_rectangle(wd, r);
-		return{ r.width, r.height };
+		internal_scope_guard lock;
+		if(is_window(wd))
+			return wd->dimension;
+		return {};
 	}
 
 	void window_size(window wd, const size& sz)
