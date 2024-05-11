@@ -279,7 +279,7 @@ namespace paint
 		void graphics::set_dpi(int dpi)
         {
             if (dpi == impl_->dpi) return;
-			auto sz = nana::detail::unscale_dpi(impl_->size, impl_->dpi);
+			auto sz = platform_abstraction::unscale_dpi(impl_->size, impl_->dpi);
 			impl_->dpi = dpi;
         	auto info = typeface().info();
 			nana::paint::font ft{ info.value(), dpi };
