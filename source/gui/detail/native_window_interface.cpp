@@ -1226,8 +1226,7 @@ namespace detail{
 #endif
 		}
 
-		//close_window
-		//Destroy a window
+		/// close_window, Destroy a window
 		void native_interface::close_window(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)
@@ -2197,17 +2196,27 @@ namespace detail{
 #endif
 		}
 
+		/// from window_point, all user-side
 		bool native_interface::calc_screen_point(native_window_type wd, nana::point& pos)
+		{
+			platform_abstraction::dpi_transform(pos, window_dpi(wd));
+            bool sucess = transform_window_system_point_into_screen_sytem_point(wd, pos);
+            platform_abstraction::untransform_dpi(pos, system_dpi());
+            return sucess;
+        }
+		
+		///< from client, system-side
+		bool native_interface::transform_window_system_point_into_screen_sytem_point(native_window_type wd, nana::point& screen_system_point)
 		{
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging) 
 				std::wcout << "   ---  calc_screen_point() " << window_caption(wd) << ":\n";
-			pos = scale_to_dpi(wd, pos.x, pos.y);
-			POINT point = {pos.x, pos.y};
-			if(::ClientToScreen(reinterpret_cast<HWND>(wd), &point))
+
+			POINT pt = {screen_system_point.x, screen_system_point.y};
+			if(::ClientToScreen(reinterpret_cast<HWND>(wd), &pt))
 			{
-				pos.x = point.x;
-				pos.y = point.y;
+				screen_system_point.x = pt.x;
+				screen_system_point.y = pt.y;
 				return true;
 			}
 #elif defined(NANA_X11)
@@ -2222,13 +2231,16 @@ namespace detail{
 #endif
 			return false;
 		}
+
+		/// to client, user-side
 		bool native_interface::calc_window_point(native_window_type wd, nana::point& pos)
 		{
 			platform_abstraction::dpi_transform(pos, system_dpi());
-			if (!transform_screen_system_point_into_window_sytem_point(wd, pos)) return false;
+			bool sucess = transform_screen_system_point_into_window_sytem_point(wd, pos);
 			platform_abstraction::untransform_dpi(pos, window_dpi(wd));
-			return true;
+			return sucess;
 		}
+
 		nana::point	native_interface::cursor_window_position(native_window_type wd)
         {
             auto pos = cursor_sytem_position();
@@ -2236,6 +2248,7 @@ namespace detail{
             return platform_abstraction::untransform_dpi(pos, window_dpi(wd));
         }
 
+		/// to client, system-side
 		bool native_interface::transform_screen_system_point_into_window_sytem_point(native_window_type wd, nana::point& pos)
 		{
 #if defined(NANA_WINDOWS)

@@ -121,9 +121,10 @@ namespace detail
 
 		static void	set_focus     (native_window_type wd);
 		static native_window_type get_focus_window();
-		static bool calc_screen_point(native_window_type wd, nana::point& window_point);
-		static bool calc_window_point(native_window_type wd, nana::point& screen_point);
-		static bool transform_screen_system_point_into_window_sytem_point(native_window_type wd, nana::point& screen_system_point);
+		static bool calc_screen_point(native_window_type wd, nana::point& window_point); ///< from client, user-side
+		static bool calc_window_point(native_window_type wd, nana::point& screen_point); ///< to  client, user-side
+		static bool transform_window_system_point_into_screen_sytem_point(native_window_type wd, nana::point& system_system_point); ///< from client, system-side
+		static bool transform_screen_system_point_into_window_sytem_point(native_window_type wd, nana::point& screen_system_point); ///< to  client, system-side
 
 		static native_window_type find_window_from_system_screen_point(const nana::point& system_screen_point);   
 		/// point will be the position of cursor the returned window, but if no window under cursor, the point will be on screen point 
