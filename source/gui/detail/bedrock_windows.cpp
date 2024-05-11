@@ -544,8 +544,11 @@ namespace detail
 
 		if (set_key_state)
 		{
-			arg.pos.x = pmdec.mouse.x - wd->pos_root.x;
-			arg.pos.y = pmdec.mouse.y - wd->pos_root.y;
+			arg.pos.x = static_cast<int>(pmdec.mouse.x);  /// \todo: is system-side dpi to user-side ok here?
+			arg.pos.y = static_cast<int>(pmdec.mouse.y);
+			platform_abstraction::untransform_dpi(arg.pos, wd->dpi);
+			arg.pos -= wd->pos_root;
+
 			arg.alt = (::GetKeyState(VK_MENU) < 0);
 			arg.shift = pmdec.mouse.button.shift;
 			arg.ctrl = pmdec.mouse.button.ctrl;
