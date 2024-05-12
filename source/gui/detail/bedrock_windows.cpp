@@ -732,8 +732,10 @@ namespace detail
 
 	void adjust_sizing(basic_window* wd, ::RECT * const r, int edge, unsigned req_width, unsigned req_height)
 	{
-		unsigned width = static_cast<unsigned>(r->right - r->left) - wd->extra_width;
-		unsigned height = static_cast<unsigned>(r->bottom - r->top) - wd->extra_height;
+		///\todo: all here user-side dpi ?? r from *r = unscale_dpi_(*r, msgwnd->dpi);	in 	Bedrock_WIN32_WindowProc	///\todo: to user-side dpi ok?)
+
+		unsigned width  = static_cast<unsigned>(r->right  - r->left) - wd->extra_width;
+		unsigned height = static_cast<unsigned>(r->bottom - r->top ) - wd->extra_height;
 
 		if(wd->max_track_size.width && (wd->max_track_size.width < req_width))
 			req_width = wd->max_track_size.width;
@@ -950,15 +952,16 @@ namespace detail
 					wd_manager.do_lazy_refresh(msgwnd, false);
 				}
 				break;
-			case WM_GETMINMAXINFO:
+			case WM_GETMINMAXINFO:  ///\todo: reset MINMAXINFO pointed by lParam to the new values, system-side dpi ok?
 			{
 				bool take_over = false;
-				auto mmi = reinterpret_cast<MINMAXINFO*>(lParam);
+				auto mmi = reinterpret_cast<MINMAXINFO*>(lParam); ///\todo : system-side dpi ok?
 
 				if (!msgwnd->min_track_size.empty())
 				{
-					mmi->ptMinTrackSize.x = static_cast<LONG>(msgwnd->min_track_size.width + msgwnd->extra_width);
-					mmi->ptMinTrackSize.y = static_cast<LONG>(msgwnd->min_track_size.height + msgwnd->extra_height);
+					///\todo : user-side dpi to system-side ok?
+					mmi->ptMinTrackSize.x = static_cast<LONG>(platform_abstraction::dpi_scale(msgwnd->min_track_size.width  + msgwnd->extra_width , msgwnd->dpi));
+					mmi->ptMinTrackSize.y = static_cast<LONG>(platform_abstraction::dpi_scale(msgwnd->min_track_size.height + msgwnd->extra_height, msgwnd->dpi));
 					take_over = true;
 				}
 
@@ -966,12 +969,11 @@ namespace detail
 				{
 					if (msgwnd->max_track_size.width && msgwnd->max_track_size.height)
 					{
-						mmi->ptMaxTrackSize.x = static_cast<LONG>(msgwnd->max_track_size.width + msgwnd->extra_width);
-						mmi->ptMaxTrackSize.y = static_cast<LONG>(msgwnd->max_track_size.height + msgwnd->extra_height);
-						if (mmi->ptMaxSize.x > mmi->ptMaxTrackSize.x)
-							mmi->ptMaxSize.x = mmi->ptMaxTrackSize.x;
-						if (mmi->ptMaxSize.y > mmi->ptMaxTrackSize.y)
-							mmi->ptMaxSize.y = mmi->ptMaxTrackSize.y;
+						mmi->ptMaxTrackSize.x = static_cast<LONG>(platform_abstraction::dpi_scale(msgwnd->max_track_size.width  + msgwnd->extra_width , msgwnd->dpi));
+						mmi->ptMaxTrackSize.y = static_cast<LONG>(platform_abstraction::dpi_scale(msgwnd->max_track_size.height + msgwnd->extra_height, msgwnd->dpi));
+
+						if (mmi->ptMaxSize.x > mmi->ptMaxTrackSize.x)	mmi->ptMaxSize.x = mmi->ptMaxTrackSize.x;
+						if (mmi->ptMaxSize.y > mmi->ptMaxTrackSize.y)	mmi->ptMaxSize.y = mmi->ptMaxTrackSize.y;
 
 						take_over = true;
 					}
@@ -1336,9 +1338,10 @@ namespace detail
 				break;
 			case WM_SIZING:
 				{
-					::RECT* const r = reinterpret_cast<RECT*>(lParam);
-					unsigned width = static_cast<unsigned>(r->right - r->left) - msgwnd->extra_width;
-					unsigned height = static_cast<unsigned>(r->bottom - r->top) - msgwnd->extra_height;
+					::RECT* r = reinterpret_cast<RECT*>(lParam);				///\todo: system-side dpi ok?
+					*r = unscale_dpi_(*r, msgwnd->dpi);							///\todo: to user-side dpi ok?)
+					unsigned width  = static_cast<unsigned>(r->right  - r->left) - msgwnd->extra_width;
+					unsigned height = static_cast<unsigned>(r->bottom - r->top ) - msgwnd->extra_height;
 
 					if(msgwnd->max_track_size.width || msgwnd->min_track_size.width)
 					{
@@ -1346,6 +1349,7 @@ namespace detail
 						{
 							if(msgwnd->max_track_size.width && (width > msgwnd->max_track_size.width))
 								r->left = r->right - static_cast<int>(msgwnd->max_track_size.width) - msgwnd->extra_width;
+
 							if(msgwnd->min_track_size.width && (width < msgwnd->min_track_size.width))
 								r->left = r->right - static_cast<int>(msgwnd->min_track_size.width) - msgwnd->extra_width;
 						}
@@ -1409,8 +1413,10 @@ namespace detail
 					if (arg.width != width || arg.height != height)
 					{
 						adjust_sizing(msgwnd, r, static_cast<int>(wParam), arg.width, arg.height);
+						*r = scale_to_dpi_(*r, msgwnd->dpi);	///\todo: back to system-side dpi ok?
 						return TRUE;
 					}
+					*r = scale_to_dpi_(*r, msgwnd->dpi);	///\todo: back to system-side dpi ok?
 				}
 				break;
 			case WM_SIZE:
