@@ -55,6 +55,45 @@ namespace nana
 
 namespace detail
 {
+	///\todo: here temp, to avoid including windef.h in native_window_interface.hpp
+	::RECT scale_to_dpi_(const ::RECT& r, int dpi)
+    {
+        auto scaled_r = ::RECT(MulDiv(r.left,   dpi, 96), 
+						            MulDiv(r.top,    dpi, 96),
+						            MulDiv(r.right,  dpi, 96), 
+							        MulDiv(r.bottom, dpi, 96));
+
+        if constexpr (dpi_debugging)
+        {
+            std::cout << "   orig rect= " << r.left                         << ", " << r.top                          <<
+                         "   with size= " << r.right - r.left               << ", " << r.bottom - r.top               << '\n';
+            std::cout << " scaled rect= " << scaled_r.left                  << ", " << scaled_r.top                   << 
+                         "   with size= " << scaled_r.right - scaled_r.left << ", " << scaled_r.bottom - scaled_r.top << '\n';
+        }
+        return scaled_r;
+    }
+	::RECT scale_to_dpi_(native_window_type wd, const ::RECT& r)
+    {
+		int dpi = static_cast<int>(native_interface::window_dpi(wd));
+		return scale_to_dpi_(r, dpi);
+    }
+
+	::RECT unscale_dpi_(const ::RECT& r, int dpi)
+    {
+        auto scaled_r = ::RECT(MulDiv(r.left,   96, dpi), 
+							       MulDiv(r.top,    96, dpi),
+							       MulDiv(r.right,  96, dpi), 
+							       MulDiv(r.bottom, 96, dpi));
+
+        if constexpr (dpi_debugging)
+        {
+            std::cout << " unscaled rect= " << scaled_r.left                  << ", " << scaled_r.top                   << 
+                           "   with size= " << scaled_r.right - scaled_r.left << ", " << scaled_r.bottom - scaled_r.top << '\n';
+        }
+        return scaled_r;
+    }
+
+
 	namespace restrict
 	{
 		typedef struct tagTRACKMOUSEEVENT{
