@@ -646,7 +646,8 @@ namespace detail
 				::DestroyCaret();
 				break;
 			case 2: //SetPos
-				::SetCaretPos(reinterpret_cast<nana::detail::messages::caret*>(lParam)->x, reinterpret_cast<nana::detail::messages::caret*>(lParam)->y);
+				::SetCaretPos(reinterpret_cast<nana::detail::messages::caret*>(lParam)->x, 
+							  reinterpret_cast<nana::detail::messages::caret*>(lParam)->y); /// \todo: system-side dpi ok direct use of lParam set in native_interface::caret_pos?
 				delete reinterpret_cast<nana::detail::messages::caret*>(lParam);
 				break;
 			}
@@ -737,15 +738,11 @@ namespace detail
 		unsigned width  = static_cast<unsigned>(r->right  - r->left) - wd->extra_width;
 		unsigned height = static_cast<unsigned>(r->bottom - r->top ) - wd->extra_height;
 
-		if(wd->max_track_size.width && (wd->max_track_size.width < req_width))
-			req_width = wd->max_track_size.width;
-		else if(wd->min_track_size.width && (wd->min_track_size.width > req_width))
-			req_width = wd->min_track_size.width;
+		     if(wd->max_track_size.width && (wd->max_track_size.width < req_width)) 	req_width = wd->max_track_size.width;
+		else if(wd->min_track_size.width && (wd->min_track_size.width > req_width))	    req_width = wd->min_track_size.width;
 
-		if(wd->max_track_size.height && (wd->max_track_size.height < req_height))
-			req_height = wd->max_track_size.height;
-		else if(wd->min_track_size.height && (wd->min_track_size.height > req_height))
-			req_height = wd->min_track_size.height;
+		     if(wd->max_track_size.height && (wd->max_track_size.height < req_height))	req_height = wd->max_track_size.height;
+		else if(wd->min_track_size.height && (wd->min_track_size.height > req_height))	req_height = wd->min_track_size.height;
 
 		if(req_width != width)
 		{
@@ -753,16 +750,12 @@ namespace detail
 			{
 			case WMSZ_LEFT:
 			case WMSZ_BOTTOMLEFT:
-			case WMSZ_TOPLEFT:
-				r->left = r->right - static_cast<int>(req_width) - wd->extra_width;
-				break;
+			case WMSZ_TOPLEFT: 		r->left = r->right - static_cast<int>(req_width) - wd->extra_width; 	break;
 			case WMSZ_RIGHT:
 			case WMSZ_BOTTOMRIGHT:
 			case WMSZ_TOPRIGHT:
 			case WMSZ_TOP:
-			case WMSZ_BOTTOM:
-				r->right = r->left + static_cast<int>(req_width) + wd->extra_width;
-				break;
+			case WMSZ_BOTTOM:		r->right = r->left + static_cast<int>(req_width) + wd->extra_width;		break;
 			}
 		}
 
@@ -772,16 +765,12 @@ namespace detail
 			{
 			case WMSZ_TOP:
 			case WMSZ_TOPLEFT:
-			case WMSZ_TOPRIGHT:
-				r->top = r->bottom - static_cast<int>(req_height) - wd->extra_height;
-				break;
+			case WMSZ_TOPRIGHT:		r->top = r->bottom - static_cast<int>(req_height) - wd->extra_height;	break;
 			case WMSZ_BOTTOM:
 			case WMSZ_BOTTOMLEFT:
 			case WMSZ_BOTTOMRIGHT:
 			case WMSZ_LEFT:
-			case WMSZ_RIGHT:
-				r->bottom = r->top + static_cast<int>(req_height) + wd->extra_height;
-				break;
+			case WMSZ_RIGHT:		r->bottom = r->top + static_cast<int>(req_height) + wd->extra_height;	break;
 			}
 		}
 	}
@@ -866,11 +855,9 @@ namespace detail
 				}
 				break;
 			case WM_DPICHANGED:  /// \todo: generalize dpi to v2 awareness
-				
 				{
-				
 				auto r = reinterpret_cast<const RECT*>(lParam);
-				auto dpi_x = HIWORD(wParam);
+				auto dpi_x = HIWORD(wParam);    /// \todo: always equals? we take it from native_interface::windows_dpi
 				auto dpi_y = LOWORD(wParam);
 
 				if constexpr (dpi_debugging) 
@@ -880,7 +867,7 @@ namespace detail
 						              ", size = " << r->right - r->left << ", " << r->bottom - r->top << '\n';
 				}
 				platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
-				wd_manager.update_dpi(msgwnd);  /// \todo: pass dpi = dpi_x to update_dpi
+				wd_manager.update_dpi(msgwnd);  /// \todo: pass dpi = dpi_x to update_dpi  ??
 				::SetWindowPos(root_window,
 					NULL,
 					r->left,

@@ -39,7 +39,7 @@ namespace nana
 						native_interface::caret_create(owner_->root, size_);
 
 						visibility_ = visible_state::invisible;
-						this->position(position_);
+						this->position(position_);  /// \todo: position_ = position_; ? just call update()
 					}
 					else
 						native_interface::caret_destroy(owner_->root);
