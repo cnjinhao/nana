@@ -1005,7 +1005,10 @@ namespace detail
 					break;
 
 				pressed_wd = nullptr;
-				msgwnd = wd_manager.find_window(native_window, { pmdec.mouse.x, pmdec.mouse.y });
+				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window)); ///\todo: use root_wd->dpi here?
+				msgwnd = wd_manager.find_window(native_window, pos);
+
 				if (msgwnd && msgwnd->flags.enabled)
 				{
 					if (msgwnd->flags.take_active && !msgwnd->flags.ignore_mouse_focus)
@@ -1029,8 +1032,9 @@ namespace detail
 				//Ignore mouse events when a window has been pressed by pressing spacebar
 				if (pressed_wd_space)
 					break;
-
-				msgwnd = wd_manager.find_window(native_window, { pmdec.mouse.x, pmdec.mouse.y });
+				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));  ///\todo: use root_wd->dpi here?
+				msgwnd = wd_manager.find_window(native_window, pos);
 
 				//Don't take care about whether msgwnd is equal to the pressed_wd.
 				//
@@ -1096,7 +1100,7 @@ namespace detail
 				if (pressed_wd_space)
 					break;
 				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
-				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));///\todo: use root_wd->dpi here?
 				msgwnd = wd_manager.find_window(native_window, pos);
 				if (nullptr == msgwnd)
 					break;
@@ -1152,7 +1156,7 @@ namespace detail
 				if (pressed_wd_space)
 					break;
 				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
-				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));///\todo: use root_wd->dpi here?
 				msgwnd = wd_manager.find_window(native_window, pos);
 				//msgwnd = wd_manager.find_window(native_window, {pmdec.mouse.x, pmdec.mouse.y});
 				if (wd_manager.available(hovered_wd) && (msgwnd != hovered_wd))
