@@ -136,10 +136,10 @@ namespace nana
 			void typeface(const font&);			///< Selects a specified font type into the graphics object.  \todo: dpi?
 			font typeface() const;
 
-			::nana::size text_extent_size(std::string_view text) const;  ///< unscaled: user-side
-			::nana::size text_extent_size(std::wstring_view text) const;  ///< unscaled: user-side
+			::nana::size text_extent_size(std::string_view text) const;  ///< dpi unscaled: user-side
+			::nana::size text_extent_size(std::wstring_view text) const;  ///< dpi unscaled: user-side
 #ifdef __cpp_char8_t
-			::nana::size text_extent_size(std::u8string_view text) const;  ///< unscaled: user-side
+			::nana::size text_extent_size(std::u8string_view text) const;  ///< dpi unscaled: user-side
 #endif
 
 			///Only supports the wide string, because it is very hard to specify the begin and end position in a UTF-8 string.
