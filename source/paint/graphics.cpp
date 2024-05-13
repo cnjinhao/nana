@@ -1,14 +1,20 @@
-/*
+/**
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/graphics.cpp
+ *	@file nana/paint/graphics.cpp
  */
+#include <algorithm>
+#if defined(NANA_WINDOWS)
+	#include <windows.h>
+#elif defined(NANA_X11)
+	#include <X11/Xlib.h>
+#endif
 
 #include "../detail/platform_spec_selector.hpp"
 #include <nana/gui/detail/bedrock.hpp>
@@ -18,12 +24,6 @@
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/unicode_bidi.hpp>
-#include <algorithm>
-#if defined(NANA_WINDOWS)
-	#include <windows.h>
-#elif defined(NANA_X11)
-	#include <X11/Xlib.h>
-#endif
 
 #include "../detail/platform_abstraction.hpp"
 

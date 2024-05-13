@@ -1,17 +1,21 @@
-/*
+/**
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/window_manager.cpp
+ *	@file nana/gui/detail/window_manager.cpp
  *	@list of contributions:
  *		Katsuhisa Yuasa,
  *		wwriter, added a feature: disabling tabstop(#626)
  */
+
+#include <stdexcept>
+#include <algorithm>
+#include <iterator>
 
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
@@ -24,10 +28,6 @@
 #include "effects_renderer.hpp"
 #include "window_register.hpp"
 #include "inner_fwd_implement.hpp"
-
-#include <stdexcept>
-#include <algorithm>
-#include <iterator>
 
 namespace nana
 {
@@ -400,7 +400,7 @@ namespace detail
 				throw std::invalid_argument("invalid parent/owner handle");
 
 			if (parent->flags.destroying)
-				throw std::logic_error("the specified parent is destory");
+				throw std::logic_error("the specified parent is destroying");
 
 			auto wdg_notifier = widget_notifier_interface::get_notifier(wdg);
 
@@ -511,8 +511,7 @@ namespace detail
 			}
 		}
 
-		//show
-		//@brief: show or hide a window
+		/// show or hide a window
 		bool window_manager::show(basic_window* wd, bool visible)
 		{
 			internal_scope_guard lock;
@@ -573,7 +572,7 @@ namespace detail
 			return attr_.capture.window;
 		}
 
-		// move the wnd and all its children window, x and y are relative coordinate to wnd's parent window
+		/// move the wnd and all its children window, x and y are relative coordinate to wnd's parent window
 		bool window_manager::move(basic_window* wd, int x, int y, bool passive)
 		{
 			internal_scope_guard lock;

@@ -1,17 +1,20 @@
-/*
+/**
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/programming_interface.hpp
+ *	@file nana/gui/programming_interface.hpp
  */
 
 #ifndef NANA_GUI_PROGRAMMING_INTERFACE_HPP
 #define NANA_GUI_PROGRAMMING_INTERFACE_HPP
+
+#include <memory>
+
 #include <nana/config.hpp>
 #include "effects.hpp"
 #include "detail/general_events.hpp"
@@ -19,7 +22,6 @@
 #include "detail/widget_content_measurer_interface.hpp"
 #include "detail/virtual_keyboard.hpp"
 #include <nana/paint/image.hpp>
-#include <memory>
 
 namespace nana
 {

@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/window_manager.hpp
+ *	@file nana/gui/detail/window_manager.hpp
  *
  *	<Knowledge: 1, 2007-8-17, "Difference between destroy and destroy_handle">
  *		destroy method destroys a window handle and the handles of its children, but it doesn't delete the handle which type is a root window
@@ -61,9 +61,7 @@ namespace nana::detail
 		basic_window* create_widget(basic_window*, const rectangle&, bool is_lite, widget*);
 		void close(basic_window*);
 
-		//destroy
-		//@brief:	Delete the window handle
-		void destroy(basic_window*);
+		void destroy(basic_window*);   ///< Delete the window handle
 
 		//destroy_handle
 		//@brief:	Delete window handle, the handle type must be a root and a frame.
@@ -89,7 +87,7 @@ namespace nana::detail
 
 		basic_window* root(native_window_type) const;
 
-		//Copy the root buffer that wnd specified into DeviceContext
+		/// Copy the root buffer that wnd specified into DeviceContext
 		void map(basic_window*, bool forced, const rectangle* update_area = nullptr);
 
 		bool update(basic_window*, bool redraw, bool force, const rectangle* update_area = nullptr);
@@ -111,7 +109,7 @@ namespace nana::detail
 
 		void enable_tabstop(basic_window*);
 		void disable_tabstop(basic_window*);
-		basic_window* tabstop(basic_window*, bool forward) const;	//forward means move to next in logic.
+		basic_window* tabstop(basic_window*, bool forward) const;	///< forward means move to next in logic.
 
 		void remove_trash_handle(thread_t tid);
 
