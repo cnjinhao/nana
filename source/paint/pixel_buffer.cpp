@@ -1,15 +1,22 @@
-/*
+/**
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/pixel_buffer.cpp
- *	@note: The format of Xorg 16bits depth is 565
+ *	@file nana/paint/pixel_buffer.cpp
+ *	@note The format of Xorg 16bits depth is 565
  */
+
+#include <algorithm>  //std::clamp
+#include <stdexcept>
+#include <cstring>
+#include <cmath>
+#include <fstream>
+
 
 #include "../detail/platform_spec_selector.hpp"
 #include "detail/image_format_defs.hpp"
@@ -17,11 +24,6 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
 #include <nana/paint/detail/image_process_provider.hpp>
-
-#include <stdexcept>
-#include <cstring>
-#include <cmath>
-#include <fstream>
 
 namespace nana{	namespace paint
 {
