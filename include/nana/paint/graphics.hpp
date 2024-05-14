@@ -105,7 +105,7 @@ namespace nana
 		{
 		public:
 			graphics();
-			graphics(const ::nana::size&, int dpi = 96);                 ///< size in pixel
+			graphics(const ::nana::size& sz, int dpi = 96);                 ///< size in pixel
 			graphics(const graphics&);      ///< the resource is not copyed, the two graphics objects refer to the *SAME* resource
 			graphics& operator=(const graphics&);
 

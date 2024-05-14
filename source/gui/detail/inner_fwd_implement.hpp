@@ -77,7 +77,7 @@ namespace nana{
 			}condition;
 
 			root_misc(root_misc&&);
-			root_misc(basic_window * wd, unsigned width, unsigned height);
+			root_misc(basic_window * wd, const size& sz);
 			~root_misc();
 
 #ifdef NANA_X11

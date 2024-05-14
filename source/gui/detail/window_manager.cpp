@@ -145,9 +145,9 @@ namespace nana
 			other.wpassoc = nullptr;	//moved-from
 		}
 
-		root_misc::root_misc(basic_window * wd, unsigned width, unsigned height)
+		root_misc::root_misc(basic_window * wd, const size& sz)
 			: window(wd),
-			root_graph({ width, height }, wd->dpi)
+			root_graph(sz, wd->dpi)
 		{
 			condition.ignore_tab = false;
 			condition.pressed = nullptr;
@@ -381,7 +381,7 @@ namespace detail
 				internal_scope_guard lock;
 
 				//create Root graphics Buffer and manage it
-				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, result.width, result.height));
+				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, {result.width, result.height}));
 
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd);
