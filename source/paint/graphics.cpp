@@ -294,9 +294,10 @@ namespace paint
 			: impl_(new implementation)
 		{}
 
-		graphics::graphics(const nana::size& sz)
+		graphics::graphics(const nana::size& sz, int dpi)
 			: impl_(new implementation)
 		{
+			impl_->dpi = dpi;
 			make(sz);
 		}
 

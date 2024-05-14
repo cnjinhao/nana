@@ -147,7 +147,7 @@ namespace nana
 
 		root_misc::root_misc(basic_window * wd, unsigned width, unsigned height)
 			: window(wd),
-			root_graph({ width, height })
+			root_graph({ width, height }, wd->dpi)
 		{
 			condition.ignore_tab = false;
 			condition.pressed = nullptr;
