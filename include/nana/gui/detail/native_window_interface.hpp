@@ -49,11 +49,12 @@ namespace detail
 		{
 			native_window_type native_handle;
 
-			unsigned width;		///< client size
-			unsigned height;	///< client size
+			size  client_size;	    ///< client size
 
 			unsigned extra_width;	///< extra border size, it is useful in Windows, ignore in X11 always 0
 			unsigned extra_height;	///< extra border size, it is useful in Windows, ignore in X11 always 0
+
+			int   owner_dpi, dpi;	///< owner_dpi is the DPI of the owner window, dpi is the DPI of the window
 		};
 
 		struct frame_extents

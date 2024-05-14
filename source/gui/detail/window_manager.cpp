@@ -381,9 +381,10 @@ namespace detail
 				internal_scope_guard lock;
 
 				//create Root graphics Buffer and manage it
-				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, {result.width, result.height}));
+				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, result.client_size));
 
-				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
+				wd->bind_native_window(result.native_handle, result.client_size.width, result.client_size.height, 
+									   result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd);
 
 				bedrock::inc_window(wd->thread_id);

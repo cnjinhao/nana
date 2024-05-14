@@ -867,13 +867,16 @@ namespace detail{
 
 			wd_area.right -= wd_area.left;
 			wd_area.bottom -= wd_area.top;
-
+			auto wd = reinterpret_cast<native_window_type>(native_wd);
+			int new_dpi = window_dpi(wd);
 			// unscale from system coordinates to App scale
-			window_result result = { reinterpret_cast<native_window_type>(native_wd),
-										static_cast<unsigned>(MulDiv(client.right,                   96, dpi)), 
-				                        static_cast<unsigned>(MulDiv(client.bottom,                  96, dpi)),
-										static_cast<unsigned>(MulDiv(wd_area.right - client.right,   96, dpi)), 
-				                        static_cast<unsigned>(MulDiv(wd_area.bottom - client.bottom, 96, dpi))
+			window_result result = { .native_handle = wd,
+									 .client_size   = unscale_dpi(size{static_cast<size::value_type>(client.right   -client.left), 
+																           static_cast<size::value_type>(client.bottom - client.top)}, new_dpi),
+									 .extra_width   = static_cast<unsigned>(MulDiv(wd_area.right - client.right,   96, dpi)), 
+				                     .extra_height  = static_cast<unsigned>(MulDiv(wd_area.bottom - client.bottom, 96, dpi)),
+				                     .owner_dpi     = dpi,
+				                     .dpi           = new_dpi 
 			                       };
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
