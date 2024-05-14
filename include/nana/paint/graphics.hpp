@@ -1,27 +1,26 @@
-/*
+/**
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/graphics.hpp
+ *	@file nana/paint/graphics.hpp
  */
 
 #ifndef NANA_PAINT_GRAPHICS_HPP
 #define NANA_PAINT_GRAPHICS_HPP
 
+#include <filesystem>
 #include <memory>
+#include <optional>
+#include <string_view>
 
 #include "../basic_types.hpp"
 #include "../gui/basis.hpp"
-#include <filesystem>
-#include <string_view>
 #include "detail/ptdefs.hpp"
-
-#include <optional>
 
 
 namespace nana
