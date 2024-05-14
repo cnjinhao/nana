@@ -113,6 +113,7 @@ namespace nana::detail
 			{
 				_m_init_pos_and_size(parent, r);
 				_m_initialize(parent);
+				dpi = parent->dpi;
 			}
 		}
 
