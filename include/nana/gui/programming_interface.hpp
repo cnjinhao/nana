@@ -519,7 +519,7 @@ namespace api
 	/// \todo: generalize dpi to v2 awareness
 	unsigned screen_dpi(bool x_requested);
 
-	std::size_t window_dpi(window);
+	int window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
 
 	void keyboard_default_language(const std::string& lang);

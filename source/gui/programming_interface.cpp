@@ -1713,13 +1713,13 @@ namespace api
 		return ::nana::platform_abstraction::screen_dpi(x_requested);
 	}
 
-	std::size_t window_dpi(window wd)
+    int window_dpi(window wd)
 	{
 		internal_scope_guard lock;
 		if (is_window(wd))
 			return interface_type::window_dpi(wd->root);
 		
-		return 0;
+		return 96;
 	}
 
 	dragdrop_status window_dragdrop_status(::nana::window wd)
