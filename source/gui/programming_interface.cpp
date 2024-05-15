@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -460,9 +460,19 @@ namespace api
 		{
 			internal_scope_guard lock;
 			if (is_window(wd) && wd->annex.text_editor)
-
 				return wd->annex.text_editor->im_input(insert_pos, str, candidate);
 			return {};
+		}
+
+		/// Cancels the candiate mode
+		/**
+		* Cancels the candidate mode when the virtual keyboard window is closed.
+		*/
+		void im_cancel(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd) && wd->annex.text_editor)
+				wd->annex.text_editor->im_cancel();
 		}
 
 
@@ -1721,6 +1731,12 @@ namespace api
 		return dragdrop_status::not_ready;
 	}
 
+	void keyboard_default_language(const std::string& lang)
+	{
+		internal_scope_guard lock;
+		restrict::bedrock.vkeyboard().default_im_value() = lang;
+	}
+
 	/// Configures the qwerty keyboard for a text editor
 	bool keyboard_qwerty(window wd, std::vector<std::string> langs, keyboard_behaves behave, keyboard_modes mode)
 	{
@@ -1737,11 +1753,11 @@ namespace api
 	}
 
 	/// Configures the numeric keyboard.
-	bool keyboard_numeric(window wd)
+	bool keyboard_numeric(window wd, bool padding)
 	{
 		internal_scope_guard lock;
 #ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
-		return restrict::bedrock.vkeyboard().numeric(wd);
+		return restrict::bedrock.vkeyboard().numeric(wd, padding);
 #else
 		(void)wd;
 		return false;

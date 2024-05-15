@@ -135,7 +135,10 @@ namespace api
 
 		std::optional<upoint> caret_position(window);
 
-		upoint im_input(window, const upoint& insert_pos, const std::wstring&, bool candidate);
+		upoint	im_input(window, const upoint& insert_pos, const std::wstring&, bool candidate);
+
+		/// Cancel the candidate mode
+		void	im_cancel(window);
 	}//end namespace dev
 
 
@@ -519,6 +522,8 @@ namespace api
 	std::size_t window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
 
+	void keyboard_default_language(const std::string& lang);
+
 	/// Configures the qwerty keyboard for a text editor
 	/**
 	 * @param wd The handle to a text editor window. Such as textbox and combox.
@@ -531,7 +536,7 @@ namespace api
 
 	/// Configures the numeric keyboard. It returns true if virtual keyboard is enabled and
 	/// the specified window is a text editor window, false otherwise.
-	bool keyboard_numeric(window);
+	bool keyboard_numeric(window, bool padding);
 }//end namespace api
 
 namespace API = api;

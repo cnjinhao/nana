@@ -985,7 +985,7 @@ namespace nana{	namespace paint
 	void pixel_buffer::rectangle(const nana::rectangle &r, const ::nana::color& clr, double fade_rate, bool solid)
 	{
 		auto sp = storage_.get();
-		if((nullptr == sp) || (fade_rate == 1.0)) return;
+		if((nullptr == sp) || (fade_rate == 1.0) || r.empty()) return;
 
 		if (r.right() < 0 || r.x >= static_cast<int>(sp->pixel_size.width) || r.bottom() < 0 || r.y >= static_cast<int>(sp->pixel_size.height))
 			return;
