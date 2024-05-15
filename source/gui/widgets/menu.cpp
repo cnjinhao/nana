@@ -92,8 +92,8 @@ namespace nana
 				sz.width -= left_width;
 				sz.height -= 2;
 				graph.rectangle(false, colors::gray_border);
-				graph.rectangle({ 1, 1, left_width - 2, sz.height }, true, static_cast<color_rgb>(0xf6f6f6));
-				graph.rectangle({ static_cast<int>(left_width - 1), 1, sz.width, sz.height }, true, colors::white);
+				graph.rectangle({ 1, 1, left_width - unit, sz.height }, true, static_cast<color_rgb>(0xf6f6f6));
+				graph.rectangle({ static_cast<int>(left_width - unit), 1, sz.width, sz.height }, true, colors::white);
 			}
 
 			void item(graph_reference graph, const nana::rectangle& r, const attr& at) override
