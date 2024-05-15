@@ -15,6 +15,7 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/system/platform.hpp>
 #include <map>
+#include "../../detail/platform_abstraction.hpp"
 
 namespace nana
 {
@@ -348,8 +349,37 @@ namespace nana
 				tooltip_window * tooltip;
 				component	comp_pointed;
 				node_type * pointed;
-				node_type * selected;
+				node_type * selected; //last selected
+				std::vector<node_type*> nodes_selected;
 				node_type * pressed_node;
+				node_type * pivot_node;
+
+				void remove_node(node_type* node)
+				{
+					auto it = std::find(nodes_selected.begin(), nodes_selected.end(), node);
+					if (it != nodes_selected.end())
+						nodes_selected.erase(it);
+				}
+				
+				void add_node(node_type* node)
+				{
+					nodes_selected.push_back(node);
+				}
+				
+				void clear()
+				{
+					nodes_selected.clear();
+				}
+				
+				void deselect_all()
+				{
+					for (auto& sel_node : nodes_selected)
+						sel_node->value.second.selected = false;
+
+					nodes_selected.clear();
+					selected = nullptr;
+					pivot_node = nullptr;
+				}
 			}node_state;
 
 			struct track_node_tag
@@ -367,6 +397,8 @@ namespace nana
 			}adjust;
 
 			bool use_entire_line;
+			bool use_multiselection{ false };
+			bool use_select_contracted_parent_node{ true };
 
 		public:
 			implementation()
@@ -386,6 +418,7 @@ namespace nana
 				node_state.pointed = nullptr;
 				node_state.selected = nullptr;
 				node_state.pressed_node = nullptr;
+				node_state.pivot_node = nullptr;
 
 				track_node.key_time = 0;
 
@@ -414,7 +447,7 @@ namespace nana
 				ndattr.text = node->value.second.text;
 				ndattr.checked = node->value.second.checked;
 				ndattr.mouse_pointed = (node_state.pointed == node);
-				ndattr.selected = (node_state.selected == node);
+				ndattr.selected = node->value.second.selected;
 
 				ndattr.icon_hover.close();
 				ndattr.icon_normal.close();
@@ -437,6 +470,7 @@ namespace nana
 				shape.first = nullptr;
 				node_state.pointed = nullptr;
 				node_state.selected = nullptr;
+				node_state.nodes_selected.clear();
 			}
 
 			bool unlink(node_type* node, bool perf_clear)
@@ -809,20 +843,136 @@ namespace nana
 				return false;
 			}
 
-			bool set_selected(node_type * node)
+			bool set_selected_multi(node_type* node, bool crtl, bool shift)
+			{
+				if (crtl)
+				{
+					data.stop_drawing = true;
+					if (node->value.second.selected)
+					{
+						node_state.remove_node(node);
+						node->value.second.selected = false;
+						item_proxy iprx(data.trigger_ptr, node);
+						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
+					}
+					else
+					{
+						node_state.add_node(node);
+						node->value.second.selected = true;
+						item_proxy iprx(data.trigger_ptr, node);
+						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
+					}
+					data.stop_drawing = false;
+
+					node_state.selected = node;
+					return true;
+				}
+
+				data.stop_drawing = true;
+				if (node_state.selected)
+				{
+					//node_state.selected through node
+					auto nodes_copy = node_state.nodes_selected;
+					node_state.clear();
+					auto target1 = node_state.pivot_node;
+					auto target2 = node;
+					item_proxy{ data.trigger_ptr, attr.tree_cont.get_root() }.visit_recursively([&](item_proxy&& i)
+					{
+						if (i.empty())
+						{
+							return false;
+						}
+						else if ((!i.child().empty() && !i.expanded()))
+						{
+							if ((target1 == nullptr || target2 == nullptr) && (i._m_node() == target1 || i._m_node() == target2))
+							{
+								node_state.add_node(i._m_node());
+								return false;
+							}
+						}
+
+						if ((target1 == nullptr || target2 == nullptr) && (i._m_node() == target1 || i._m_node() == target2))
+						{
+							node_state.add_node(i._m_node());
+							return false;
+						}
+
+						if (i._m_node() == node_state.pivot_node)
+						{
+							target1 = nullptr;
+							node_state.add_node(i._m_node());
+						}
+						else if (i._m_node() == node)
+						{
+							target2 = nullptr;
+							node_state.add_node(i._m_node());
+						}
+						else if ((target1 == nullptr || target2 == nullptr))
+						{
+							if (i.hidden())
+								return false;
+
+							node_state.add_node(i._m_node());
+						}
+						return true;
+					});
+
+					for (auto& old_node : nodes_copy)
+					{
+						if (node_state.pivot_node == old_node || std::find(node_state.nodes_selected.begin(), node_state.nodes_selected.end(), old_node) != node_state.nodes_selected.end())
+							continue;
+
+						old_node->value.second.selected = false;
+						item_proxy iprx(data.trigger_ptr, old_node);
+						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
+					}
+
+					for (auto& sel_node : node_state.nodes_selected)
+					{
+						if (node_state.pivot_node == sel_node || std::find(nodes_copy.begin(), nodes_copy.end(), sel_node) != nodes_copy.end())
+							continue;
+
+						sel_node->value.second.selected = true;
+						item_proxy iprx(data.trigger_ptr, sel_node);
+						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
+					}
+				}
+				else
+				{
+					node_state.add_node(node);
+					node->value.second.selected = true;
+					item_proxy iprx(data.trigger_ptr, node);
+					data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
+				}
+
+				node_state.selected = node;
+				
+				data.stop_drawing = false;
+				return true;
+			}
+
+			bool set_selected(node_type * node, bool single_selection)
 			{
 				if(node_state.selected != node)
 				{
 					data.stop_drawing = true;
-					if (node_state.selected)
+					if (node_state.selected && single_selection || node == nullptr)
 					{
-						item_proxy iprx(data.trigger_ptr, node_state.selected);
-						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
+						auto nodes_copy = node_state.nodes_selected;
+						node_state.clear();
+						for (auto& selected_node : nodes_copy)
+						{
+							selected_node->value.second.selected = false;
+							item_proxy iprx(data.trigger_ptr, selected_node);
+							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
+						}
 					}
 
 					node_state.selected = node;
 					if (node)
 					{
+						node_state.add_node(node_state.selected);
+						node_state.selected->value.second.selected = true;
 						item_proxy iprx(data.trigger_ptr, node_state.selected);
 						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
 					}
@@ -839,8 +989,8 @@ namespace nana
 					if(value == false)
 					{
 						//if contracting a parent of the selected node, select the contracted node.
-						if (node->is_ancestor_of(node_state.selected))
-							set_selected(node);
+						if (use_select_contracted_parent_node && node->is_ancestor_of(node_state.selected))
+							set_selected(node, true);
 					}
 
 					node->value.second.expanded = value;
@@ -864,7 +1014,7 @@ namespace nana
 					{
 						//if hiding a parent of the selected node or the selected node itself - select nothing.
 						if (node->is_ancestor_of(node_state.selected) || node_state.selected == node)
-							set_selected(nullptr);
+							set_selected(nullptr, true);
 					}
 
 					node->value.second.hidden = value;
@@ -1104,7 +1254,7 @@ namespace nana
 				case event_code::mouse_up:
 					if(node_state.selected == node_state.pointed)
 						return;
-					set_selected(node_state.pointed);
+					set_selected(node_state.pointed, true);
 					break;
 				default:
 					set_expanded(node_state.selected, !node_state.selected->value.second.expanded);
@@ -1204,13 +1354,13 @@ namespace nana
 
 		bool item_proxy::selected() const
 		{
-			return (trigger_->impl()->node_state.selected == node_);
+			return node_->value.second.selected;
 		}
 
 		item_proxy& item_proxy::select(bool s)
 		{
 			auto * impl = trigger_->impl();
-			if(impl->set_selected(s ? node_ : nullptr))
+			if(impl->set_selected(s ? node_ : nullptr, !impl->use_multiselection))
 				impl->draw(true);
 
 			return *this;
@@ -1273,7 +1423,9 @@ namespace nana
 
 		item_proxy& item_proxy::text(const std::string& id)
 		{
-			trigger_->rename(node_, nullptr, id.data());
+			if (trigger_->rename(node_, nullptr, id.data()))
+				trigger_->impl()->draw(false);
+
 			return *this;
 		}
 #ifdef __cpp_char8_t
@@ -1760,11 +1912,11 @@ namespace nana
 		//class trigger
 		//struct treebox_node_type
 		trigger::treebox_node_type::treebox_node_type()
-			:expanded(false), hidden(false), checked(checkstate::unchecked)
+			:expanded(false), hidden(false), checked(checkstate::unchecked), selected(false)
 		{}
 
 		trigger::treebox_node_type::treebox_node_type(std::string text)
-			:text(std::move(text)), expanded(false), hidden(false), checked(checkstate::unchecked)
+			:text(std::move(text)), expanded(false), hidden(false), checked(checkstate::unchecked), selected(false)
 		{}
 
 		trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)
@@ -1774,6 +1926,7 @@ namespace nana
 				text = rhs.text;
 				value = rhs.value;
 				checked = rhs.checked;
+				selected = rhs.selected;
 				img_idstr = rhs.img_idstr;
 			}
 			return *this;
@@ -2077,7 +2230,7 @@ namespace nana
 
 			auto & node_state = impl_->node_state;
 			node_state.pressed_node = nl.node();
-
+			
 			if (node_state.pressed_node && (component::expander == nl.what()))
 			{
 				if(impl_->set_expanded(node_state.pressed_node, !node_state.pressed_node->value.second.expanded))
@@ -2119,9 +2272,30 @@ namespace nana
 
 				check(nl.node(), cs);
 			}
-			if ((impl_->node_state.selected != nl.node()) && (nl.item_body() || nl.what() == component::crook))
+			if (nl.item_body())
 			{
-				impl_->set_selected(nl.node());
+				if (arg.shift && !impl_->node_state.pivot_node)
+				{
+					impl_->node_state.pivot_node = impl_->node_state.selected;
+				}
+				else if (!impl_->use_multiselection || !arg.shift)
+				{
+					impl_->node_state.pivot_node = nullptr;
+				}
+
+			}
+				
+			
+			if (impl_->use_multiselection && (arg.ctrl || arg.shift))
+			{
+				if ((nl.item_body() || nl.what() == component::crook))
+				{
+					impl_->set_selected_multi(nl.node(), arg.ctrl, arg.shift);
+				}
+			}
+			else if ((impl_->node_state.selected != nl.node()) && (nl.item_body() || nl.what() == component::crook))
+			{
+				impl_->set_selected(nl.node(), !impl_->use_multiselection || (!arg.ctrl));
 				if (impl_->make_adjust(impl_->node_state.selected, 1))
 					impl_->adjust.scroll_timestamp = 1;
 			}
@@ -2209,7 +2383,7 @@ namespace nana
 						}
 					}
 
-					impl_->set_selected(prev);
+					impl_->set_selected(prev, true);
 
 					if(impl_->make_adjust(prev, 4))
 						scroll = true;
@@ -2241,7 +2415,7 @@ namespace nana
 
 					if(node)
 					{
-						impl_->set_selected(node);
+						impl_->set_selected(node, true);
 						redraw = true;
 						scroll = impl_->make_adjust(node_state.selected, 4);
 					}
@@ -2254,7 +2428,7 @@ namespace nana
 					{
 						if(node_state.selected->owner != impl_->attr.tree_cont.get_root())
 						{
-							impl_->set_selected(node_state.selected->owner);
+							impl_->set_selected(node_state.selected->owner, true);
 							impl_->make_adjust(node_state.selected, 4);
 						}
 					}
@@ -2276,7 +2450,7 @@ namespace nana
 					}
 					else if(node_state.selected->child)
 					{
-						impl_->set_selected(node_state.selected->child);
+						impl_->set_selected(node_state.selected->child, true);
 						impl_->make_adjust(node_state.selected, 4);
 						redraw = true;
 						scroll = true;
@@ -2310,7 +2484,7 @@ namespace nana
 			auto node = const_cast<node_type*>(impl_->find_track_node(arg.key));
 			if(node && (node != impl_->node_state.selected))
 			{
-				impl_->set_selected(node);
+				impl_->set_selected(node, true);
 				impl_->make_adjust(node, 4);
 				do_refresh |= 2; //No need to reacts scrollbar
 			}
@@ -2504,6 +2678,24 @@ namespace nana
 		return item_proxy(const_cast<drawer_trigger_t*>(dw), dw->impl()->node_state.selected);
 	}
 
+	void treebox::selected(std::vector<treebox::item_proxy>& selected_nodes) const
+	{
+		auto dw = &get_drawer_trigger();
+		for (auto& item : dw->impl()->node_state.nodes_selected)
+		{
+			selected_nodes.push_back({ const_cast<drawer_trigger_t*>(dw) , item });
+		}
+	}
+
+	void treebox::deselect_all()
+	{
+		auto dw = &get_drawer_trigger();
+		bool should_draw = dw->impl()->node_state.nodes_selected.size() > 0;
+		dw->impl()->node_state.deselect_all();
+		if (should_draw)
+			dw->impl()->draw(false);
+	}
+
 	void treebox::scroll_into_view(item_proxy item, align_v bearing)
 	{
 		internal_scope_guard lock;
@@ -2536,6 +2728,18 @@ namespace nana
 	{
 		auto dw = &get_drawer_trigger();
 		dw->impl()->use_entire_line = enable;
+	}
+
+	void treebox::enable_multiselection(bool enable)
+	{
+		auto dw = &get_drawer_trigger();
+		dw->impl()->use_multiselection = enable;
+	}
+
+	void treebox::use_select_contracted_parent_node(bool enable)
+	{
+		auto dw = &get_drawer_trigger();
+		dw->impl()->use_select_contracted_parent_node = enable;
 	}
 
 	auto treebox::first() const -> item_proxy
