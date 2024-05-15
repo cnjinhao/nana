@@ -1,7 +1,7 @@
 /*
 *	A text editor implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -127,7 +127,7 @@ namespace nana::widgets::skeletons
 
 			if (sel_a_ != sel_b_)
 			{
-				selected_text_ = editor_._m_make_select_string();
+				selected_text_ = editor_.make_select_string();
 			}
 		}
 
@@ -316,7 +316,7 @@ namespace nana::widgets::skeletons
 				editor_.select_.b = dest_b_;
 				editor_.points_.caret = (sel_a_ < sel_b_ ? sel_a_ : sel_b_);
 
-				const auto text = editor_._m_make_select_string();
+				const auto text = editor_.make_select_string();
 
 				editor_._m_erase_select(false);
 				editor_._m_put(text, false);
@@ -2097,18 +2097,30 @@ namespace nana::widgets::skeletons
 		else
 			move_caret(insert_pos, true);
 
-		nana::arg_keyboard arg;
-		arg.evt_code = event_code::key_char;
-		arg.window_handle = window_;
-		arg.ignore = false;
-		arg.ctrl = false;
-		arg.shift = false;
-		arg.alt = false;
-
-		for (auto ch : str)
+		if (str.size() == 1)
 		{
-			arg.key = ch;
+			nana::arg_keyboard arg;
+			arg.evt_code = event_code::key_char;
+			arg.window_handle = window_;
+			arg.ignore = false;
+			arg.ctrl = false;
+			arg.shift = false;
+			arg.alt = false;
+
+			arg.key = str.front();
 			respond_char(arg);
+		}
+		else if(!str.empty())
+		{
+			//Use put for text is more faster than respond_char for each character.
+
+			//Don't trigger text_changed if candidate is true.
+			put(str, !candidate);
+		}
+		else 
+		{
+			//Restore the position of caret if candidate input is empty
+			move_caret(insert_pos, true);
 		}
 
 		if (candidate)
@@ -2123,6 +2135,27 @@ namespace nana::widgets::skeletons
 			api::refresh_window(window_);
 
 		return insert_pos;
+	}
+
+	void text_editor::im_cancel()
+	{
+		if (!this->selected())
+			return;
+
+		auto text = this->make_select_string();
+
+		for (std::size_t i = 0; i < text.size();)
+		{
+			if (' ' == text[i])
+				text.erase(i, 1);
+			else
+				++i;
+		}
+
+		this->put(text, true);
+
+		if (this->try_refresh())
+			api::update_window(window_);
 	}
 
 	void text_editor::put(std::wstring text, bool perform_event)
@@ -2189,7 +2222,6 @@ namespace nana::widgets::skeletons
 		}
 		else
 			impl_->try_refresh = sync_graph::refresh;
-
 	}
 
 	void text_editor::copy() const
@@ -2198,7 +2230,7 @@ namespace nana::widgets::skeletons
 		if (mask_char_)
 			return;
 
-		auto text = _m_make_select_string();
+		auto text = make_select_string();
 		if (!text.empty())
 			nana::system::dataexch().set(text, api::root(this->window_));
 	}
@@ -2380,8 +2412,6 @@ namespace nana::widgets::skeletons
 
 		if (perform_event)
 			textbase().text_changed();
-
-		textbase().text_changed();
 
 		if (has_to_redraw)
 		{
@@ -3206,7 +3236,7 @@ namespace nana::widgets::skeletons
 		return points_.caret;
 	}
 
-	std::wstring text_editor::_m_make_select_string() const
+	std::wstring text_editor::make_select_string() const
 	{
 		std::wstring text;
 
@@ -3393,7 +3423,7 @@ namespace nana::widgets::skeletons
 			return false;
 
 		nana::upoint caret = points_.caret;
-		const auto text = _m_make_select_string();
+		const auto text = make_select_string();
 		if (!text.empty())
 		{
 			auto undo_ptr = std::unique_ptr<undo_move_text>(new undo_move_text(*this));

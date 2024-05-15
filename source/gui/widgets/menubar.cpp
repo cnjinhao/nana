@@ -188,7 +188,7 @@ namespace nana
 			{
 				auto menubar_size = widget_ptr->size();
 				int offset = platform_abstraction::dpi_scale(widget_ptr->handle(), 2);
-				if ((offset <= pos.x) && (offset <= pos.y) && (pos.y < menubar_size.height))
+				if ((offset <= pos.x) && (offset <= pos.y) && (pos.y < static_cast<int>(menubar_size.height)))
 				{
 					int item_x = offset;
 					std::size_t index = 0;

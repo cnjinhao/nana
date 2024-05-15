@@ -1,4 +1,4 @@
-/**
+ï»¿/**
 *	Virtual Keyboard Implementations
 *	Nana C++ Library(http://www.nanapro.org)
 *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
@@ -64,7 +64,7 @@ namespace nana::detail
 			static constexpr unsigned border_px = 5;
 			static constexpr unsigned button_border_px = 2;
 
-			numeric(window wd, window host, const keyboards::images* images ):
+			numeric(window wd, window host, const keyboards::images* images, bool padding):
 				panel<true>(wd),
 				window_(wd),
 				host_(host),
@@ -74,10 +74,7 @@ namespace nana::detail
 				for (int i = 0; i < 13; ++i)
 					keys_.emplace_back().value = values[i];
 
-				api::window_size(wd, { 320, 320 });
-				this->size({ 320, 320 });
-
-				_m_resized();
+				_m_adjust_size(padding);
 
 				nana::drawing{ *this }.draw([this](nana::paint::graphics& graph) {
 					_m_render(graph);
@@ -134,10 +131,38 @@ namespace nana::detail
 				return true;
 			}
 
-			void _m_resized()
+			void _m_adjust_size(bool padding)
 			{
-				auto sz = this->size();
+				nana::size sz{320, 320};
 
+				auto dsk_size = nana::screen::desktop_size();
+
+				sz.height = std::min(sz.height, dsk_size.height * 3 / 5);
+				if(sz.height > dsk_size.width)
+					sz.width = sz.height = dsk_size.width;
+				else
+					sz.width = sz.height;
+
+				if (padding)
+				{
+					api::window_size(window_, { dsk_size.width, sz.height });
+
+					nana::point pt{
+						static_cast<int>(dsk_size.width - sz.width) / 2
+						,0 };
+					this->move(nana::rectangle{ pt, sz });
+				}
+				else
+				{
+					api::window_size(window_, sz);
+					this->size(sz);
+				}
+
+				_m_resized(sz);
+			}
+
+			void _m_resized(nana::size sz)
+			{
 				if (sz.width <= border_px * 2 || sz.height <= border_px * 2)
 					return;
 
@@ -237,8 +262,8 @@ namespace nana::detail
 		{
 		public:
 			static const unsigned topbar_px = 48;
-			static const unsigned bottom_px = 32;
-			static const unsigned height_px = 280;
+			static const unsigned bottom_px = 6; //32;
+			static const unsigned height_px = 240;
 
 			using labels = im_interface::labels;
 
@@ -289,7 +314,7 @@ namespace nana::detail
 			{
 				cntpart_.lang = im_->lang();
 
-				nana::size dim{ 480, 280 };
+				nana::size dim{ 480, height_px };
 
 				api::window_size(window_, dim);
 				this->size(dim);
@@ -318,10 +343,13 @@ namespace nana::detail
 						return;
 					}
 					_m_press_key(text_wd, arg.pos, true);
-					});
+				});
 
 				this->events().mouse_move([this](const nana::arg_mouse& arg) {
-					if (1 == candidate_.state || 2 == candidate_.state)
+
+					auto move_condition = (std::abs(candidate_.origin_arg_pos.x - arg.pos.x) >= 5 || std::abs(candidate_.origin_arg_pos.y - arg.pos.y) >= 5);
+
+					if ((1 == candidate_.state && move_condition) || 2 == candidate_.state)
 					{
 						candidate_.state = 2;
 
@@ -351,7 +379,7 @@ namespace nana::detail
 							}
 						}
 					}
-					});
+				});
 
 				this->events().mouse_up([this, text_wd](const nana::arg_mouse& arg) {
 					if (1 == candidate_.state)
@@ -366,12 +394,12 @@ namespace nana::detail
 					}
 
 					candidate_.state = 0;
-					});
+				});
 
 				this->events().dbl_click([this, text_wd](const nana::arg_mouse& arg) {
 					pressed_key_ = 0;
 					_m_press_key(text_wd, arg.pos);
-					});
+				});
 
 
 				api::refresh_window(*this);
@@ -391,7 +419,8 @@ namespace nana::detail
 
 			static std::unique_ptr<im_interface> _m_default_im()
 			{
-				return _m_im_from_lang("en");
+				nana::internal_scope_guard lock;
+				return _m_im_from_lang(virtual_keyboard::default_im_value());
 			}
 
 			void _m_press_key(nana::window text_wd, const nana::point& arg_pos, bool is_pressed = false)
@@ -476,7 +505,7 @@ namespace nana::detail
 								if (i < langs.size())
 									im_ = _m_im_from_lang(langs[i]);
 								else
-									im_ = _m_im_from_lang("en");
+									im_ = _m_im_from_lang(langs[0]);
 
 								mode_ = modes::letter_lower;
 
@@ -515,6 +544,7 @@ namespace nana::detail
 						insert_pos_ = nana::api::dev::im_input(text_wd, insert_pos_, content, im_->has_intermediate_input());
 
 						candidate_.words = im_->candidates();
+						candidate_.wordsize.clear();
 						candidate_.word_areas.clear();
 						candidate_.left = 0;
 						candidate_.top = 0;
@@ -566,6 +596,7 @@ namespace nana::detail
 					insert_pos_ = nana::api::dev::im_input(text_wd, insert_pos_, content, true);
 
 					candidate_.words = im_->candidates();
+					candidate_.wordsize.clear();
 					candidate_.word_areas.clear();
 				}
 			}
@@ -874,7 +905,7 @@ namespace nana::detail
 
 			void _m_render(nana::paint::graphics& graph)
 			{
-				// ºòÑ¡ÇøÊÇµ¥ÐÐÄ£Ê½µÄÊ±ºò£¬²Å»æÖÆ¼üÅÌ
+				//Draw the keyboard if the candidate area is single mode
 				if (candidate_.single_mode)
 				{
 					if (cntpart_.mode && (cntpart_.mode.value() == mode_) && (cntpart_.lang == im_->lang()))
@@ -908,9 +939,9 @@ namespace nana::detail
 					_m_render_candidates_ml(graph);
 			}
 
-			/// äÖÈ¾µ¥ÐÐºòÑ¡ÇøÓò
+			/// Renders the single candidate area
 			/**
-			 * ÎÄ±¾ºòÑ¡ÇøÓòÓÐÁ½ÖÖÄ£Ê½£¬µ¥ÐÐÄ£Ê½ºÍ¶àÐÐÄ£Ê½¡£äÖÈ¾µÄÊ±ºò°Ñ²¿·ÖºòÑ¡ÎÄ×ÖµÄÇøÓò¼ÇÂ¼ÏÂÀ´£¬ÓÃÓÚÏìÓ¦µã»÷´¦Àí
+			 * There are 2 modes for rendering candidate area, single-line mode and multiline mode
 			 */
 			void _m_render_candidates(nana::paint::graphics& graph)
 			{
@@ -927,37 +958,65 @@ namespace nana::detail
 				r.height = topbar_px;
 
 				candidate_.offset_idx = 0;
-
-				for (auto& cd : candidate_.words)
+				if(im_->lang() == "zh-CN")
 				{
-					auto ts = graph.text_extent_size(cd);
+					//Chinese characters have same wide.
+					auto ts = graph.text_extent_size(u8"ä¸­æ–‡æ±‰å­—ç­‰å®½");
+					ts.width /= 6;
 
-					r.width = (static_cast<int>(ts.width) + candidate_gap >= space ? ts.width + candidate_gap : space);
-
-					if (r.right() > 0 && (r.x + static_cast<int>(ts.width) < right))
+					for (auto& cd : candidate_.words)
 					{
-						candidate_.word_areas.push_back(r);
+						r.width = (static_cast<int>(ts.width) + candidate_gap >= space ? ts.width + candidate_gap : space);
 
-						nana::point pt{
-							r.x,
-							static_cast<int>(r.height - ts.height) / 2
-						};
+						if (r.right() > 0 && (r.x + static_cast<int>(ts.width) < right))
+						{
+							candidate_.word_areas.push_back(r);
 
-						graph.string(pt, cd, nana::colors::black);
+							nana::point pt{
+								r.x,
+								static_cast<int>(r.height - ts.height) / 2
+							};
+
+							graph.string(pt, cd, nana::colors::black);
+						}
+						else if (r.right() <= 0)
+							candidate_.offset_idx++;
+
+						r.x += r.width;
 					}
-					else if (r.right() <= 0)
-						candidate_.offset_idx++;
+							
+				}
+				else
+				{
 
-					r.x += r.width;
+					for (auto& cd : candidate_.words)
+					{
+						auto ts = graph.text_extent_size(cd);
+
+						r.width = (static_cast<int>(ts.width) + candidate_gap >= space ? ts.width + candidate_gap : space);
+
+						if (r.right() > 0 && (r.x + static_cast<int>(ts.width) < right))
+						{
+							candidate_.word_areas.push_back(r);
+
+							nana::point pt{
+								r.x,
+								static_cast<int>(r.height - ts.height) / 2
+							};
+
+							graph.string(pt, cd, nana::colors::black);
+						}
+						else if (r.right() <= 0)
+							candidate_.offset_idx++;
+
+						r.x += r.width;
+					}
 				}
 
-				//´ËÊ±r.x¾ÍÊÇ×îÓÒ±ßµÄµã
-
+				//Now, r.x represents the right end point.
 				candidate_.content_px = (r.x - candidate_.left);
 
-
-
-				// äÖÈ¾ÏÂÀ­°´Å¥
+				// Renders dropdown button
 				if (candidate_.content_px > static_cast<int>(graph.width()))
 				{
 					key_candidate_switch_.x = right;
@@ -981,6 +1040,11 @@ namespace nana::detail
 				candidate_.left = 0;
 				candidate_.word_areas.clear();
 
+				//Calcuates all candidate words' size.
+				if (candidate_.words.size() != candidate_.wordsize.size())
+					for (auto& cd : candidate_.words)
+						candidate_.wordsize.push_back(graph.text_extent_size(cd));
+
 				const int right = (graph.width() - key_candidate_switch_.width - 5);
 
 				auto const space = (right / 13);
@@ -991,9 +1055,10 @@ namespace nana::detail
 				r.height = topbar_px;
 
 				candidate_.offset_idx = 0;
-				for (auto& cd : candidate_.words)
+				for (std::size_t i = 0; i < candidate_.words.size(); ++i)
 				{
-					auto ts = graph.text_extent_size(cd);
+					auto& cd = candidate_.words[i];
+					auto ts = candidate_.wordsize[i];
 
 					r.width = (static_cast<int>(ts.width) + candidate_gap >= space ? ts.width + candidate_gap : space);
 
@@ -1022,6 +1087,15 @@ namespace nana::detail
 
 				candidate_.content_px = (r.bottom() - candidate_.top);
 
+				if (candidate_.content_px > static_cast<int>(graph.height()))
+				{
+					//Height of scrollbar
+					unsigned scroll_px = graph.height() * graph.height() / candidate_.content_px;
+
+					int top = (-candidate_.top) * graph.height() / candidate_.content_px;
+					graph.rectangle(nana::rectangle{ right - 10, top, 6, scroll_px }, true, static_cast<nana::color_rgb>(0xa0a0a0));
+				}
+
 
 				//Candidate switch button
 				key_candidate_switch_.x = right;
@@ -1034,7 +1108,6 @@ namespace nana::detail
 
 				arrow.direction(nana::direction::north);
 				arrow.draw(graph, static_cast<nana::color_rgb>(0xD3D6DF), nana::colors::black, arrow_r, nana::element_state::normal);
-
 			}
 		private:
 			window const window_;
@@ -1073,6 +1146,7 @@ namespace nana::detail
 				nana::point origin_arg_pos;	///< cursor coordinates when button is pressed
 
 				std::vector<std::wstring> words;
+				std::vector<nana::size> wordsize;
 				std::vector<nana::rectangle> word_areas;
 			}candidate_;
 
@@ -1105,12 +1179,11 @@ namespace nana::detail
 			this->events().resized([this](const arg_resized&) {
 				_m_resized();
 			});
-
-			this->show();
 		}
 
 		~virtual_keyboard_window()
 		{
+			api::dev::im_cancel(host_);
 			api::move_window(host_form_, origin_pt_);
 			delete board_;
 		}
@@ -1125,9 +1198,9 @@ namespace nana::detail
 			board_ = new keyboards::qwerty(*this, host_, langs, behave, mode, images_);
 		}
 
-		void numeric()
+		void numeric(bool padding)
 		{
-			board_ = new keyboards::numeric{*this, host_, images_};
+			board_ = new keyboards::numeric{*this, host_, images_, padding};
 		}
 	private:
 		/// \todo: generalize dpi to v2 awareness 
@@ -1239,6 +1312,7 @@ namespace nana::detail
 	struct keyboard_host
 	{
 		bool qwerty{ true };
+		bool padding{ false };
 		std::unique_ptr<qwerty_parameters> qwerty_param; //Specific qwerty parameters
 
 		nana::event_handle focus;
@@ -1298,6 +1372,12 @@ namespace nana::detail
 		}
 	}
 
+	std::string& virtual_keyboard::default_im_value() noexcept
+	{
+		static std::string value = "en";
+		return value;
+	}
+
 	void virtual_keyboard::attach(window wd)
 	{
 		nana::internal_scope_guard lock;
@@ -1331,8 +1411,7 @@ namespace nana::detail
 				if ((!impl_->win) || impl_->win->host() != arg.window_handle)
 				{
 					//popup keyboard
-
-					impl_->win = &nana::form_loader<virtual_keyboard_window>{}(arg.window_handle, &(impl_->images));
+					impl_->win = &nana::form_loader<virtual_keyboard_window, false>{}(arg.window_handle, &(impl_->images));
 
 					impl_->win->events().destroy([this](const arg_destroy&) {
 						impl_->win = nullptr;
@@ -1351,7 +1430,10 @@ namespace nana::detail
 						impl_->win->qwerty(qp->langs, qp->behave, qp->mode);
 					}
 					else
-						impl_->win->numeric();
+						impl_->win->numeric(host.padding);
+
+					//Show the keyboard window after configuration to avoid flickering
+					impl_->win->show();
 				}
 			}
 		});
@@ -1379,13 +1461,14 @@ namespace nana::detail
 		return true;
 	}
 
-	bool virtual_keyboard::numeric(window wd)
+	bool virtual_keyboard::numeric(window wd, bool padding)
 	{
 		auto i = impl_->hosts.find(wd);
 		if (i == impl_->hosts.cend())
 			return false;
 
 		i->second.qwerty = false;
+		i->second.padding = padding;
 		i->second.qwerty_param.reset();
 		return true;
 	}

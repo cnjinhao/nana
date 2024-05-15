@@ -1365,7 +1365,6 @@ namespace detail{
 			}
 			else
 				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.right - r.left, r.bottom - r.top, true);
-
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
 

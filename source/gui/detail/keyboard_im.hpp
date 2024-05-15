@@ -16,6 +16,7 @@ namespace nana::detail
 		enum class labels
 		{
 			name,
+			short_name,
 			alphabet,
 			space,
 			done
@@ -58,6 +59,7 @@ namespace nana::detail
 			switch (l)
 			{
 			case labels::name:
+			case labels::short_name:
 				return L"EN";
 			case labels::alphabet:
 				return L"ABC";
@@ -119,6 +121,7 @@ namespace nana::detail
 			switch (l)
 			{
 			case labels::name:
+			case labels::short_name:
 				return L"RU";
 			case labels::alphabet:
 				return L"АБВ";
@@ -614,14 +617,6 @@ namespace nana::detail
 			table[L"zun"] = L"拵捘栫袸尊僔銌遵墫撙嶟噂樽罇繜瀳譐鐏鳟鷷鱒";
 			table[L"zuo"] = L"左作坐阼佐苲怍岝咗岞侳柮柞昨祚胙唑座秨袏莋笮做捽唶葄酢葃琢蓙稓筰鈼飵撮諎嘬穝繓糳";
 
-			for (auto& m : table)
-			{
-				auto idx = pinyin_list_.size();
-				pinyin_list_.push_back(m.first);
-
-				for (auto ch : m.second)
-					chartable_[ch].push_back(idx);
-			}
 
 			//常用词组
 			phrase_.insert(L"我们");
@@ -649,7 +644,6 @@ namespace nana::detail
 
 				start = end;
 			}
-
 			return pinyins;
 		}
 
@@ -788,14 +782,15 @@ namespace nana::detail
 			{
 				auto candidates = matched;
 
-				for (auto i = candidates.begin(); i != candidates.end();)
+				auto piece = s.substr(start, pos - start + 1);
+				for (auto i = candidates.cbegin(); i != candidates.cend(); )
 				{
-					if ((pos - start + 1 > i->size()) || ((*i)[pos - start] != s[pos]))
+					if ((piece.size() > i->size()) || (std::wstring::npos == i->find(piece)))
 					{
 						i = candidates.erase(i);
 						continue;
 					}
-					
+
 					++i;
 				}
 
@@ -809,8 +804,6 @@ namespace nana::detail
 		}
 	private:
 		std::map<std::wstring, std::wstring> table_;
-		std::vector<std::wstring> pinyin_list_;
-		std::map<wchar_t, std::vector<std::size_t>> chartable_;
 		std::set<std::wstring> phrase_;
 	};
 
@@ -834,6 +827,8 @@ namespace nana::detail
 				return L"空格";
 			case labels::done:
 				return L"完成";
+			default:
+				break;
 			}
 			return {};
 		}

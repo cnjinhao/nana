@@ -1,7 +1,7 @@
 /*
 *	Virtual Keyboard Implementations
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -41,9 +41,11 @@ namespace nana::detail
 		virtual_keyboard();
 		~virtual_keyboard();
 
+		static std::string& default_im_value() noexcept;
+
 		void attach(window);
 		bool qwerty(window, std::vector<std::string> langs, behaves, modes);
-		bool numeric(window);
+		bool numeric(window, bool padding);
 	private:
 		implementation* const impl_;
 	};

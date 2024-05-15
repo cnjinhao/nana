@@ -1719,8 +1719,12 @@ namespace api
 
 	void keyboard_default_language(const std::string& lang)
 	{
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
 		internal_scope_guard lock;
 		restrict::bedrock.vkeyboard().default_im_value() = lang;
+#else
+		(void)lang;
+#endif
 	}
 
 	/// Configures the qwerty keyboard for a text editor
