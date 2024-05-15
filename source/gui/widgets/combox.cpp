@@ -225,7 +225,7 @@ namespace nana
 
 						if (api::is_transparent_background(this->widget_ptr()->handle()))
 						{
-							paint::graphics trns_graph{ graph.size() };
+							paint::graphics trns_graph{ graph.size(), graph.get_dpi() };
 							if (api::dev::copy_transparent_background(this->widget_ptr()->handle(), trns_graph))
 							{
 								graph.blend(rectangle{ trns_graph.size() }, trns_graph, {}, 0.5);

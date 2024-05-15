@@ -331,7 +331,7 @@ namespace nana
 					
 					if(item.enable == false)
 					{
-						nana::paint::graphics gh(imgsize);
+						nana::paint::graphics gh(imgsize, graph.get_dpi());
 						gh.bitblt(::nana::rectangle{ imgsize }, graph, pos);
 						gh.rgb_to_wb(true);
 						gh.paste(graph, pos.x, pos.y);

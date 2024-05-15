@@ -119,7 +119,7 @@ namespace nana
 				comp_attribute_t attr;
 				if(comp_attribute(component::text, attr))
 				{
-					nana::paint::graphics item_graph({ item_r_.width, item_r_.height });
+					nana::paint::graphics item_graph({ item_r_.width, item_r_.height }, graph_->get_dpi());
 					item_graph.typeface(graph_->typeface());
 
 					renderer_->begin_paint(*widget_);

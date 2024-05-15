@@ -118,7 +118,7 @@ namespace nana
 
 				const auto label_size = graph.text_extent_size(data.text) + size{ schm.vernier_text_margin * 2, 0 };
 
-				paint::graphics graph_vern{ label_size };
+				paint::graphics graph_vern{ label_size, graph.get_dpi() };
 				graph_vern.rectangle(true, schm.color_vernier);
 
 				int arrow_pos;
@@ -183,9 +183,9 @@ namespace nana
 
 				const size label_size = (graph.text_extent_size(data.text) + size{ schm.vernier_text_margin * 2, 0 }).shift();
 
-				paint::graphics graph_vern{ label_size };
+				paint::graphics graph_vern{ label_size, graph.get_dpi() };
 
-				paint::graphics graph_horz{ size(label_size).shift() };
+				paint::graphics graph_horz{ size(label_size).shift(), graph.get_dpi() };
 				graph_horz.rectangle(true, schm.color_vernier);
 				graph_horz.string({ static_cast<int>(schm.vernier_text_margin), static_cast<int>(graph_horz.height() - label_size.width) / 2 }, data.text, schm.color_vernier_text);
 

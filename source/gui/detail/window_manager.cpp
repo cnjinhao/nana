@@ -367,6 +367,7 @@ namespace detail
 			if (result.native_handle)
 			{
 				auto wd = new basic_window(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
+				wd->dpi = result.dpi;
 				if (nested)
 				{
 					wd->owner = nullptr;

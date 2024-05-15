@@ -705,7 +705,7 @@ namespace nana
 
 		impl->dock.create(owner);
 
-		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		paint::graphics graph{ ::nana::size{ 10, 10 }, owner->dpi };
 		auto value_px = graph.text_extent_size(impl->label_text).width + 20;
 
 		impl->checkbox.create(impl->dock, rectangle{ (std::max)(static_cast<int>(label_px) - 18, 0), 0, value_px, 0 });
@@ -1310,7 +1310,7 @@ namespace nana
 	{
 		std::vector<unsigned> each_pixels;
 		unsigned label_px = 0, fixed_px = 0;
-		paint::graphics graph({ 5, 5 });
+		paint::graphics graph({ 5, 5 }, );
 
 		bool has_0_fixed_px = false;
 		for (auto p : contents)

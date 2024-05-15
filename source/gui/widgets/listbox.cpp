@@ -2465,7 +2465,7 @@ namespace nana
 			{
 				unsigned max_font_px = 0;
 
-				paint::graphics graph{ size{ 1, 1 } };
+				paint::graphics graph{ size{ 1, 1 }, this->graph->get_dpi() };
 				for (auto & col : this->header.cont())
 				{
 					if (!col.visible())
@@ -2850,7 +2850,7 @@ namespace nana
 			if (graph->empty())
 			{
 				//Creates a helper if widget graph is empty(when its size is 0).
-				graph_helper.reset(new paint::graphics{ nana::size{ 5, 5 } });
+				graph_helper.reset(new paint::graphics( nana::size( 5, 5 ), this->wd_ptr()->handle()->dpi ));
 				graph_helper->typeface(ess_->graph->typeface());
 				graph = graph_helper.get();
 			}

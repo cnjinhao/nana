@@ -2015,7 +2015,7 @@ namespace nana::widgets::skeletons
 		//Draw background
 		auto area = editor_area();
 
-		paint::graphics canvas{graph_.size()};
+		paint::graphics canvas{graph_.size(), graph_.get_dpi()};
 
 		if (!api::dev::copy_transparent_background(window_, canvas))
 		{
@@ -3587,7 +3587,7 @@ namespace nana::widgets::skeletons
 
 
 			//Draw as selected, and copy the selected part to the graph.
-			paint::graphics graph({ glyph_selected, line_px_ });
+			paint::graphics graph(size( glyph_selected, line_px_ ), this->graph_.get_dpi());
 			graph.typeface(this->graph_.typeface());
 			graph.rectangle(true, selection_color(false, has_focused));
 
