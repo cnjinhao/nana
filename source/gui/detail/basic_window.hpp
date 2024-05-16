@@ -23,6 +23,7 @@
 #include <nana/basic_types.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/effects.hpp>
+#include <nana/gui/programming_interface.hpp> 
 
 namespace nana::widgets::skeletons
 {
@@ -113,11 +114,11 @@ namespace nana::detail
 			{
 				_m_init_pos_and_size(parent, r);
 				_m_initialize(parent);
-				dpi = parent->dpi;
+				this->dpi = parent->dpi;
 			}
             else
             {
-                dpi = api::window_dpi(this);
+                this->dpi = ::nana::api::window_dpi(this);
             }
 		}
 
