@@ -90,7 +90,7 @@ namespace nana
 
 									nana::rectangle r{ nana::size{ static_cast<unsigned>(right_ - ellipsis_px_) - pos.x, wdm->height } };
 
-									nana::paint::graphics dummy({ r.width, r.height });
+									nana::paint::graphics dummy({ r.width, r.height }, graph_.get_dpi());
 									dummy.typeface(graph_.typeface());
 
 									dummy.bitblt(r, graph_, pos);

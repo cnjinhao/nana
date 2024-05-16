@@ -1733,7 +1733,7 @@ namespace nana
 					{
 						if (api::is_transparent_background(window_handle_))
 						{
-							paint::graphics item_graph{ attr.area.dimension() };
+							paint::graphics item_graph{ attr.area.dimension(), graph.get_dpi() };
 							item_graph.rectangle(false, *fg_ptr);
 							item_graph.rectangle(rectangle{ attr.area.dimension() }.pare_off(1), true, *bg_ptr);
 

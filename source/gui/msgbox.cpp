@@ -705,7 +705,7 @@ namespace nana
 
 		impl->dock.create(owner);
 
-		paint::graphics graph{ ::nana::size{ 10, 10 }, owner->dpi };
+		paint::graphics graph{ ::nana::size{ 10, 10 }, api::window_dpi(owner) };
 		auto value_px = graph.text_extent_size(impl->label_text).width + 20;
 
 		impl->checkbox.create(impl->dock, rectangle{ (std::max)(static_cast<int>(label_px) - 18, 0), 0, value_px, 0 });
@@ -727,7 +727,7 @@ namespace nana
 
 	unsigned inputbox::boolean::fixed_pixels() const
 	{
-		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		paint::graphics graph{ ::nana::size{ 10, 10 } , api::window_dpi(this->impl_->dock.handle())};
 		return graph.text_extent_size(impl_->label_text).width;
 	}
 
@@ -808,7 +808,7 @@ namespace nana
 	{
 		//get the longest value
 		int longest = (std::abs(static_cast<int>(impl_->begin < 0 ? impl_->begin * 10 : impl_->begin)) < std::abs(static_cast<int>(impl_->last < 0 ? impl_->last * 10 : impl_->last)) ? impl_->last : impl_->begin);
-		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		paint::graphics graph{ ::nana::size{ 10, 10 }, api::window_dpi(this->impl_->dock.handle())};
 		return graph.text_extent_size(std::to_wstring(longest)).width + 34;
 	}
 	//end class integer
@@ -891,7 +891,7 @@ namespace nana
 	{
 		//get the longest value
 		auto longest = (std::abs(static_cast<int>(impl_->begin < 0 ? impl_->begin * 10 : impl_->begin)) < std::abs(static_cast<int>(impl_->last < 0 ? impl_->last * 10 : impl_->last)) ? impl_->last : impl_->begin);
-		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		paint::graphics graph{ ::nana::size{ 10, 10 } , api::window_dpi(this->impl_->dock.handle())};
 		return graph.text_extent_size(std::to_wstring(longest)).width + 34;
 	}
 	//end class real
@@ -1016,7 +1016,7 @@ namespace nana
 		if (impl_->options.empty())
 			return 0;
 
-		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		paint::graphics graph{ ::nana::size{ 10, 10 } , api::window_dpi(this->impl_->dock.handle())};
 		unsigned long_px = 0;
 		//get the longest value
 		for (auto & s : impl_->options)
@@ -1310,7 +1310,7 @@ namespace nana
 	{
 		std::vector<unsigned> each_pixels;
 		unsigned label_px = 0, fixed_px = 0;
-		paint::graphics graph({ 5, 5 }, );
+		paint::graphics graph({ 5, 5 }, api::window_dpi(owner_));
 
 		bool has_0_fixed_px = false;
 		for (auto p : contents)

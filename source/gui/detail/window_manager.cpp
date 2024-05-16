@@ -752,8 +752,8 @@ namespace detail
 			}
 
 			//Before resizing the window, creates the new graphics
-			paint::graphics graph;
-			paint::graphics root_graph;
+			paint::graphics graph(wd->dpi);
+			paint::graphics root_graph(wd->dpi);
 			if (category::flags::lite_widget != wd->other.category)
 			{
 				//If allocation fails, here throws std::bad_alloc.
