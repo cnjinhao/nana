@@ -476,8 +476,8 @@ namespace detail
 				update_area.y += parent->pos_owner.y;
 				parent = parent->parent;
 			}
-			update_area = unscale_dpi(update_area, wd->dpi);
-			update(parent, false, false, &update_area); // system-side
+			// update_area = unscale_dpi(update_area, wd->dpi);
+			update(parent, false, false, &update_area); // user-side
 		}
 
 		void window_manager::destroy_handle(basic_window* wd)
