@@ -115,6 +115,10 @@ namespace nana::detail
 				_m_initialize(parent);
 				dpi = parent->dpi;
 			}
+            else
+            {
+                dpi = api::window_dpi(this);
+            }
 		}
 
 		~basic_window();
