@@ -357,7 +357,7 @@ namespace detail
 		return bedrock_object;
 	}
 
-	/// uses *update_area for direct call to PostMessage: \todo: dpi_scale ?? no: obtained directly from lParam (all system-side)
+	/// uses *update_area for direct call to PostMessage: \todo: dpi_scale ??  Use US
 	void bedrock::flush_surface(basic_window* wd, bool forced, const rectangle* update_area)
 	{
 		if (nana::system::this_thread_id() != wd->thread_id)
@@ -378,7 +378,8 @@ namespace detail
 				if (FALSE == ::PostMessage(reinterpret_cast<HWND>(wd->root), 
 										   nana::detail::messages::remote_flush_surface, 
 										   reinterpret_cast<WPARAM>(wd), 
-										   reinterpret_cast<LPARAM>(stru))   )
+										   reinterpret_cast<LPARAM>(stru))   // pointer to a nana defined and controled structure: US not SS !! \todo: no dpi scale !
+					                       )
 					::HeapFree(::GetProcessHeap(), 0, stru);
 			}
 		}
@@ -631,14 +632,14 @@ namespace detail
 		bedrock & bedrock = bedrock::instance();
 		switch(msg)
 		{
-		case nana::detail::messages::async_activate:
-			::EnableWindow(wd, true);
+		case nana::detail::messages::async_activate:	//wParam = 0, lParam = window . Not send back to Windows DefWindowProc
+			::EnableWindow(wd, true); 
 			::SetActiveWindow(wd);
 			return true;
-		case nana::detail::messages::async_set_focus:
+		case nana::detail::messages::async_set_focus:   //wParam = 0, lParam = window . Not send back to Windows DefWindowProc
 			::SetFocus(wd);
 			return true;
-		case nana::detail::messages::operate_caret:
+		case nana::detail::messages::operate_caret: 
 			//Refer to basis.hpp for this specification.
 			switch(wParam)
 			{
@@ -647,14 +648,15 @@ namespace detail
 				break;
 			case 2: //SetPos
 				::SetCaretPos(reinterpret_cast<nana::detail::messages::caret*>(lParam)->x, 
-							  reinterpret_cast<nana::detail::messages::caret*>(lParam)->y); /// \todo: system-side dpi ok direct use of lParam set in native_interface::caret_pos?
+							  reinterpret_cast<nana::detail::messages::caret*>(lParam)->y); 
+				/// \todo: system-side dpi ok? direct use of lParam set in native_interface::caret_pos?
 				delete reinterpret_cast<nana::detail::messages::caret*>(lParam);
 				break;
 			}
 			return true;
-		case nana::detail::messages::remote_flush_surface:
+		case nana::detail::messages::remote_flush_surface:  // wParam = window, lParam = detail::messages::map_thread. Not send back to Windows DefWindowProc
 			{
-				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);  //lParam   \todo: system-side dpi ok
+				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);  //lParam   \todo: User-side dpi  
 				bedrock.wd_manager().map(reinterpret_cast<basic_window*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
 				::UpdateWindow(wd);
 				::HeapFree(::GetProcessHeap(), 0, stru);
@@ -721,6 +723,7 @@ namespace detail
 		case WM_MOUSELEAVE:
 		case WM_MOUSEWHEEL:	//The WM_MOUSELAST may not include the WM_MOUSEWHEEL/WM_MOUSEHWHEEL when the version of SDK is low.
 		case WM_MOUSEHWHEEL:
+			// The messages above are not trivial messages - not send back to Windows DefWindowProc
 			return false;
 		default:
 			if((WM_MOUSEFIRST <= msg && msg <= WM_MOUSELAST) || (WM_KEYFIRST <= msg && msg <= WM_KEYLAST))

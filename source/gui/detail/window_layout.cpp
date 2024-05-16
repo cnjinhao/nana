@@ -85,9 +85,9 @@ namespace nana
 				_m_paste_children(wd, false, false, rectangle{ wd->pos_root, wd->dimension }, graph, wd->pos_root);
 			}
 
-			//read_visual_rectangle
+			/// read_visual_rectangle
 			///@brief 	Reads the visual rectangle of a window, the visual rectangle's reference frame is to root widget,
-			///			the visual rectangle is a rectangular block that a window should be displayed on screen.
+			///			the visual rectangle is a rectangular block that a window should display on screen.
 			///			The result is a rectangle that is a visible area for its ancestors.
 			bool window_layout::read_visual_rectangle(basic_window* wd, nana::rectangle& visual)
 			{
@@ -97,8 +97,8 @@ namespace nana
 
 				if (category::flags::root != wd->other.category)
 				{
-					//Test if the root widget is overlapped the specified widget
-					//the pos of root widget is (0, 0)
+					// Test if the root widget is overlapped the specified widget
+					// the pos of root widget is (0, 0)
 					if (overlapped(visual, rectangle{ wd->root_widget->pos_owner, wd->root_widget->dimension }) == false)
 						return false;
 
@@ -218,16 +218,22 @@ namespace nana
 				return true;
 			}
 
-			//make_bground
-			//		update the glass buffer of a glass window.
-			void window_layout::make_bground(basic_window* const wd)
-			{
-				nana::point rpos{ wd->pos_root };
-				auto & glass_buffer = wd->other.glass_buffer;
+            /// make_bground
+            ///		update the glass buffer of a glass window.
+            void window_layout::make_bground(basic_window* const wd)
+            {
+            
+				nana::point rpos{ wd->pos_root };									// root position of the widget
+						 
+				auto & glass_buffer = wd->other.glass_buffer;		// reference the glass graphic buffer of the widget
 
+				// The parent of the widget is a lite_widget (has no drawer graphic self)?
 				if (category::flags::lite_widget == wd->parent->other.category)
 				{
-					std::vector<basic_window*> layers;
+					// store the layers of lite widgets up in the tree of widgets until a root widget with a drawer graphic is found
+					std::vector<basic_window*> layers; 
+
+					// Traverse up the parent hierarchy until a non-lite widget is found
 					auto beg = wd->parent;
 					while (beg && (category::flags::lite_widget == beg->other.category))
 					{
@@ -235,59 +241,82 @@ namespace nana
 						beg = beg->parent;
 					}
 
-					glass_buffer.bitblt(::nana::rectangle{ wd->dimension }, beg->drawer.graphics, wd->pos_root - beg->pos_root);
+					// Copy the corresponding part of the graphics of the parent widget to pos(0,0) of the the glass graphics buffer
+					glass_buffer.bitblt( ::nana::rectangle{ wd->dimension }, 
+										 beg->drawer.graphics, 
+										 wd->pos_root - beg->pos_root);
 					
-					nana::rectangle r(wd->pos_owner, wd->dimension);
-					for (auto i = layers.rbegin(), layers_rend = layers.rend(); i != layers_rend; ++i)
+					nana::rectangle r(wd->pos_owner, wd->dimension);  //  represent the 'base' lite widget rectangle but in onwer coordinates
+
+					// Traverse the layers of lite widgets in reverse order
+					for (auto           i = layers.rbegin(), 
+					          layers_rend = layers.rend  (); i != layers_rend; ++i)
 					{
 						auto pre = *i;
-						if (false == pre->visible)
-							continue;
+						if (false == pre->visible)  continue;      // Skip if the lite widget is not visible
+						r.position(wd->pos_root - pre->pos_root);  // adjust the position current widget
 
+						// if this is the last lite_widget take wd, if not, take the next
 						auto term = ((i + 1 != layers_rend) ? *(i + 1) : wd);
-						r.position(wd->pos_root - pre->pos_root);
 
+						// Traverse the children of the current lite widget
 						for (auto child : pre->children)
 						{
-							if (child->index >= term->index)
-								break;
-
-							nana::rectangle ovlp;
-							if (child->visible && overlap(r, rectangle(child->pos_owner, child->dimension), ovlp))
+							// Break the loop if the child's index is greater than or equal to the termination point's index
+							if (child->index >= term->index)   break;
+							
+							nana::rectangle ovlp;           // represent the overlap between the child and the current lite widget
+                            // Check if the child is visible and overlaps with the current lite widget
+                            if (child->visible && overlap(r, rectangle(child->pos_owner, child->dimension), ovlp))
 							{
+								// Copy the graphics of not lite_widget child to the glass buffer
 								if (category::flags::lite_widget != child->other.category)
-									glass_buffer.bitblt(nana::rectangle(ovlp.x - pre->pos_owner.x, ovlp.y - pre->pos_owner.y, ovlp.width, ovlp.height), child->drawer.graphics, nana::point(ovlp.x - child->pos_owner.x, ovlp.y - child->pos_owner.y));
+									glass_buffer.bitblt(nana::rectangle(ovlp.x - pre->pos_owner.x, ovlp.y - pre->pos_owner.y, ovlp.width, ovlp.height), 
+									                    child->drawer.graphics, 
+														nana::point(ovlp.x - child->pos_owner.x, ovlp.y - child->pos_owner.y));
 								ovlp.x += pre->pos_root.x;
 								ovlp.y += pre->pos_root.y;
+								// Recursively paste the children of the child to the glass buffer
 								_m_paste_children(child, false, false, ovlp, glass_buffer, rpos);
 							}
 						}
 					}
 				}
 				else
-					glass_buffer.bitblt(::nana::rectangle{ wd->dimension }, wd->parent->drawer.graphics, wd->pos_owner);
+					// Copy the graphics of the parent widget to the glass buffer
+					glass_buffer.bitblt(::nana::rectangle{ wd->dimension }, 
+										wd->parent->drawer.graphics, 
+										wd->pos_owner);
 
+				// represent the current window but in client owner's coordinates: OC_US = WC_US of the owner
 				const rectangle r_of_wd{ wd->pos_owner, wd->dimension };
+				// Traverse the siblings of the current window
 				for (auto child : wd->parent->children)
 				{
-					if (child->index >= wd->index)
-						break;
+					// Break the loop if the child's index is greater than or equal to the current window's index: break on me or pass: process only previous to me
+					if (child->index >= wd->index)   break;
 
+					// Create a rectangle to represent the overlap between the child and the current window
 					nana::rectangle ovlp;
+					// Check if the child is visible and overlaps with the current window
 					if (child->visible && overlap(r_of_wd, rectangle{ child->pos_owner, child->dimension }, ovlp))
 					{
+						// Copy the graphics of the not lite_widget child to the glass buffer
 						if (category::flags::lite_widget != child->other.category)
-							glass_buffer.bitblt(nana::rectangle{ ovlp.x - wd->pos_owner.x, ovlp.y - wd->pos_owner.y, ovlp.width, ovlp.height }, child->drawer.graphics, {ovlp.position() - child->pos_owner});
+							glass_buffer.bitblt(nana::rectangle{ ovlp.x - wd->pos_owner.x, ovlp.y - wd->pos_owner.y, ovlp.width, ovlp.height }, 
+																 child->drawer.graphics, 
+																 {ovlp.position() - child->pos_owner});
 
 						ovlp.x += wd->parent->pos_root.x;
 						ovlp.y += wd->parent->pos_root.y;
+						// Recursively paste the children of the child to the glass buffer
 						_m_paste_children(child, false, false, ovlp, glass_buffer, rpos);
 					}
 				}
 
-				if (wd->effect.bground)
-					wd->effect.bground->take_effect(wd, glass_buffer);
-			}
+            // Apply the background effect to the glass buffer if it exists
+            if (wd->effect.bground)		wd->effect.bground->take_effect(wd, glass_buffer);
+            }
 
 			void window_layout::_m_paste_children(basic_window* wd, bool have_refreshed, bool req_refresh_children, const nana::rectangle& parent_rect, nana::paint::graphics& graph, const nana::point& graph_rpos)
 			{

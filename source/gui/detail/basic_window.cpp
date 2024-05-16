@@ -235,7 +235,7 @@ namespace nana
 			basic_window::basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, category::root_tag**)
 				: widget_notifier(std::move(wdg_notifier)), other(category::flags::root)
 			{
-				if (owner) dpi = owner->dpi;
+				if (owner) dpi = owner->dpi;  ///\todo: set dpi anyway? in all graphics?
 				drawer.bind(this);
 				_m_init_pos_and_size(nullptr, rectangle());
 				this->_m_initialize(owner);

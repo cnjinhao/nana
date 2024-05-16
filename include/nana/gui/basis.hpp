@@ -84,22 +84,22 @@ namespace nana
 	{
 		enum class flags
 		{
-			super,
-			widget = 0x1,
-			lite_widget = 0x3,
-			root = 0x5
+			super,              // 000
+			widget      = 0x1,  // 001
+			lite_widget = 0x3,  // 011
+			root        = 0x5   // 101
 		};
 		//wait for constexpr
-		struct widget_tag{ static const flags value = flags::widget; };
+		struct widget_tag                         { static const flags value = flags::widget;       };
 		struct lite_widget_tag : public widget_tag{ static const flags value = flags::lite_widget;  };
-		struct root_tag : public widget_tag{ static const flags value = flags::root;  };
+		struct root_tag        : public widget_tag{ static const flags value = flags::root;         };
 	}// end namespace category
 
-	using window = detail::basic_window*;							///< The window handle type representing nana window objects
+	using window             = detail::basic_window*;	 	    	///< The window handle type representing nana window objects
 	using native_window_type = detail::native_window_handle_impl*;	///< The native window handle type representing system native windows. E.g, HWND in windows, Window in X11
 
-	using event_handle = detail::event_handle_impl*;				///< The event handle type representing nana window events
-	using native_drawable_type = detail::native_drawable_impl*;		///< The drawable handle type representing system native drawable objects.	E.g. HDC in windows, Drawable in X11
+	using event_handle         = detail::event_handle_impl*;	///< The event handle type representing nana window events
+	using native_drawable_type = detail::native_drawable_impl*;	///< The drawable handle type representing system native drawable objects.	E.g. HDC in windows, Drawable in X11
 
 
 	struct keyboard

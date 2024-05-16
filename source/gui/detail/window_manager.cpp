@@ -462,7 +462,7 @@ namespace detail
 			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) == false)	return;
 
-			rectangle update_area(wd->pos_owner, wd->dimension); // user-side ?
+			rectangle update_area(wd->pos_owner, wd->dimension); // user-side 
 
 			auto parent = wd->parent;
 			if (parent)
@@ -1379,7 +1379,7 @@ namespace detail
 				return;
 
 			wd->dpi = native_interface::window_dpi(wd->root);
-			wd->drawer.graphics.set_dpi(wd->dpi);
+			wd->drawer.graphics.set_dpi(wd->dpi);    ///\todo: revise if glass_buffer and root_graphics is needed to be updated
 
 			for (auto child : wd->children)
 			{

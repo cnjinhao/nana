@@ -390,7 +390,7 @@ namespace paint
 				//The object will be deleted while dwptr_ is performing a release.
 				std::shared_ptr<nana::detail::drawable_impl_type> dw{ new nana::detail::drawable_impl_type, detail::drawable_deleter{} };
 
-				//Reuse the old font
+				///\todo: make sure to set correct 'dpi' size before Reuse the old font
 				if (impl_->platform_drawable)
 				{
 					drawable_type reuse = impl_->platform_drawable.get();
