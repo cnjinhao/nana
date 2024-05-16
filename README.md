@@ -19,6 +19,25 @@ Jinhao, [Ariel Viña Rodríguez].
 
 The best way to get help with Nana library is by visiting https://nana.acemind.cn/documentation
 
+## Examples
+
+Here are some examples to give you an idea how to use the Nana C++ Library.
+
+### Create a window
+
+The `form` class provides methods to manipulating a window.
+```C++
+#include <nana/gui.hpp>
+
+int main()
+{
+    nana::form fm;
+    fm.show();
+    nana::exec();
+}
+```
+
+
 ## Sending a Pull Request ?
 
 This project encourage you to contribute through sending a pull request! There is a simple rule: please **don't** directly commit your contributions to the **master** branch. According to your commits, please choose the **hotfixes** branch or the **develop** branch. Thank you!
