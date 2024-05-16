@@ -272,7 +272,7 @@ namespace paint
 			::nana::size	size;  ///< system-side size, dpi-scaled
 			pixel_buffer	pxbuf;
 			bool            changed{ false };
-			int             dpi  { 96   };
+			int             dpi  { 97   };
 			float           scale{ 1.0f };  /// \todo:
 		};
 
@@ -297,7 +297,7 @@ namespace paint
 		graphics::graphics(const nana::size& sz, int dpi)
 			: impl_(new implementation)
 		{
-			impl_->dpi = dpi;
+			set_dpi(dpi);
 			make(sz);
 		}
 
