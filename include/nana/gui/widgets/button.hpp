@@ -1,13 +1,15 @@
 /**
  *	A Button Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library 
+ *  Documentation https://nana.acemind.cn/documentation
+ *  Sources: https://github.com/cnjinhao/nana
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *  @file: nana/gui/widgets/button.hpp
+ *  @file nana/gui/widgets/button.hpp
  *	@contributor
  *		besh81(pr#361)
  */
