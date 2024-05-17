@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -164,6 +164,7 @@ namespace nana::widgets::skeletons
 		bool select(bool);
 
 		bool select_points(nana::upoint arg_a, nana::upoint arg_b);
+		::std::wstring make_select_string() const;
 
 		/// IM candidate mode
 		void im_candidate_mode(bool);
@@ -196,6 +197,7 @@ namespace nana::widgets::skeletons
 		void render(bool focused);
 	public:
 		upoint im_input(upoint insert_pos, const std::wstring& str, bool candidate);
+		void im_cancel();
 		void put(std::wstring, bool perform_event);
 		void put(wchar_t);
 		void copy() const;
@@ -255,7 +257,6 @@ namespace nana::widgets::skeletons
 
 		::nana::upoint _m_erase_select(bool perform_event);
 
-		::std::wstring _m_make_select_string() const;
 		static bool _m_resolve_text(const ::std::wstring&, std::vector<std::pair<std::size_t, std::size_t>> & lines);
 
 		bool _m_cancel_select(int align);

@@ -38,8 +38,6 @@
 #	include "../detail/posix/theme.hpp"
 #endif
 
-#include <iostream> //debug
-
 namespace fs = std::filesystem;
 namespace fs_ext = nana::filesystem_ext;
 
