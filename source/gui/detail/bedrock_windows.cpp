@@ -1792,7 +1792,7 @@ namespace detail
 
 	void bedrock::map_through_widgets(basic_window* wd, native_drawable_type drawable)
 	{
-		auto graph_context = reinterpret_cast<HDC>(wd->root_graph->handle()->context);
+		auto graph_context = reinterpret_cast<HDC>(wd->root_graph->handle()->context);  // destination HDC
 
 		for (auto child : wd->children)
 		{
@@ -1800,8 +1800,11 @@ namespace detail
 
 			if (::nana::category::flags::widget == child->other.category)
 			{
-				::BitBlt(reinterpret_cast<HDC>(drawable), child->pos_root.x, child->pos_root.y, static_cast<int>(child->dimension.width), static_cast<int>(child->dimension.height),
-					graph_context, child->pos_root.x, child->pos_root.y, SRCCOPY);
+				///\todo: dpi scale
+				auto pos_root = platform_abstraction::dpi_scale(child->pos_root, wd->dpi);  
+				auto dimension = platform_abstraction::dpi_scale(child->dimension, wd->dpi);
+				::BitBlt(reinterpret_cast<HDC>(drawable), pos_root.x, pos_root.y, static_cast<int>(dimension.width), static_cast<int>(dimension.height),
+				    	graph_context, pos_root.x, pos_root.y, SRCCOPY);
 			}
 			else if (::nana::category::flags::lite_widget == child->other.category)
 				map_through_widgets(child, drawable);

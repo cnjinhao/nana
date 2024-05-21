@@ -716,7 +716,8 @@ namespace paint
 
 #if defined(NANA_WINDOWS)
 				HDC dc = ::GetDC(reinterpret_cast<HWND>(src));
-				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, dc, 0, 0, SRCCOPY);
+				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, 
+						 dc, 0, 0, SRCCOPY);
 				::ReleaseDC(reinterpret_cast<HWND>(src), dc);
 #elif defined(NANA_X11)
 				::XCopyArea(nana::detail::platform_spec::instance().open_display(),
@@ -727,15 +728,18 @@ namespace paint
 			}
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst_, native_window_type src, const nana::point& p_src)  /// \todo: scale_dpi before? unused?
+		void graphics::bitblt(const nana::rectangle& r_dst_, native_window_type src, const nana::point& p_src_)  /// \todo: scale_dpi unused?
 		{
 			if(impl_->handle)
 			{
-				auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);  /// todo: use platform_abstraction
+				auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);   
+				auto p_src = platform_abstraction::dpi_scale(p_src_, nana::detail::native_interface::window_dpi(src));  
+
 #if defined(NANA_WINDOWS)
 				
 				HDC dc = ::GetDC(reinterpret_cast<HWND>(src));
-				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, dc, p_src.x, p_src.y, SRCCOPY);
+				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, 
+						 dc, p_src.x, p_src.y, SRCCOPY);
 				::ReleaseDC(reinterpret_cast<HWND>(src), dc);
 #elif defined(NANA_X11)
 				::XCopyArea(nana::detail::platform_spec::instance().open_display(),
@@ -752,7 +756,8 @@ namespace paint
 			{
                 auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi); 
 #if defined(NANA_WINDOWS)
-				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, src.impl_->handle->context, 0, 0, SRCCOPY);
+				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, 
+						 src.impl_->handle->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
 				::XCopyArea(nana::detail::platform_spec::instance().open_display(),
 						src.impl_->handle->pixmap, impl_->handle->pixmap, impl_->handle->context,
@@ -762,13 +767,15 @@ namespace paint
 			}
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst_, const graphics& src, const nana::point& p_src)
+		void graphics::bitblt(const nana::rectangle& r_dst_, const graphics& src, const nana::point& p_src_)
 		{
 			if(impl_->handle && src.impl_->handle)
 			{
 				 auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi); 
+				 auto p_src = platform_abstraction::dpi_scale(p_src_, src.impl_->dpi); ///\todo: use dpi src?
 #if defined(NANA_WINDOWS)
-				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, src.impl_->handle->context, p_src.x, p_src.y, SRCCOPY);
+				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, 
+						 src.impl_->handle->context, p_src.x, p_src.y, SRCCOPY);
 #elif defined(NANA_X11)
 				::XCopyArea(nana::detail::platform_spec::instance().open_display(),
 						src.impl_->handle->pixmap, impl_->handle->pixmap, impl_->handle->context,
@@ -890,8 +897,11 @@ namespace paint
 		{
 			if(impl_->handle && dst.impl_->handle && impl_->handle != dst.impl_->handle)
 			{
+				auto p = platform_abstraction::dpi_scale(point(x, y), dst.impl_->dpi); 
+				auto sz = platform_abstraction::dpi_scale(size(), dst.impl_->dpi);
 #if defined(NANA_WINDOWS)
-				::BitBlt(dst.impl_->handle->context, x, y, impl_->size.width, impl_->size.height, impl_->handle->context, 0, 0, SRCCOPY);
+				::BitBlt(dst.impl_->handle->context, p.x, p.y, impl_->size.width, impl_->size.height, 
+						 impl_->handle->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
 				Display* display = nana::detail::platform_spec::instance().open_display();
 				::XCopyArea(display,
@@ -913,11 +923,14 @@ namespace paint
 		{
 			if(impl_->handle)
 			{
+				auto p = platform_abstraction::dpi_scale(nana::rectangle(dx, dy, width, height), nana::detail::native_interface::window_dpi(dst));
+				point s = platform_abstraction::dpi_scale(point(sx, sy), impl_->dpi);
 #if defined(NANA_WINDOWS)
 				HDC dc = ::GetDC(reinterpret_cast<HWND>(dst));
 				if(dc)
 				{
-					::BitBlt(dc, dx, dy, width, height, impl_->handle->context, sx, sy, SRCCOPY);
+					::BitBlt(dc, p.x, p.y, p.width, p.height, 
+							 impl_->handle->context, sx, sy, SRCCOPY);
 					::ReleaseDC(reinterpret_cast<HWND>(dst), dc);
 				}
 #elif defined(NANA_X11)
@@ -946,8 +959,11 @@ namespace paint
 		{
 			if(impl_->handle && dst && impl_->handle != dst)
 			{
+				auto p = platform_abstraction::dpi_scale(point(x, y), impl_->dpi);  ///\todo: how to get dpi of dst?
 #if defined (NANA_WINDOWS)
-				::BitBlt(dst->context, x, y, impl_->size.width, impl_->size.height, impl_->handle->context, 0, 0, SRCCOPY);
+
+				::BitBlt(dst->context, x, y, impl_->size.width, impl_->size.height, 
+						 impl_->handle->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
 				Display * display = nana::detail::platform_spec::instance().open_display();
 				::XCopyArea(display,
