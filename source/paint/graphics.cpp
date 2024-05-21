@@ -1123,12 +1123,13 @@ namespace paint
 		{
 			if (impl_->handle)
 			{
+                auto p = platform_abstraction::dpi_scale(point(x, y), impl_->dpi);
 #if defined(NANA_WINDOWS)
-				::SetPixel(impl_->handle->context, x, y, impl_->handle->bgcolor_native);
+				::SetPixel(impl_->handle->context, p.x, p.y, impl_->handle->bgcolor_native);
 #elif defined(NANA_X11)
 				Display* disp = nana::detail::platform_spec::instance().open_display();
 				impl_->handle->update_color();
-				::XDrawPoint(disp, impl_->handle->pixmap, impl_->handle->context, x, y);
+				::XDrawPoint(disp, impl_->handle->pixmap, impl_->handle->context, p.x, p.y);
 #endif
 				if (impl_->changed == false) impl_->changed = true;
 			}
