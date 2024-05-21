@@ -1,22 +1,29 @@
-/*
+/**
  *	Screen Informations
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/screen.cpp
+ *	@file nana/gui/screen.cpp
  */
-#include <nana/gui/screen.hpp>
+
 #include <vector>
 #include <memory>
+
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/programming_interface.hpp>
+#include <nana/gui/screen.hpp>
+
+#include "../detail/platform_abstraction.hpp"
+
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #endif
+
+/// \todo: move all to nana::detail::native_interface in native_window_interface.hpp ???
 
 namespace nana
 {
@@ -25,14 +32,15 @@ namespace nana
 		: public display
 	{
 	public:
-		real_display() = default;	//For requirement of vector
+		real_display() = default;	// requirement of vector
 
 #if defined(NANA_WINDOWS)
-		real_display(std::size_t number, const MONITORINFOEX& mi)
+		real_display(std::size_t number, const MONITORINFOEX& mi, int dpi)
 			:	index_(number),
 				is_primary_(mi.dwFlags & /*MONITORINFOF_PRIMARY*/ 0x1),
-				area_(mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right - mi.rcMonitor.left, mi.rcMonitor.bottom - mi.rcMonitor.top),
-				workarea_(mi.rcWork.left, mi.rcWork.top, mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top)
+				area_    (mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right - mi.rcMonitor.left, mi.rcMonitor.bottom - mi.rcMonitor.top),
+				workarea_(mi.rcWork.left   , mi.rcWork.top   , mi.rcWork.right    - mi.rcWork.left   , mi.rcWork.bottom    - mi.rcWork.top),
+			    dpi_(dpi), scale_(dpi / 96.0)
 		{
 		}
 #else
@@ -55,18 +63,31 @@ namespace nana
 
 		const ::nana::rectangle& area() const override
 		{
-			return area_;
+			return platform_abstraction::unscale_dpi(area_, dpi_);
 		}
 
 		const ::nana::rectangle& workarea() const override
 		{
-			return workarea_;
+			return platform_abstraction::unscale_dpi(workarea_, dpi_);
 		}
+
+		int dpi() const override
+        {
+            return dpi_;
+        }
+
+		double scaling() const override
+		{
+		    return scale_;
+		}
+
 	private:
-		std::size_t	index_;
-		bool		is_primary_;
+		std::size_t			index_;
+		bool				is_primary_;
 		::nana::rectangle	area_;
 		::nana::rectangle	workarea_;
+		int                 dpi_;
+		double              scale_{ 1.0 };
 	};
 
 	//class screen
@@ -93,10 +114,31 @@ namespace nana
 	{
 		std::vector<real_display> displays;
 
+
 #if defined(NANA_WINDOWS)
+
+		/// \todo: move all to nana::detail::native_interface in native_window_interface.hpp ???
+		enum MONITOR_DPI_TYPE {
+			MDT_EFFECTIVE_DPI,
+			MDT_ANGULAR_DPI,
+			MDT_RAW_DPI,
+			MDT_DEFAULT
+		};
+		using  GetDpiForMonitor_ftype = HRESULT(__stdcall*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
+		inline static GetDpiForMonitor_ftype  GetDpiForMonitor { nullptr };
+
 		void load_monitors()
 		{
 			std::vector<real_display> tmp;
+			if (!GetDpiForMonitor)
+			{
+                HMODULE shcore = ::LoadLibraryA("SHCORE.DLL");
+                if (shcore)
+                {
+                    GetDpiForMonitor = reinterpret_cast<GetDpiForMonitor_ftype>(::GetProcAddress(shcore, "GetDpiForMonitor"));
+                    ::FreeLibrary(shcore);
+                }
+            }
 			::EnumDisplayMonitors(nullptr, nullptr, implement::enum_proc, reinterpret_cast<LPARAM>(&tmp));
 			tmp.swap(displays);
 		}
@@ -106,8 +148,14 @@ namespace nana
 			auto disp_cont = reinterpret_cast<std::vector<real_display>*>(self_ptr);
 			MONITORINFOEX mi;
 			mi.cbSize = sizeof(MONITORINFOEX);
-			if (::GetMonitorInfo(handle, &mi))
-				disp_cont->emplace_back(disp_cont->size(), mi);
+			if (! ::GetMonitorInfo(handle, &mi)) return TRUE;
+			int dpi = 96;
+
+			UINT xdpi, ydpi;
+			LRESULT success = GetDpiForMonitor(handle, MDT_EFFECTIVE_DPI, &xdpi, &ydpi);
+			if (success == S_OK) dpi = xdpi;
+			
+			disp_cont->emplace_back(disp_cont->size(), mi, dpi);
 
 			return TRUE;
 		}
