@@ -877,7 +877,7 @@ namespace nana
 
 			//Translate pt to px
 			auto hDC = ::GetDC(nullptr);
-			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
+			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72.0);
 
 			if (wfont_family.empty() || (0 == font_height))
 			{
@@ -907,8 +907,8 @@ namespace nana
 				if (0 == font_height)
 				{
 					auto correspond_dpi = detail::native_interface::system_dpi(); /// \todo OK
-					fi.size_pt = static_cast<double>(std::abs(metrics.lfMessageFont.lfHeight) * 72 / correspond_dpi);
-					font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
+					fi.size_pt = static_cast<double>(std::abs(metrics.lfMessageFont.lfHeight) * 72.0 / correspond_dpi);
+					font_height = -static_cast<LONG>(fi.size_pt * dpi / 72.0);
 				}
 			}
 
@@ -932,7 +932,7 @@ namespace nana
 
 			//Translate pt to px
 			auto hDC = ::GetDC(nullptr);  /// \todo OK??
-			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
+			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72.0);
 			::ReleaseDC(nullptr, hDC);
 
 			::LOGFONT lf{};
