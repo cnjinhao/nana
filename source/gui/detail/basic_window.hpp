@@ -103,23 +103,27 @@ namespace nana::detail
 		};
 
 		/// constructor for the root window
-		basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&&, category::root_tag**);
+		basic_window(basic_window* owner, 
+					 std::unique_ptr<widget_notifier_interface>&&, 
+					 category::root_tag**, 
+					 int dpi  ///< the dpi or scaling is needed to intitialize any bitmap graphics
+		            );
 
 		template<typename Category>
-		basic_window(basic_window* parent, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, const rectangle& r, Category**)
-			: widget_notifier(std::move(wdg_notifier)), other(Category::value)
+		basic_window(basic_window* parent, 
+					 std::unique_ptr<widget_notifier_interface>&& wdg_notifier, 
+					 const rectangle& r, 
+					 Category**,
+					 int dpi   ///< the dpi or scaling is needed to intitialize any bitmap graphics
+		             )
+			: widget_notifier(std::move(wdg_notifier)), other(Category::value), dpi(dpi)
 		{
 			drawer.bind(this);
 			if(parent)
 			{
 				_m_init_pos_and_size(parent, r);
 				_m_initialize(parent);
-				this->dpi = parent->dpi;
 			}
-            else
-            {
-                this->dpi = ::nana::api::window_dpi(this);
-            }
 		}
 
 		~basic_window();

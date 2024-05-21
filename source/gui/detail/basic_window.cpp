@@ -230,10 +230,15 @@ namespace nana
 				}
 			//end struct basic_window::other_tag
 
-			//basic_window
-			//@brief: constructor for the root window
-			basic_window::basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, category::root_tag**)
-				: widget_notifier(std::move(wdg_notifier)), other(category::flags::root)
+
+			/// constructor for the root window
+			basic_window::basic_window(basic_window* owner, 
+									   std::unique_ptr<widget_notifier_interface>&& wdg_notifier, 
+									   category::root_tag**, 
+									   int dpi)
+				: widget_notifier(std::move(wdg_notifier)), 
+				  other(category::flags::root),
+				  dpi(dpi)
 			{
 				if (owner) dpi = owner->dpi;  ///\todo: set dpi anyway? in all graphics?
 				drawer.bind(this);
