@@ -1403,7 +1403,7 @@ namespace nana
 	/// dpi scaling for int
 	int platform_abstraction::dpi_scale(const int scalar, int dpi)
     {
-        return static_cast<int>(long long (dpi) * scalar / 96);
+        return static_cast<int>(static_cast<long long> (dpi) * scalar / 96);
     }
 	int platform_abstraction::dpi_transform(int& scalar, int dpi)
     {
