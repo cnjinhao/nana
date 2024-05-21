@@ -1296,10 +1296,11 @@ namespace paint
 			rectangle(::nana::rectangle{ size() }, solid);
 		}
 
-		void graphics::rectangle(const ::nana::rectangle& r, bool solid)
+		void graphics::rectangle(const ::nana::rectangle& r_, bool solid)
 		{
-			if (r.width && r.height && impl_->handle && r.right() > 0 && r.bottom() > 0)
+			if (r_.width && r_.height && impl_->handle && r_.right() > 0 && r_.bottom() > 0)
 			{
+				auto r = platform_abstraction::dpi_scale(r_, impl_->dpi);
 #if defined(NANA_WINDOWS)
 
 				auto brush = ::CreateSolidBrush(impl_->handle->bgcolor_native);
