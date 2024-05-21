@@ -559,7 +559,7 @@ namespace nana{	namespace paint
 
 	bool pixel_buffer::open(drawable_type drawable, const nana::rectangle & want_rectangle)
 	{
-		auto sz = nana::paint::detail::drawable_size(drawable);
+		auto sz = nana::paint::detail::drawable_size(drawable);    ///<  dpi: system side 
 		if(want_rectangle.x >= static_cast<int>(sz.width) || want_rectangle.y >= static_cast<int>(sz.height))
 			return false;
 

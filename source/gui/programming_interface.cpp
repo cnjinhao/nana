@@ -262,6 +262,7 @@ namespace api
 			internal_scope_guard lock;
 			if(is_window(wd))
 			{
+				wd->drawer.graphics.set_dpi(wd->dpi);  ///\todo:  make(wd->dimension, wd->dpi)
 				wd->drawer.graphics.make(wd->dimension);
 				wd->drawer.graphics.rectangle(true, wd->annex.scheme->background.get_color());
 				wd->drawer.attached(wdg, dr);

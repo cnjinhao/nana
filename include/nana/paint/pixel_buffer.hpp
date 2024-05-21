@@ -28,7 +28,8 @@ namespace nana{	namespace paint
 		direct_copy,	///< DestColor = SrcColor, DestAlpha = SrcAlpha
 	};
 
-	class pixel_buffer
+	/// \todo: decide to put before or after dpi scaling
+	class pixel_buffer 
 	{
 		struct pixel_buffer_storage;
 		typedef bool (pixel_buffer:: * unspecified_bool_t)() const;

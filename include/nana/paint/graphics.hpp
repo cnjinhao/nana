@@ -128,8 +128,8 @@ namespace nana
 			/**
 			 * @param sz The dimension of the graphics to be requested. If sz is empty, it performs as release().
 			 */
-			void make(const ::nana::size& sz);
-			void resize(const ::nana::size&);
+			void make(const ::nana::size& sz);  ///\todo take dpi 
+			void resize(const ::nana::size&);  ///\todo take dpi 
 			void set_dpi(int dpi);
 			int  get_dpi() const;
 			void typeface(const font&);			///< Selects a specified font type into the graphics object.  \todo: dpi?

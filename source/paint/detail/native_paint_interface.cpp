@@ -37,7 +37,7 @@ namespace paint
 namespace detail
 {
 
-	nana::size drawable_size(drawable_type dw)  ///< todo: dpi: system side? 
+	nana::size drawable_size(drawable_type dw)  ///< todo: dpi: system side 
 	{
 		if(0 == dw) return nana::size();
 #if defined(NANA_WINDOWS)

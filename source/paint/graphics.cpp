@@ -490,8 +490,8 @@ namespace paint
 					impl_->handle = dw.get();
 					impl_->size = sz;
 
-					impl_->handle->string.tab_pixels        = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
-					impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" " , 1).width;
+					impl_->handle->string.tab_pixels        = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;  // dpi unscaled to SS
+					impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" " , 1).width;  // dpi unscaled to SS
 				}
 			}
 
@@ -702,7 +702,7 @@ namespace paint
 
 		void graphics::bitblt(int x, int y, const graphics& src)
 		{
-			nana::rectangle r(src.size()); // unscaled to user-side
+			nana::rectangle r(src.size()); 
 			r.x = x;
 			r.y = y;
 			bitblt(r, src);
