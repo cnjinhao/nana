@@ -770,7 +770,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 						if (MotionNotify == msg_pkt.u.xevent.type)
 						{
 							auto pos = api::cursor_position();
-							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window(pos.x, pos.y));
+							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window_from_system_screen_point(pos.x, pos.y));
 
 							const char* icon = nullptr;
 							if(hovered_.native_wd != native_cur_wd)
@@ -786,7 +786,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 							}
 
 
-							auto cur_wd = api::find_window(api::cursor_position());
+							auto cur_wd = api::find_window_from_system_screen_point(api::cursor_position());
 
 							if(hovered_.window_handle != cur_wd)
 							{
@@ -831,7 +831,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 						if (MotionNotify == msg_pkt.u.xevent.type)
 						{
 							auto pos = api::cursor_position();
-							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window(pos.x, pos.y));
+							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window_from_system_screen_point(pos.x, pos.y));
 
 							xdnd_proto.mouse_move(native_cur_wd, pos, data.requested_action);
 						}
