@@ -61,12 +61,12 @@ namespace nana
 			return is_primary_;
 		}
 
-		const ::nana::rectangle& area() const override
+		::nana::rectangle area() const override
 		{
 			return platform_abstraction::unscale_dpi(area_, dpi_);
 		}
 
-		const ::nana::rectangle& workarea() const override
+		::nana::rectangle workarea() const override
 		{
 			return platform_abstraction::unscale_dpi(workarea_, dpi_);
 		}
@@ -207,7 +207,7 @@ namespace nana
 			{
 				for (auto & disp : impl_->displays)
 				{
-					auto & r = disp.area();
+					auto  r = disp.area();
 					if (r.x == mi.rcMonitor.left && r.y == mi.rcMonitor.top &&
 						r.width == unsigned(mi.rcMonitor.right - mi.rcMonitor.left) &&
 						r.height == unsigned(mi.rcMonitor.bottom - mi.rcMonitor.top)

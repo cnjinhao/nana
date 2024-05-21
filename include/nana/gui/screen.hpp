@@ -32,8 +32,8 @@ namespace nana
 		virtual bool is_primary_monitor() const = 0;
 
 		/// Returns the positional coordinates and size of the display device in reference to the desktop area
-		virtual const ::nana::rectangle& area() const = 0;
-		virtual const ::nana::rectangle& workarea() const = 0;
+		virtual ::nana::rectangle area() const = 0;
+		virtual ::nana::rectangle workarea() const = 0;
 		virtual int dpi() const = 0;
 		virtual double scaling() const = 0;
 	};
