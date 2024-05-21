@@ -770,7 +770,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 						if (MotionNotify == msg_pkt.u.xevent.type)
 						{
 							auto pos = api::cursor_position();
-							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window_from_system_screen_point(pos.x, pos.y));
+							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window_from_system_screen_point(pos));
 
 							const char* icon = nullptr;
 							if(hovered_.native_wd != native_cur_wd)
@@ -831,7 +831,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 						if (MotionNotify == msg_pkt.u.xevent.type)
 						{
 							auto pos = api::cursor_position();
-							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window_from_system_screen_point(pos.x, pos.y));
+							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window_from_system_screen_point(pos));
 
 							xdnd_proto.mouse_move(native_cur_wd, pos, data.requested_action);
 						}
