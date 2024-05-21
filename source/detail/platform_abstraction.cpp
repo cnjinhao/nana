@@ -1407,79 +1407,79 @@ namespace nana
     }
 	int platform_abstraction::dpi_transform(int& scalar, int dpi)
     {
-        return scalar = static_cast<int>(long long (dpi) * scalar / 96);
+        return scalar = static_cast<int>(static_cast<long long> (dpi) * scalar / 96);
     }
 	int platform_abstraction::unscale_dpi(const int scalar, int dpi)
     {
-        return static_cast<int>(long long (scalar) * 96 / dpi);
+        return static_cast<int>(static_cast<long long> (scalar) * 96 / dpi);
     }
 	int platform_abstraction::untransform_dpi(int& scalar, int dpi)
 	{
-	    return scalar = static_cast<int>(long long (scalar) * 96 / dpi);
+	    return scalar = static_cast<int>(static_cast<long long>(scalar) * 96 / dpi);
 	}
 	/// dpi scaling for unsigned int
 	unsigned int platform_abstraction::dpi_scale(const unsigned int scalar, int dpi)
     {
-        return static_cast<unsigned int>(long long (dpi) * scalar / 96);
+        return static_cast<unsigned int>(static_cast<long long>(dpi) * scalar / 96);
     }
 	unsigned int platform_abstraction::dpi_transform(unsigned int& scalar, int dpi)
     {
-        return scalar = static_cast<unsigned int>(long long (dpi) * scalar / 96);
+        return scalar = static_cast<unsigned int>(static_cast<long long> (dpi) * scalar / 96);
     }
 	unsigned int platform_abstraction::unscale_dpi(const unsigned int scalar, int dpi)
     {
-        return static_cast<unsigned int>(long long (scalar) * 96 / dpi);
+        return static_cast<unsigned int>(static_cast<long long> (scalar) * 96 / dpi);
     }
 	unsigned int platform_abstraction::untransform_dpi(unsigned int& scalar, int dpi)
     {
-        return scalar = static_cast<unsigned int>(long long (scalar) * 96 / dpi);
+        return scalar = static_cast<unsigned int>(static_cast<long long> (scalar) * 96 / dpi);
     }
 	
 	/// dpi scaling for nana::size
 	nana::size platform_abstraction::dpi_scale(const nana::size& sz, int dpi)
     {
-        return { static_cast<size::value_type>(long long (dpi) * sz.width  / 96), 
-			     static_cast<size::value_type>(long long (dpi) * sz.height / 96) };
+        return { static_cast<size::value_type>(static_cast<long long> (dpi) * sz.width  / 96), 
+			     static_cast<size::value_type>(static_cast<long long> (dpi) * sz.height / 96) };
     }
 	nana::size platform_abstraction::dpi_transform(nana::size& sz, int dpi)
     {
-        sz.width  = static_cast<size::value_type>(long long (dpi) * sz.width  / 96);
-		sz.height = static_cast<size::value_type>(long long (dpi) * sz.height / 96);
+        sz.width  = static_cast<size::value_type>(static_cast<long long> (dpi) * sz.width  / 96);
+		sz.height = static_cast<size::value_type>(static_cast<long long> (dpi) * sz.height / 96);
 		return sz;
     }
 	nana::size platform_abstraction::unscale_dpi(const nana::size& sz, int dpi)
     {
-        return { static_cast<size::value_type>(long long (sz.width)  * 96 / dpi), 
-		         static_cast<size::value_type>(long long (sz.height) * 96 / dpi) };
+        return { static_cast<size::value_type>(static_cast<long long>(sz.width)  * 96 / dpi), 
+		         static_cast<size::value_type>(static_cast<long long> (sz.height) * 96 / dpi) };
     }
 	nana::size platform_abstraction::untransform_dpi(nana::size& sz, int dpi)
     {
-        sz.width  = static_cast<size::value_type>(long long (sz.width)  * 96 / dpi);
-		sz.height = static_cast<size::value_type>(long long (sz.height) * 96 / dpi);
+        sz.width  = static_cast<size::value_type>(static_cast<long long> (sz.width)  * 96 / dpi);
+		sz.height = static_cast<size::value_type>(static_cast<long long> (sz.height) * 96 / dpi);
 		return sz;
     }
 
 	/// dpi scaling for nana::point
 	nana::point platform_abstraction::dpi_scale(const nana::point& pt, int dpi)
     {
-        return { static_cast<nana::point::value_type>(long long (dpi) * pt.x / 96), 
-		         static_cast<nana::point::value_type>(long long (dpi) * pt.y / 96) };
+        return { static_cast<nana::point::value_type>(static_cast<long long> (dpi) * pt.x / 96), 
+		         static_cast<nana::point::value_type>(static_cast<long long> (dpi) * pt.y / 96) };
     }
 	nana::point platform_abstraction::dpi_transform(nana::point& pt, int dpi)
     {
-        pt.x = static_cast<nana::point::value_type>(long long (dpi) * pt.x / 96);
-		pt.y = static_cast<nana::point::value_type>(long long (dpi) * pt.y / 96);
+        pt.x = static_cast<nana::point::value_type>(static_cast<long long> (dpi) * pt.x / 96);
+		pt.y = static_cast<nana::point::value_type>(static_cast<long long> (dpi) * pt.y / 96);
 		return pt;
     }
 	nana::point platform_abstraction::unscale_dpi(const nana::point& pt, int dpi)
     {
-        return { static_cast<nana::point::value_type>(long long (pt.x) * 96 / dpi), 
-	             static_cast<nana::point::value_type>(long long (pt.y) * 96 / dpi) };
+        return { static_cast<nana::point::value_type>(static_cast<long long> (pt.x) * 96 / dpi), 
+	             static_cast<nana::point::value_type>(static_cast<long long> (pt.y) * 96 / dpi) };
     }
     nana::point platform_abstraction::untransform_dpi(nana::point& pt, int dpi)
     {
-        pt.x = static_cast<nana::point::value_type>(long long (pt.x) * 96 / dpi);
-		pt.y = static_cast<nana::point::value_type>(long long (pt.y) * 96 / dpi);
+        pt.x = static_cast<nana::point::value_type>(static_cast<long long> (pt.x) * 96 / dpi);
+		pt.y = static_cast<nana::point::value_type>(static_cast<long long> (pt.y) * 96 / dpi);
 		return pt;
     }
 	
