@@ -285,15 +285,14 @@ namespace paint
             return impl_->dpi;
         }
 		graphics::graphics(int dpi)
-			: impl_(new implementation)
+			: impl_(new implementation{.dpi{dpi}, .scale{dpi/96.0f}})
 		{
-			set_dpi(dpi);
+			//set_dpi(dpi);
 		}
 
 		graphics::graphics(const nana::size& sz, int dpi)
-			: impl_(new implementation)
+			: impl_(new implementation{.dpi{dpi}, .scale{dpi/96.0f}})
 		{
-			set_dpi(dpi);
 			make(sz);
 		}
 
