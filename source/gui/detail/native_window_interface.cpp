@@ -2368,14 +2368,14 @@ namespace detail{
          #endif
 		}
 
-		int native_interface::window_dpi(native_window_type wd)  /// \todo: add bool x_requested = true)
+		int native_interface::window_dpi(native_window_type wd, bool x_requested)  
 		{
 #ifdef NANA_WINDOWS
 			
 			HWND hwnd = reinterpret_cast<HWND>(wd);
 
 			if (!::IsWindow(hwnd))
-				return system_dpi();
+				return system_dpi(x_requested);
 
 			if (wdpi_fns().GetDpiForWindow)  // how to get x_dpi or y_dpi?
 				return static_cast<int>(wdpi_fns().GetDpiForWindow(hwnd));
@@ -2385,23 +2385,23 @@ namespace detail{
 				HMONITOR pmonitor = ::MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
 				UINT x_dpi, y_dpi;
 				if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
-					return  static_cast<int>(x_dpi);  // x_requested ? x_dpi, y_dpi
+					return  static_cast<int>(x_requested ? x_dpi : y_dpi);   
 			}
 
 			HDC hdc = ::GetDC(hwnd);  // the old way. Works in any Windows version
 			if (hdc)
 			{
-				auto dpi = ::GetDeviceCaps(hdc, LOGPIXELSX); // x_requested ? LOGPIXELSX : LOGPIXELSY
+				auto dpi = ::GetDeviceCaps(hdc, x_requested ? LOGPIXELSX : LOGPIXELSY); 
 				::ReleaseDC(nullptr, hdc);
 				return dpi;
 			}
 
 #endif
 			static_cast<void>(wd);	//eliminate the unused warning
-			return system_dpi();
+			return system_dpi(x_requested);
 		}
 
-		int native_interface::system_dpi()
+		int native_interface::system_dpi(bool x_requested)
 		{
   #ifdef NANA_WINDOWS
 
@@ -2413,7 +2413,10 @@ namespace detail{
 				HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
 				UINT x_dpi, y_dpi;
 				if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
-					return  static_cast<int>(x_dpi);  //  x_dpi != y_dpi ??
+				{
+					if constexpr ( dpi_debugging ) std::cout << "GetDpiForMonitor = " << (x_requested ? x_dpi : y_dpi) << std::endl;
+					return  static_cast<int>(x_requested ? x_dpi : y_dpi);
+				}
 			}
 			if (wdpi_fns().GetDpiForSystem)  
 			{
@@ -2421,15 +2424,29 @@ namespace detail{
 				return static_cast<int>(wdpi_fns().GetDpiForSystem());
 			}
 
-			if constexpr (dpi_debugging) std::cout << "GetDeviceCaps" << std::endl;
-
 			//When DPI-aware APIs are not supported by the running Windows, it returns the system DPI
 			auto hdc = ::GetDC(nullptr);
-			auto dpi = ::GetDeviceCaps(hdc, LOGPIXELSX);
+			auto dpi = ::GetDeviceCaps(hdc, x_requested ? LOGPIXELSX : LOGPIXELSY);
 			::ReleaseDC(nullptr, hdc);
+			if constexpr (dpi_debugging) std::cout << "GetDeviceCaps = " << dpi << std::endl;
 			return dpi;
 
-#endif
+  #else
+			auto & spec = ::nana::detail::platform_spec::instance();
+			auto disp = spec.open_display();
+			auto screen = ::XDefaultScreen(disp);
+
+			double dots = 0.5;
+
+			if (x_requested)
+				dots += ((((double)DisplayWidth  (disp, screen)) * 25.4) /
+				          ((double)DisplayWidthMM(disp, screen)));
+			else
+				dots += ((((double)DisplayHeight  (disp, screen)) * 25.4) /
+				          ((double)DisplayHeightMM(disp, screen)));
+
+			return static_cast<int>(dots);
+  #endif
 			return 96;
 		}
 	//end struct native_interface

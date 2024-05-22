@@ -1,4 +1,4 @@
-/*
+/**
  *	Platform Abstraction
  *	Nana C++ Library 
  *  Documentation https://nana.acemind.cn/documentation
@@ -70,6 +70,7 @@ namespace nana
 		/// 'manuallay' set the current system DPI, this is used for DPI scaling.
 		static void set_current_dpi(int dpi);
 		static int      current_dpi();
+		static int       screen_dpi(bool x_requested = true); ///< ask the system for the DPI of the main screen
 
 		static int         dpi_scale(int scalar);
 		static nana::size  dpi_scale(const nana::size&   size);
@@ -109,8 +110,6 @@ namespace nana
 		static nana::rectangle dpi_transform  (nana::rectangle&       rect, int dpi);
 		static nana::rectangle unscale_dpi    (const nana::rectangle& rect, int dpi);
 		static nana::rectangle untransform_dpi(nana::rectangle&       rect, int dpi);
-
-		static unsigned screen_dpi(bool x_requested);
 	};
 }
 

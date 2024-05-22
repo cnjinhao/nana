@@ -516,8 +516,7 @@ namespace api
 	 */
 	::std::optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 
-	/// \todo: generalize dpi to v2 awareness
-	unsigned screen_dpi(bool x_requested);
+	int screen_dpi(bool x_requested = true);   ///< unused ?
 
 	int window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);

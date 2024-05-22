@@ -1545,29 +1545,9 @@ namespace nana
 		}
 #endif
 	}
-	/// \todo: generalize dpi to v2 awareness
-	unsigned platform_abstraction::screen_dpi(bool x_requested)
+ 
+	int platform_abstraction::screen_dpi(bool x_requested)
 	{
-#ifdef NANA_WINDOWS
-		auto hdc = ::GetDC(nullptr);
-		auto dots = static_cast<unsigned>(::GetDeviceCaps(hdc, (x_requested ? LOGPIXELSX : LOGPIXELSY)));
-		::ReleaseDC(nullptr, hdc);
-		return dots;
-#else
-		auto & spec = ::nana::detail::platform_spec::instance();
-		auto disp = spec.open_display();
-		auto screen = ::XDefaultScreen(disp);
-
-		double dots = 0.5;
-
-		if (x_requested)
-			dots += ((((double)DisplayWidth(disp, screen)) * 25.4) /
-			((double)DisplayWidthMM(disp, screen)));
-		else
-			dots += ((((double)DisplayHeight(disp, screen)) * 25.4) /
-			((double)DisplayHeightMM(disp, screen)));
-
-		return static_cast<unsigned>(dots);
-#endif
+         return detail::native_interface::system_dpi(x_requested);
 	}
 }

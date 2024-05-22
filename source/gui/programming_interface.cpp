@@ -1708,8 +1708,8 @@ namespace api
 		
 		return{};
 	}
-	/// \todo: generalize dpi to v2 awareness
-	unsigned screen_dpi(bool x_requested)
+	
+	int screen_dpi(bool x_requested)   ///< unused ?
 	{
 		return ::nana::platform_abstraction::screen_dpi(x_requested);
 	}
