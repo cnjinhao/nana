@@ -10,6 +10,7 @@
  *	@file nana/paint/graphics.cpp
  */
 #include <algorithm>
+
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_X11)
@@ -273,12 +274,14 @@ namespace paint
 		void graphics::set_dpi(int dpi)
         {
             if (dpi == impl_->dpi) return;
-			auto sz = platform_abstraction::unscale_dpi(impl_->size, impl_->dpi);
-			impl_->dpi = dpi;
+			auto sz = this->size();
         	auto info = typeface().info();
+			graphics duplicate(std::move(*this));
+			impl_->dpi = dpi;
 			nana::paint::font ft{ info.value(), dpi };
 			typeface(ft);
-			make(sz);
+			make(sz);  // this will scale the size to the dpi
+			bitblt(0, 0, duplicate);
         }
 		int graphics::get_dpi() const
         {
@@ -287,12 +290,17 @@ namespace paint
 		graphics::graphics(int dpi)
 			: impl_(new implementation{.dpi{dpi}, .scale{dpi/96.0f}})
 		{
-			//set_dpi(dpi);
+			auto info = typeface().info();
+			nana::paint::font ft{ info.value(), dpi };
+			typeface(ft);
 		}
 
 		graphics::graphics(const nana::size& sz, int dpi)
 			: impl_(new implementation{.dpi{dpi}, .scale{dpi/96.0f}})
 		{
+			auto info = typeface().info();
+			nana::paint::font ft{ info.value(), dpi };
+			typeface(ft);
 			make(sz);
 		}
 
