@@ -36,9 +36,9 @@ namespace nana
 
 			using font_style = ::nana::detail::font_style;
 
-			font();
-			font(drawable_type);
-			font(const font&);
+			font();					 ///< use the application default font
+			font(drawable_type src); ///< extract the font of the drawable_type. Warnnig: assign only from fonts with the expected target dpi.
+			font(const font&);       ///< Warnnig: copy only from fonts with the expected target dpi.
 
 			/// \todo: generalize dpi to v2 awareness
 
@@ -54,7 +54,7 @@ namespace nana
 			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
 			font(const ::std::string& name, double size_pt, const font_style& fs = {}, int dpi = 0);
 
-			/// creates a font object with a truetype font file.
+			/// creates a font object from a TrueType font file.
 			/// @param size_pt The font size.
 			/// @param truetype The path to a truetype font file
 			/// @param fs The font style.
@@ -69,7 +69,10 @@ namespace nana
 
 			/// Returns font size, in point.
 			/**
-			* @param fixed Indicates whether to return a fixed font size. If this parameter is false, the method may return zero for default system font size. If the parameter is true, the method returns a fixed size of default font size if the font size that assigned by constructor is zero.
+			* @param fixed Indicates whether to return a fixed font size. If this parameter is false, 
+			*        the method may return zero for default system font size. If the parameter is true, 
+			*        the method returns a fixed size of default font size if the font size that assigned by constructor is zero.
+			* @param dpi Specifies the DPI for de-scaling the size to user-side, 0 indicates the system DPI.
 			* @return The font size, in point.
 			*/
 			double size(bool fixed = false, int dpi = 0) const;
@@ -86,7 +89,7 @@ namespace nana
 
 			std::optional<font_info> info() const;
 
-			font& operator=(const font&);
+			font& operator=(const font&);			 ///< Warnnig: assign only from fonts with the expected target dpi.
 			bool operator==(const font&) const;
 			bool operator!=(const font&) const;
 		private:

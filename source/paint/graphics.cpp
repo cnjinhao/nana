@@ -506,7 +506,7 @@ namespace paint
 			impl_->font_shadow = f;
 			if(impl_->handle && (false == f.empty()))
 			{
-				impl_->handle->font = f.impl_->real_font; /// \todo: scale_dpi before?  
+				impl_->handle->font = f.impl_->real_font; /// \todo: scale_dpi before? no, the font don't know the target dpi. Set it before!  
 #if defined(NANA_WINDOWS)
 				::SelectObject(impl_->handle->context, reinterpret_cast<HFONT>(f.impl_->real_font->native_handle()));
 #endif

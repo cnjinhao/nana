@@ -20,8 +20,7 @@ namespace nana
 {
 	namespace detail
 	{
-		struct native_font_signature;
-
+		struct native_font_signature;  ///< \todo unused?
 		
 		struct font_style
 		{
@@ -41,12 +40,12 @@ namespace nana
 
 	namespace paint
 	{
-		using native_font_type = ::nana::detail::native_font_signature*;
+		using native_font_type = ::nana::detail::native_font_signature*;  ///< \todo unused?
 
 		struct font_info
 		{
-			std::string family;	///< Font family
-			double size_pt;		///< Font Size, in pt.
+			std::string family;	            ///< Font family
+			double size_pt;		            ///< Font Size, in pt., 1 pt = 1 inch/72 (not scaled)
 			nana::detail::font_style style;	///< Font Styles
 		};
 	}
