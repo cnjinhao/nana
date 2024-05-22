@@ -31,10 +31,6 @@ namespace nana
 			bool strike_out{ false };
 			bool antialiasing{ true };
 
-			font_style() = default;
-			font_style(unsigned weight, bool italic = false, bool underline = false, bool strike_out = false);
-
-
 			font_style& change_weight(unsigned);
 			font_style& change_italic(bool);
 			font_style& change_underline(bool);

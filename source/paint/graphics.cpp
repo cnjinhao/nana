@@ -35,12 +35,6 @@ namespace nana
 
 	namespace detail
 	{
-		font_style::font_style(unsigned weight, bool italic, bool underline, bool strike_out) :
-			weight(weight),
-			italic(italic),
-			underline(underline),
-			strike_out(strike_out)
-		{}
 
 		font_style& font_style::change_weight(unsigned w)
 		{
