@@ -1276,8 +1276,8 @@ namespace nana
 
 	void platform_abstraction::initialize()
 	{
-		if (nullptr == data::storage)
-			data::storage = new platform_runtime;
+		if (data::storage) return;
+		data::storage = new platform_runtime{.dpi{screen_dpi()}};
 	}
 
 	void platform_abstraction::shutdown()
@@ -1304,8 +1304,7 @@ namespace nana
 	{
 #ifdef NANA_WINDOWS
 		//Create default font object.
-		NONCLIENTMETRICS metrics = {};
-		metrics.cbSize = sizeof metrics;
+		NONCLIENTMETRICS metrics = {.cbSize = sizeof NONCLIENTMETRICS};
 #if(WINVER >= 0x0600)
 #if defined(NANA_MINGW)
 		OSVERSIONINFO osvi = {};
