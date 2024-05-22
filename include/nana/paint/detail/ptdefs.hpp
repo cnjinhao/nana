@@ -1,3 +1,17 @@
+/**
+ *	Font styles and font information
+ *	Nana C++ Library 
+ *  Documentation https://nana.acemind.cn/documentation
+ *  Sources: https://github.com/cnjinhao/nana
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0. 
+ *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file nana/paint/detail/ptdefs.hpp 
+ */
+
 #ifndef NANA_PAINT_PTDEFS_INCLUDED
 #define NANA_PAINT_PTDEFS_INCLUDED
 #include <string>

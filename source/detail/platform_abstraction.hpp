@@ -1,17 +1,20 @@
 /*
  *	Platform Abstraction
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2017-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library 
+ *  Documentation https://nana.acemind.cn/documentation
+ *  Sources: https://github.com/cnjinhao/nana
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/detail/platform_spec.hpp
+ *	@file nana/detail/platform_spec.hpp
  *
  *	The platform_abstraction provides some functions and types for the abstract
  *	system platform.
  */
+
 #ifndef NANA_DETAIL_PLATFORM_ABSTRACTION_HEADER_INCLUDED
 #define NANA_DETAIL_PLATFORM_ABSTRACTION_HEADER_INCLUDED
 

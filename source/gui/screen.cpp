@@ -1,6 +1,8 @@
 /**
  *	Screen Informations
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library 
+ *  Documentation https://nana.acemind.cn/documentation
+ *  Sources: https://github.com/cnjinhao/nana
  *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.

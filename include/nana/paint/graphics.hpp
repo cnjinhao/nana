@@ -27,6 +27,7 @@ namespace nana
 {
 	namespace paint
 	{
+		/// functions to create and set/get properties of fonts
 		class font
 		{
 			friend class graphics;
