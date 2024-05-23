@@ -112,12 +112,12 @@ namespace nana
 				{
 					std::string	text;
 					std::any	value;
-					bool		expanded;
-					bool		hidden;
-					bool		selected;
-					checkstate	checked;
+					bool		expanded {false};
+					bool		hidden   {false};
+					bool		selected {false};
+					checkstate	checked  {checkstate::unchecked};
 					std::string img_idstr;
-				};
+				};  
 
 				struct pseudo_node_type{};
 
