@@ -494,7 +494,7 @@ namespace nana
 		void _m_layout()
 		{
 			unsigned ascent, desent, ileading;
-			paint::graphics{nana::size{1, 1}, api::window_dpi(this)}.text_metrics(ascent, desent, ileading);
+			paint::graphics{nana::size{1, 1}, api::window_dpi(this->handle())}.text_metrics(ascent, desent, ileading);
 
 			auto text_height = ascent + desent + 16;
 			place_.bind(*this);
