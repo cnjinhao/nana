@@ -863,7 +863,7 @@ namespace detail{
 			wd_area.right -= wd_area.left;
 			wd_area.bottom -= wd_area.top;
 			auto wd = reinterpret_cast<native_window_type>(native_wd);
-			nana:size client_size{static_cast<size::value_type>(client.right   -client.left), 
+			nana::size client_size{static_cast<size::value_type>(client.right   -client.left), 
 						          static_cast<size::value_type>(client.bottom - client.top)};
 			unsigned extra_width   = static_cast<unsigned>(wd_area.right  - client.right), 
 				     extra_height  = static_cast<unsigned>(wd_area.bottom - client.bottom);
