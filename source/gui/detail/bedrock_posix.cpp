@@ -613,7 +613,7 @@ namespace detail
 				{
 					if(native_interface::is_window(msgwnd->root))
 					{
-						nana::point pos = native_interface::cursor_position();
+						nana::point pos = api::cursor_position();
 						auto recv = native_interface::find_window(pos.x, pos.y);
 
 						brock.event_focus_changed(msgwnd, recv, false);
@@ -686,7 +686,7 @@ namespace detail
 						//If a root window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
 						if (msgwnd->root != native_interface::get_focus_window())
 						{
-							auto pos = native_interface::cursor_position();
+							auto pos = api::cursor_position();
 							auto rootwd = native_interface::find_window(pos.x, pos.y);
 							native_interface::calc_window_point(rootwd, pos);
 							if(msgwnd != wd_manager.find_window(rootwd, pos))
@@ -1327,7 +1327,7 @@ namespace detail
 		wd->root_widget->other.attribute.root->state_cursor = nana::cursor::arrow;
 		wd->root_widget->other.attribute.root->state_cursor_window = nullptr;
 
-		auto pos = native_interface::cursor_position();
+		auto pos = api::cursor_position();
 		auto native_handle = native_interface::find_window(pos.x, pos.y);
 		if (!native_handle)
 			return;
