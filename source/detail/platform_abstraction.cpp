@@ -28,12 +28,13 @@
 
 
 #ifdef NANA_WINDOWS
-
+#   include <windef.h>
 #	ifndef _WIN32_WINNT
 #		define _WIN32_WINNT  0x0501
 #	endif
 
 #	include <windows.h>
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /******************************************************************
@@ -1304,7 +1305,7 @@ namespace nana
 	{
 #ifdef NANA_WINDOWS
 		//Create default font object.
-		NONCLIENTMETRICS metrics = {.cbSize = sizeof NONCLIENTMETRICS};
+		NONCLIENTMETRICS metrics = {.cbSize = sizeof(NONCLIENTMETRICS)};
 #if(WINVER >= 0x0600)
 #if defined(NANA_MINGW)
 		OSVERSIONINFO osvi = {};

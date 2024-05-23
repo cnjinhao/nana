@@ -16,6 +16,7 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
+#include <windef.h>
 
 #include <iostream>	//use std::cerr
 
@@ -58,10 +59,10 @@ namespace detail
 	///\todo: here temp, to avoid including windef.h in native_window_interface.hpp
 	::RECT scale_to_dpi_(const ::RECT& r, int dpi)
     {
-        auto scaled_r = ::RECT(MulDiv(r.left,   dpi, 96), 
-						            MulDiv(r.top,    dpi, 96),
-						            MulDiv(r.right,  dpi, 96), 
-							        MulDiv(r.bottom, dpi, 96));
+        ::RECT scaled_r       {.left  = MulDiv(r.left,    dpi, 96), 
+						       .top   = MulDiv(r.top,     dpi, 96),
+						       .right = MulDiv(r.right,   dpi, 96), 
+							   .bottom= MulDiv(r.bottom,  dpi, 96) } ;
 
         if constexpr (dpi_debugging)
         {
@@ -80,10 +81,10 @@ namespace detail
 
 	::RECT unscale_dpi_(const ::RECT& r, int dpi)
     {
-        auto scaled_r = ::RECT(MulDiv(r.left,   96, dpi), 
-							       MulDiv(r.top,    96, dpi),
-							       MulDiv(r.right,  96, dpi), 
-							       MulDiv(r.bottom, 96, dpi));
+        ::RECT scaled_r       {.left  = MulDiv(r.left,   96,  dpi), 
+						       .top   = MulDiv(r.top,    96,  dpi),
+						       .right = MulDiv(r.right,  96,  dpi), 
+							   .bottom= MulDiv(r.bottom, 96,  dpi) } ;
 
         if constexpr (dpi_debugging)
         {
