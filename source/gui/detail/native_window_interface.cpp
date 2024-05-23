@@ -896,7 +896,7 @@ namespace detail{
 			Window parent = (owner ? reinterpret_cast<Window>(owner) : restrict::spec.root_window());
 
 			//The position passed to XCreateWindow is a screen coordinate.
-			auto pos = r.position();
+			auto pos = scaled_r.position();
 			if((false == nested) && owner)
 			{
 				win_attr.save_under = True;
@@ -911,7 +911,7 @@ namespace detail{
 			win_attr.event_mask = ButtonPressMask | ButtonReleaseMask | PointerMotionMask | KeyPressMask | KeyReleaseMask | ExposureMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask | FocusChangeMask;
 
 			Window handle = ::XCreateWindow(disp, parent,
-							pos.x, pos.y, (r.width ? r.width : 1), (r.height ? r.height : 1), 0,
+							pos.x, pos.y, (scaled_r.width ? scaled_r.width : 1), (scaled_r.height ? scaled_r.height : 1), 0,
 							restrict::spec.screen_depth(), InputOutput, restrict::spec.screen_visual(),
 							attr_mask, &win_attr);
 			if(handle)
@@ -923,7 +923,7 @@ namespace detail{
 					restrict::spec.make_owner(origin_owner, reinterpret_cast<native_window_type>(handle));
 
 					//The exposed_position is a relative position to its owner/parent.
-					exposed_positions[handle] = r.position();
+					exposed_positions[handle] = scaled_r.position();
 				}
 
 				XChangeWindowAttributes(disp, handle, attr_mask, &win_attr);
@@ -964,8 +964,8 @@ namespace detail{
 				}
 				else
 				{
-					hints.min_width = hints.max_width = r.width;
-					hints.min_height = hints.max_height = r.height;
+					hints.min_width = hints.max_width = scaled_r.width;
+					hints.min_height = hints.max_height = scaled_r.height;
 					hints.flags |= (PMinSize | PMaxSize);
 				}
 				::XSetWMNormalHints(disp, handle, &hints);
@@ -1011,7 +1011,7 @@ namespace detail{
 				}
 			}
 			auto wd = reinterpret_cast<native_window_type>(handle);
-			nana::size client_size = nana::size(r.width, r.height);
+			nana::size client_size = nana::size(scaled_r.width, scaled_r.height);
 			unsigned extra_width   = 0, 
 				     extra_height  = 0;
 			restrict::spec.msg_insert(wd);
@@ -2228,10 +2228,11 @@ namespace detail{
 			}
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
-			int x = pos.x, y = pos.y;
+			int x = screen_system_point.x, 
+				y = screen_system_point.y;
 			Window child;
 			if(True == ::XTranslateCoordinates(restrict::spec.open_display(),
-													reinterpret_cast<Window>(wd), restrict::spec.root_window(), x, y, &pos.x, &pos.y, &child))
+													reinterpret_cast<Window>(wd), restrict::spec.root_window(), x, y, &screen_system_point.x, &screen_system_point.y, &child))
 			{
 				return true;
 			}
