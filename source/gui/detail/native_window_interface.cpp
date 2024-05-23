@@ -1010,14 +1010,11 @@ namespace detail{
 										reinterpret_cast<unsigned char*>(const_cast<Atom*>(&ab.net_wm_state_skip_taskbar)), 1);
 				}
 			}
-			auto wd = reinterpret_cast<native_window_type>(native_wd);
+			auto wd = reinterpret_cast<native_window_type>(handle);
 			nana::size client_size = nana::size(r.width, r.height);
 			unsigned extra_width   = 0, 
 				     extra_height  = 0;
-
-
-			window_result result = {reinterpret_cast<native_window_type>(handle), r.width, r.height, 0, 0};
-			restrict::spec.msg_insert(reinterpret_cast<native_window_type>(handle));
+			restrict::spec.msg_insert(wd);
 #endif
 			int new_dpi = window_dpi(wd);
 			// unscale from system coordinates to App scale
