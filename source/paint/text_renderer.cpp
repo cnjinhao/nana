@@ -44,7 +44,7 @@ namespace nana
 
 				unsigned operator()(const int top, const wchar_t * buf, std::size_t bufsize)
 				{
-					//auto const drawable = graph_.handle();
+					//auto const drawable = graph_.handle(); std::vector<unicode_bidi::entity>
 					auto const reordered = unicode_reorder(buf, bufsize);
 					
 					unsigned return_max_height = 0;
@@ -53,7 +53,7 @@ namespace nana
 					for (auto & ent : reordered)
 					{
 						/// \todo: dpi scale ??
-						auto word_sz = graph_.text_extent_size({ent.begin, ent.end }); //- ent.begin
+						auto word_sz = graph_.text_extent_size({ent.begin,  static_cast<unsigned>(ent.end - ent.begin) }); //- ent.begin
 						word_metrics.push_back(word_sz);
 
 						string_px += word_sz.width;
@@ -82,7 +82,7 @@ namespace nana
 								if (pos.x + static_cast<int>(wdm->width) <= right_ - static_cast<int>(ellipsis_px_))
 								{
 									//This word can be fully painted.
-									graph_.string(pos, {ent.begin, ent.end });//- ent.begin
+									graph_.string(pos, {ent.begin,  static_cast<unsigned>(ent.end - ent.begin) });//- ent.begin
 								}
 								else
 								{
@@ -115,7 +115,7 @@ namespace nana
 						pos.x = (right_ - left_ - string_px) / 2;
 						for (auto & ent : reordered)
 						{
-							graph_.string(pos, {ent.begin, ent.end });//- ent.begin
+							graph_.string(pos, {ent.begin,  static_cast<unsigned>(ent.end - ent.begin) });//- ent.begin
 							pos.x += (wdm++)->width;
 						}
 						break;
@@ -125,7 +125,7 @@ namespace nana
 						for (auto i = reordered.crbegin(); i != reordered.crend(); ++i)
 						{
 							pos.x -= (wdm--)->width;
-							graph_.string(pos, {i->begin, i->end });//- i->begin
+							graph_.string(pos, {i->begin,  static_cast<unsigned>(i->end - i->begin) });//- i->begin
 						}
 						break;
 					}
@@ -166,7 +166,7 @@ namespace nana
 					for(auto & i : reordered)
 					{
 						/// \todo: dpi scale ??
-						auto word_sz = graph.text_extent_size({i.begin, i.end });//- i->begin
+						auto word_sz = graph.text_extent_size({i.begin, static_cast<unsigned>(i.end - i.begin) });//- i->begin
 						
 						word_metrics.emplace_back(word_sz);
 						string_px += word_sz.width;
@@ -280,7 +280,7 @@ namespace nana
 							}
 							else
 							{
-								graph.string(pos, {i.begin, i.end });  // bidi_string ??- i.begin
+								graph.string(pos, {i.begin, static_cast<unsigned>(i.end - i.begin) });  // bidi_string ??- i.begin
 								pos.x += static_cast<int>(wdm->width);
 							}
 
@@ -301,7 +301,7 @@ namespace nana
 							for(auto & ent : reordered)
 							{
 								if (pos.x + static_cast<int>(wdm->width) > 0)
-									graph.string(pos, {ent.begin, ent.end });  // bidi_string ??- ent.begin
+									graph.string(pos, {ent.begin, static_cast<unsigned>(ent.end - ent.begin) });  // bidi_string ??- ent.begin
 
 								pos.x += static_cast<int>(wdm->width);
 								++wdm;
@@ -385,7 +385,7 @@ namespace nana
 					for(auto & i : reordered)
 					{
 						/// \todo: dpi scale ??
-						auto word_sz = graph.text_extent_size({i.begin, i.end });//- i.begin
+						auto word_sz = graph.text_extent_size({i.begin, static_cast<unsigned>(i.end - i.begin) });
 						word_metrics.emplace_back(word_sz);
 						string_px += word_sz.width;
 
