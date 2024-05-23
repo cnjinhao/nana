@@ -2134,9 +2134,10 @@ namespace detail{
 
 		void native_interface::caret_pos(native_window_type wd, const point& pos_ori)
 		{
+			auto pos = platform_abstraction::dpi_scale(pos_ori, window_dpi(wd));
+
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging) std::wcout << "   ---  caret_pos() " << window_caption(wd) << ":\n";
-			auto pos = scale_to_dpi(wd, pos_ori.x, pos_ori.y);
 
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
