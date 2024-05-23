@@ -745,7 +745,7 @@ namespace detail{
   #endif
 	}
     	/// \todo: generalize dpi to v2 awareness 
-		rectangle native_interface::screen_area_from_system_point(const point& system_point) ///< unused ?
+		rectangle native_interface::screen_area_from_system_point([[maybe_unused]] const point& system_point) ///< unused ?
 		{
 #if defined(NANA_WINDOWS)
 			// led assume somehow coordinates in the united global big and 'fake'-96 DPI sytem monitor are provided 
@@ -771,8 +771,6 @@ namespace detail{
 					}
 				}
 			}
-#else
-			static_cast<void>(pos); //eliminate unused parameter compiler warning.
 #endif
 			return rectangle{ primary_monitor_size() };
 		}
