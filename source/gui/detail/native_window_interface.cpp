@@ -778,7 +778,8 @@ namespace detail{
 		//platform-dependent
 		native_interface::window_result native_interface::create_window(native_window_type owner, bool nested, const rectangle& r, const appearance& app)
 		{
-			/// \todo: use platform_abstraction::dpi_scale(r, dpi) instead, to include X11 ? 
+			int dpi = native_interface::window_dpi(owner);
+			nana::rectangle scaled_r = platform_abstraction::dpi_scale(r, dpi);
 
 #if defined(NANA_WINDOWS)
 			DWORD style = WS_SYSMENU | WS_CLIPCHILDREN;
@@ -797,12 +798,8 @@ namespace detail{
 
 			if(app.floating)	style_ex |= WS_EX_TOPMOST;
 
-			int dpi = static_cast<int>(native_interface::window_dpi(owner));
-
 			if constexpr (dpi_debugging)
 				std::wcout << "   ---  create_window():\n";  // on:" << window_caption(owner) << "\n";
-
-			nana::rectangle scaled_r = scale_to_dpi(r, dpi);
 
 			POINT pt = {scaled_r.x, scaled_r.y};
 
@@ -866,16 +863,11 @@ namespace detail{
 			wd_area.right -= wd_area.left;
 			wd_area.bottom -= wd_area.top;
 			auto wd = reinterpret_cast<native_window_type>(native_wd);
-			int new_dpi = window_dpi(wd);
-			// unscale from system coordinates to App scale
-			window_result result = { .native_handle = wd,
-									 .client_size   = unscale_dpi(size{static_cast<size::value_type>(client.right   -client.left), 
-																           static_cast<size::value_type>(client.bottom - client.top)}, new_dpi),
-									 .extra_width   = static_cast<unsigned>(MulDiv(wd_area.right - client.right,   96, dpi)), 
-				                     .extra_height  = static_cast<unsigned>(MulDiv(wd_area.bottom - client.bottom, 96, dpi)),
-				                     .owner_dpi     = dpi,
-				                     .dpi           = new_dpi 
-			                       };
+			nana:size client_size{static_cast<size::value_type>(client.right   -client.left), 
+						          static_cast<size::value_type>(client.bottom - client.top)};
+			unsigned extra_width   = static_cast<unsigned>(wd_area.right  - client.right), 
+				     extra_height  = static_cast<unsigned>(wd_area.bottom - client.bottom);
+
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 
@@ -1018,9 +1010,24 @@ namespace detail{
 										reinterpret_cast<unsigned char*>(const_cast<Atom*>(&ab.net_wm_state_skip_taskbar)), 1);
 				}
 			}
+			auto wd = reinterpret_cast<native_window_type>(native_wd);
+			nana::size client_size = nana::size(r.width, r.height);
+			unsigned extra_width   = 0, 
+				     extra_height  = 0;
+
+
 			window_result result = {reinterpret_cast<native_window_type>(handle), r.width, r.height, 0, 0};
 			restrict::spec.msg_insert(reinterpret_cast<native_window_type>(handle));
 #endif
+			int new_dpi = window_dpi(wd);
+			// unscale from system coordinates to App scale
+			window_result result = { .native_handle = wd,
+									 .client_size   = platform_abstraction::unscale_dpi(client_size, new_dpi),
+									 .extra_width   = platform_abstraction::unscale_dpi(extra_width,  new_dpi),
+				                     .extra_height  = platform_abstraction::unscale_dpi(extra_height, new_dpi),
+				                     .owner_dpi     = dpi,
+				                     .dpi           = new_dpi 
+			                       };
 			return result;
 		}
 
