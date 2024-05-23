@@ -118,7 +118,9 @@ namespace nana::detail
 					 Category**,
 					 int dpi   ///< the dpi or scaling is needed to intitialize any bitmap graphics
 		             )
-			: widget_notifier(std::move(wdg_notifier)), other(Category::value), dpi(dpi)
+			: dpi(dpi), 
+			  widget_notifier(std::move(wdg_notifier)), 
+			  other(Category::value, dpi)
 		{
 			drawer.bind(this);
 			if(parent)
@@ -155,6 +157,7 @@ namespace nana::detail
 		void _m_init_pos_and_size(basic_window* parent, const rectangle&);
 		void _m_initialize(basic_window* parent);
 	public:
+		int dpi{ 96 };	      ///< \todo: DPI of the window, cached value of the root, root_widget's and root_graph.
 #if defined(NANA_POSIX)
 		point	pos_native;
 #endif
@@ -163,7 +166,6 @@ namespace nana::detail
 		size	dimension;     ///< size of thes window             \todo: dpi? user or system-side ?
 		::nana::size	min_track_size;
 		::nana::size	max_track_size;
-		int dpi{ 96 };	      ///< \todo: DPI of the window, cached value of the root, root_widget's and root_graph.
 
 		bool	visible;
 
@@ -202,7 +204,6 @@ namespace nana::detail
 			mouse_action	action;
 			mouse_action	action_before;
 		}flags;
-
 
 		struct annex_components
 		{
@@ -253,7 +254,7 @@ namespace nana::detail
 				attr_root_tag * root;
 			}attribute;
 
-			other_tag(category::flags);
+			other_tag(category::flags, int dpi);
 			~other_tag();
 		}other;
 

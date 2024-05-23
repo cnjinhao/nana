@@ -214,8 +214,11 @@ namespace nana
 
 		//struct basic_window
 			//struct basic_window::other_tag
-				basic_window::other_tag::other_tag(category::flags categ)
-					: category(categ), active_window(nullptr), upd_state(update_state::none)
+				basic_window::other_tag::other_tag(category::flags categ, int dpi)
+					: category     (categ), 
+					  active_window(nullptr), 
+					  glass_buffer (dpi),
+					  upd_state    (update_state::none)
 				{
 					if (category::flags::root == categ)
 						attribute.root = new attr_root_tag;
@@ -237,8 +240,8 @@ namespace nana
 									   category::root_tag**, 
 									   int dpi)
 				: widget_notifier(std::move(wdg_notifier)), 
-				  other(category::flags::root),
-				  dpi(dpi)
+				  dpi            (dpi),
+				  other          (category::flags::root, dpi)
 			{
 				if (owner) dpi = owner->dpi;  ///\todo: set dpi anyway? in all graphics?
 				drawer.bind(this);
