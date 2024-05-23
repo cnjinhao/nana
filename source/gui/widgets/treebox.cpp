@@ -956,7 +956,7 @@ namespace nana
 				if(node_state.selected != node)
 				{
 					data.stop_drawing = true;
-					if (node_state.selected && single_selection || node == nullptr)
+					if ((node_state.selected && single_selection) || node == nullptr)
 					{
 						auto nodes_copy = node_state.nodes_selected;
 						node_state.clear();
