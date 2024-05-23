@@ -613,7 +613,7 @@ namespace detail
 				{
 					if(native_interface::is_window(msgwnd->root))
 					{
-						auto recv = native_interface::find_window_cursor({});
+						auto recv = native_interface::find_cursor_window({});
 						brock.event_focus_changed(msgwnd, recv, false);
 					}
 				}
