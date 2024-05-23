@@ -110,17 +110,13 @@ namespace nana
 			public:
 				struct treebox_node_type
 				{
-					treebox_node_type();
-					treebox_node_type(std::string);
-					treebox_node_type& operator=(const treebox_node_type&);
-
-					::std::string text;
-					std::any value;
-					bool expanded;
-					bool hidden;
-					bool selected;
-					checkstate checked;
-					::std::string img_idstr;
+					std::string	text;
+					std::any	value;
+					bool		expanded;
+					bool		hidden;
+					bool		selected;
+					checkstate	checked;
+					std::string img_idstr;
 				};
 
 				struct pseudo_node_type{};

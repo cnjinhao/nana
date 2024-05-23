@@ -1910,28 +1910,6 @@ namespace nana
 		//Treebox Implementation
 
 		//class trigger
-		//struct treebox_node_type
-		trigger::treebox_node_type::treebox_node_type()
-			:expanded(false), hidden(false), checked(checkstate::unchecked), selected(false)
-		{}
-
-		trigger::treebox_node_type::treebox_node_type(std::string text)
-			:text(std::move(text)), expanded(false), hidden(false), checked(checkstate::unchecked), selected(false)
-		{}
-
-		trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)
-		{
-			if(this != &rhs)
-			{
-				text = rhs.text;
-				value = rhs.value;
-				checked = rhs.checked;
-				selected = rhs.selected;
-				img_idstr = rhs.img_idstr;
-			}
-			return *this;
-		}
-		//end struct treebox_node_type
 
 		trigger::trigger()
 			:	impl_(new implementation)
