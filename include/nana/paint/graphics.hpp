@@ -185,7 +185,7 @@ namespace nana
 			void paste(const ::nana::rectangle& r_src, graphics& dst, int x, int y) const;
 			void rgb_to_wb(bool skip_transparent_pixels = false);   ///< Transform a color graphics into black&white.
 
-			void stretch(const ::nana::rectangle& src_r, graphics& dst, const ::nana::rectangle& r) const;
+			void stretch(const ::nana::rectangle& src_r, graphics& dst, const ::nana::rectangle& dst_r) const;
 			void stretch(graphics& dst, const ::nana::rectangle&) const;
 
 			void flush();

@@ -258,17 +258,17 @@ namespace paint
 		}
 	//end class font
 
-	//class graphics. /// \todo add dpi, scale, and/or wd/widget to the graphics constructor
+	//class graphics. /// \todo add dpi, scale, and/or wd/widget? to the graphics constructor
 		struct graphics::implementation
 		{
+			int             dpi  { 97   };
+			float           scale{ 1.0f };				/// \todo:
 			std::shared_ptr<::nana::detail::drawable_impl_type> platform_drawable;
 			font			font_shadow;
-			drawable_type	handle{ nullptr };
-			::nana::size	size;  ///< system-side size, dpi-scaled
+			drawable_type	handle{ nullptr };			///< refers to the platform-specific drawable_impl_type object
+			::nana::size	size;						///< system-side size, dpi-scaled
 			pixel_buffer	pxbuf;
 			bool            changed{ false };
-			int             dpi  { 97   };
-			float           scale{ 1.0f };  /// \todo:
 		};
 
 		void graphics::set_dpi(int dpi)
@@ -552,7 +552,7 @@ namespace paint
 		}
 #endif
 		
-		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const  /// \todo: scale dpi ? not used?
+		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const  /// \todo: not used?
 		{
 			end = std::clamp(end, static_cast<std::size_t>(0), static_cast<std::size_t>(text.size()));
 
@@ -612,7 +612,7 @@ namespace paint
 			return pxbuf;
 		}
 
-		::nana::size graphics::bidi_extent_size(std::string_view utf8str) const
+		nana::size graphics::bidi_extent_size(std::string_view utf8str) const
 		{
 			return bidi_extent_size(to_wstring(utf8str));
 		}
@@ -649,7 +649,7 @@ namespace paint
 				::TEXTMETRIC tm;
 				::GetTextMetrics(impl_->handle->context, &tm);
 				// uscale_dpi before
-				ascent = static_cast<unsigned>(tm.tmAscent);   
+				ascent  = static_cast<unsigned>(tm.tmAscent);   
 				ascent  = platform_abstraction::unscale_dpi(ascent, impl_->dpi) ; 
 				descent = static_cast<unsigned>(tm.tmDescent); 
 				descent = platform_abstraction::unscale_dpi(descent, impl_->dpi) ; 
@@ -729,7 +729,7 @@ namespace paint
 			}
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst_, native_window_type src, const nana::point& p_src_)  /// \todo: scale_dpi unused?
+		void graphics::bitblt(const nana::rectangle& r_dst_, native_window_type src, const nana::point& p_src_)  /// \todo: unused?
 		{
 			if(impl_->handle)
 			{
@@ -825,16 +825,16 @@ namespace paint
 			if(impl_->handle)
 			{
 				//Create the color table for performance
-				float* tablebuf = new float[0x100 * 3];
-				float* table_red = tablebuf;
+				float* tablebuf    = new float[0x100 * 3];
+				float* table_red   = tablebuf;
 				float* table_green = tablebuf + 0x100;
-				float* table_blue = tablebuf + 0x200;
+				float* table_blue  = tablebuf + 0x200;
 
 				for(int i = 0; i < 0x100; ++i)
 				{
-					table_red[i] = (i * 0.3f);
+					table_red  [i] = (i * 0.3f);
 					table_green[i] = (i * 0.59f);
-					table_blue[i] = (i * 0.11f);
+					table_blue [i] = (i * 0.11f);
 				}
 
 				pixel_buffer pixbuf(impl_->handle, 0, 0);

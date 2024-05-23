@@ -166,7 +166,7 @@ namespace detail
 		return {};
 	}
 
-	nana::size real_text_extent_size(drawable_type dw, const char* text, std::size_t len)  ///< todo: take string_view? dpi: user or system side?
+	nana::size real_text_extent_size(drawable_type dw, const char* text, std::size_t len)  ///< todo: take string_view? dpi: return user or system side? Now SS.
 	{
 		if (dw && text && len)
 		{
@@ -193,7 +193,7 @@ namespace detail
 	}
 
 
-	nana::size text_extent_size(drawable_type dw, const char * text, std::size_t len)  ///< todo: take string_view? dpi: user or system side?
+	nana::size text_extent_size(drawable_type dw, const char * text, std::size_t len)  ///< todo: take string_view? dpi: return user or system side? Now SS.
 	{
 		if (nullptr == dw || nullptr == text || 0 == len)
 			return{};
@@ -212,7 +212,7 @@ namespace detail
 		return extents;
 	}
 
-	nana::size text_extent_size(drawable_type dw, const wchar_t * text, std::size_t len)  ///< todo: take string_view? dpi: user or system side?
+	nana::size text_extent_size(drawable_type dw, const wchar_t * text, std::size_t len)  ///< todo: take string_view? dpi: return user or system side? Now SS.
 	{
 		if (nullptr == dw || nullptr == text || 0 == len)
 			return{};
@@ -231,7 +231,7 @@ namespace detail
 		return extents;
 	}
 
-	void draw_string(drawable_type dw, const nana::point& pos, const wchar_t * str, std::size_t len)  ///< todo: take string_view? dpi: user or system side?
+	void draw_string(drawable_type dw, const nana::point& pos, const wchar_t * str, std::size_t len)  ///< todo: take string_view? dpi: return user or system side? Now SS.
 	{
 #if defined(NANA_WINDOWS)
 		::TextOut(dw->context, pos.x, pos.y, str, static_cast<int>(len));

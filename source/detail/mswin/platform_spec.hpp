@@ -78,7 +78,7 @@ namespace detail
 		};
 	};
 
-	struct drawable_impl_type
+	struct drawable_impl_type  ///\todo: keep a dpi ?
 	{
 		using font_type = ::std::shared_ptr<font_interface>;
 

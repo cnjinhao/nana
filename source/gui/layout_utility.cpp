@@ -1,4 +1,4 @@
-/*
+/**
  *	Utility Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/layout_utility.hpp
+ *	@file nana/gui/layout_utility.hpp
  *	@contributors: Ryan Gonzalez
  *
  */
@@ -15,7 +15,7 @@
 
 namespace nana
 {
-	//overlap test if overlapped between r1 and r2
+	/// overlap test if overlapped between r1 and r2
 	bool overlapped(const rectangle& r1, const rectangle& r2)
 	{
 		if (r1.y + (long long)(r1.height) <= r2.y) return false;
@@ -27,7 +27,7 @@ namespace nana
 		return true;
 	}
 
-	//overlap, compute the overlap area between r1 and r2. the rect is for root
+	/// overlap, compute the overlap area between r1 and r2. the rect is for root
 	bool overlap(const rectangle& r1, const rectangle& r2, rectangle& r)
 	{
 		if(overlapped(r1, r2))
