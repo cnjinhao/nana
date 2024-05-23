@@ -239,8 +239,8 @@ namespace nana
 									   std::unique_ptr<widget_notifier_interface>&& wdg_notifier, 
 									   category::root_tag**, 
 									   int dpi)
-				: widget_notifier(std::move(wdg_notifier)), 
-				  dpi            (dpi),
+				: dpi            (dpi),
+				  widget_notifier(std::move(wdg_notifier)), 
 				  other          (category::flags::root, dpi)
 			{
 				if (owner) dpi = owner->dpi;  ///\todo: set dpi anyway? in all graphics?
