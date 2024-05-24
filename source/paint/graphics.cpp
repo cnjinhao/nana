@@ -906,7 +906,7 @@ namespace paint
 				auto p = platform_abstraction::dpi_scale(point(x, y), dst.impl_->dpi); 
 				auto sz = platform_abstraction::dpi_scale(size(), dst.impl_->dpi);
 #if defined(NANA_WINDOWS)
-				::BitBlt(dst.impl_->handle->context, p.x, p.y, impl_->size.width, impl_->size.height, 
+				::BitBlt(dst.impl_->handle->context, p.x, p.y, sz.width, sz.height, 
 						 impl_->handle->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
 				Display* display = nana::detail::platform_spec::instance().open_display();
