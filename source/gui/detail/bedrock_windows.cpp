@@ -880,6 +880,8 @@ namespace detail
 					r->right - r->left,
 					r->bottom - r->top,
 					SWP_NOZORDER | SWP_NOACTIVATE);
+				
+				wd_manager.refresh_tree(msgwnd);
 			}
 				break;
 			case WM_IME_STARTCOMPOSITION:
