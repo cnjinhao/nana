@@ -859,14 +859,15 @@ namespace detail
 				}
 				break;
 			case WM_DPICHANGED:  /// \todo: generalize dpi to v2 awareness
-				{
+			{
 				auto r = reinterpret_cast<const RECT*>(lParam);
 				auto dpi_x = HIWORD(wParam);    /// \todo: always equals? we take it from native_interface::windows_dpi
 				auto dpi_y = LOWORD(wParam);
 
 				if constexpr (dpi_debugging) 
 				{
-					std::cout << "WM_DPICHANGED: dpi_x = " << dpi_x  << ", dpi_y = " << dpi_y << '\n';
+					std::cout << "WM_DPICHANGED: dpi_x = " << dpi_x  << ", dpi_y = " << dpi_y << '\n'
+						      << "window_dpi= " << api::window_dpi(msgwnd);
 					std::cout << "SetWindowPos: " << r->left << ", r->top = " << r->top << 
 						              ", size = " << r->right - r->left << ", " << r->bottom - r->top << '\n';
 				}
@@ -879,7 +880,7 @@ namespace detail
 					r->right - r->left,
 					r->bottom - r->top,
 					SWP_NOZORDER | SWP_NOACTIVATE);
-				}
+			}
 				break;
 			case WM_IME_STARTCOMPOSITION:
 				break;
