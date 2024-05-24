@@ -1,4 +1,4 @@
-/*
+/**
  *	The Deploy Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/deploy.hpp
+ *	@file nana/deploy.hpp
  *
  *	What follows is dependent on what defined in nana/config.hpp
  */

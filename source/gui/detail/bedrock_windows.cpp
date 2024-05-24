@@ -16,7 +16,7 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
-#include <windef.h>
+//#include <windef.h>
 
 #include <iostream>	//use std::cerr
 

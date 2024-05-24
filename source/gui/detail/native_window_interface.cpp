@@ -21,7 +21,7 @@
 #include <nana/gui/detail/window_manager.hpp>
 
 #if defined(NANA_WINDOWS)
-#   include <windef.h>
+//#   include <windef.h>
 #	include <mutex>
 #	include <map>
 #elif defined(NANA_X11)
@@ -97,13 +97,14 @@ namespace detail{
 		}
 		return scaled_r;
     }
-	// create helper function to scale ::RECT to dpi
-	::RECT scale_to_dpi_(const ::RECT& r, int dpi)
+	
+	// create helper function to scale RECT to dpi
+	RECT scale_to_dpi(const RECT& r, int dpi)
     {
-        ::RECT scaled_r       {.left  = MulDiv(r.left,    dpi, 96), 
-						       .top   = MulDiv(r.top,     dpi, 96),
-						       .right = MulDiv(r.right,   dpi, 96), 
-							   .bottom= MulDiv(r.bottom,  dpi, 96) } ;
+        RECT scaled_r       {.left  = MulDiv(r.left,    dpi, 96), 
+						     .top   = MulDiv(r.top,     dpi, 96),
+						     .right = MulDiv(r.right,   dpi, 96), 
+						     .bottom= MulDiv(r.bottom,  dpi, 96) } ;
 
         if constexpr (dpi_debugging)
         {
@@ -114,18 +115,18 @@ namespace detail{
         }
         return scaled_r;
     }
-	::RECT scale_to_dpi_(native_window_type wd, const ::RECT& r)
+	RECT scale_to_dpi(native_window_type wd, const RECT& r)
     {
 		int dpi = static_cast<int>(native_interface::window_dpi(wd));
-		return scale_to_dpi_(r, dpi);
+		return scale_to_dpi(r, dpi);
     }
 
-	::RECT unscale_dpi_(const ::RECT& r, int dpi)
+	RECT unscale_dpi(const RECT& r, int dpi)
     {
-        ::RECT scaled_r       {.left  = MulDiv(r.left,   96,  dpi), 
-						       .top   = MulDiv(r.top,    96,  dpi),
-						       .right = MulDiv(r.right,  96,  dpi), 
-							   .bottom= MulDiv(r.bottom, 96,  dpi) } ;
+        RECT scaled_r       {.left  = MulDiv(r.left,   96,  dpi), 
+						     .top   = MulDiv(r.top,    96,  dpi),
+						     .right = MulDiv(r.right,  96,  dpi), 
+						     .bottom= MulDiv(r.bottom, 96,  dpi) } ;
 
         if constexpr (dpi_debugging)
         {

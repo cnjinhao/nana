@@ -20,6 +20,10 @@
 #include "../basis.hpp"
 #include <nana/paint/image.hpp>
 
+//#if defined(NANA_WINDOWS)
+//#include <windef.h>
+//#endif
+
 namespace nana
 {
 namespace detail
@@ -28,10 +32,12 @@ namespace detail
     nana::point scale_to_dpi(int x, int y, int dpi);
 	nana::point scale_to_dpi(native_window_type wd, int x, int y);
 	nana::point unscale_dpi(native_window_type wd, int x, int y);
+
     // create helper function to scale nana::rectangle to dpi
     nana::rectangle scale_to_dpi(const nana::rectangle& r, int dpi);
 	nana::rectangle scale_to_dpi(native_window_type wd, const nana::rectangle& r);
 	nana::rectangle unscale_dpi(const nana::rectangle& r, int dpi);
+
 	// create helper function to scale ::RECT to dpi
 	//::RECT scale_to_dpi(const ::RECT& r, int dpi);
 	//::RECT scale_to_dpi(native_window_type wd, const ::RECT& r);
