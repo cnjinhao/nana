@@ -25,6 +25,7 @@
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/unicode_bidi.hpp>
+#include <nana/gui/programming_interface.hpp>
 
 #include "../detail/platform_abstraction.hpp"
 
@@ -281,17 +282,18 @@ namespace paint
 			nana::paint::font ft{ info.value(), dpi };
 			typeface(ft);
 			make(sz);  // this will scale the size to the dpi
-			bitblt(0, 0, duplicate);
+			//bitblt(0, 0, duplicate);
         }
 		int graphics::get_dpi() const
         {
             return impl_->dpi;
         }
 		graphics::graphics(int dpi)
-			: impl_(new implementation{.dpi{dpi}, .scale{dpi/96.0f}})
+			: impl_(new implementation{.dpi  {dpi?dpi: api::screen_dpi()}, 
+					                   .scale{(dpi?dpi: api::screen_dpi())/96.0f}})
 		{
 			auto info = typeface().info();
-			nana::paint::font ft{ info.value(), dpi };
+			nana::paint::font ft{ info.value(), impl_->dpi };
 			typeface(ft);
 		}
 
