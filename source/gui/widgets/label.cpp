@@ -959,7 +959,7 @@ namespace nana
 			//First Check the graph of label
 			//Then take a substitute for graph when the graph of label is zero-sized.
 			nana::paint::graphics * graph_ptr = impl->graph;
-			nana::paint::graphics substitute;
+			nana::paint::graphics substitute(graph_ptr->get_dpi());
 			if(graph_ptr->empty())
 			{
 				graph_ptr = &substitute;
