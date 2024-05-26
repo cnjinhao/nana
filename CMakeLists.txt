@@ -122,7 +122,7 @@ if(NOT NANA_CMAKE_ENABLE_CONF)
     target_compile_definitions(nana PRIVATE NANA_IGNORE_CONF)    # really ??
 endif()
 if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-    # target_compile_definitions(nana PUBLIC NANA_AUTOMATIC_GUI_TESTING)
+    target_compile_definitions(nana PUBLIC NANA_AUTOMATIC_GUI_TESTING)
     # todo: enable_testing()       #  ??
 endif()
 
