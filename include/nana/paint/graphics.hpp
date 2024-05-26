@@ -118,7 +118,7 @@ namespace nana
 
 			~graphics();
 
-			bool changed() const;           ///< Returns true if the graphics object is operated
+			bool changed() const;           ///< Returns true if the graphics object is operated  \todo: not used ??
 			bool empty() const;             ///< Returns true if the graphics object does not refer to any resource.
 			explicit operator bool() const noexcept;
 
@@ -166,27 +166,34 @@ namespace nana
 			void line_begin(int x, int y);
 
 
-			/// \todo: how to manage scaling here??
-			void bitblt(int x, int y, const graphics& source);     ///<   Transfers the source to the specified point.
-			void bitblt(const ::nana::rectangle& r_dst, native_window_type src);  ///< Transfers the color data corresponding to r_dst from the src window to this graphics.
-			void bitblt(const ::nana::rectangle& r_dst, native_window_type src, const point& p_src);  ///< Transfers the color data corresponding to r_dst from the src window at point p_src to this graphics.
-			void bitblt(const ::nana::rectangle& r_dst, const graphics& src);     ///< Transfers the color data corresponding to r_dst from the src graphics to this graphics.
-			void bitblt(const ::nana::rectangle& r_dst, const graphics& src, const point& p_src);///< Transfers the color data corresponding to r_dst from the src graphics at point p_src to this graphics.
+			/// \todo: how to manage scaling here?? stretch if dpi_src != dpi_dst ??
+
+			//                             to       ,                      from
+			void bitblt(                int x, int y,  const graphics&    src                    ); ///< Transfers the whole source to the specified point.
+			void bitblt(const nana::rectangle& r_dst,  const graphics&    src                    ); ///< Transfers the color data corresponding to r_dst from the src graphics to this graphics.
+			void bitblt(const nana::rectangle& r_dst,  const graphics&    src, const point& p_src); ///< Transfers the color data corresponding to r_dst from the src graphics at point p_src to this graphics.
+            void bitblt(const nana::rectangle& r_dst,  native_window_type src                    ); ///< Transfers to r_dst of this graphics from the src window the corresponding color data \todo
+			void bitblt(const nana::rectangle& r_dst,  native_window_type src, const point& p_src); ///< Transfers the color data corresponding to r_dst from the src window at point p_src to this graphics.
+
+			//                         from           ,          to                     
+			void paste(                                graphics& dst, int x, int y) const;  ///< Paste the whole graphics object into the dest at (x, y)
+			void paste(const ::nana::rectangle& r_src, graphics& dst, int x, int y) const;  ///< Paste  r_src of graphics object into the dest at (x, y)
+
+			//                                 to                                             ,      from
+			void paste(native_window_type dst, const ::nana::rectangle& r_dst                 , int sx, int sy) const;  ///< Paste the graphics object into a platform-dependent window at (x, y)
+			void paste(native_window_type dst, int dx, int dy, unsigned width, unsigned height, int sx, int sy) const;
+			void paste(     drawable_type dst, int  x, int  y                                                 ) const;
+
+			//                          from           ,           to                     
+			void stretch(const ::nana::rectangle& src_r, graphics& dst, const ::nana::rectangle& dst_r) const;
+			void stretch(                                graphics& dst, const ::nana::rectangle& dst_r) const;
 
 			void blend(const ::nana::rectangle& r, const ::nana::color&, double fade_rate);
 			void blend(const ::nana::rectangle& blend_r, const graphics& blend_graph, const point& blend_graph_point, double fade_rate);///< blends with the blend_graph.
 
 			void blur(const ::nana::rectangle& r, std::size_t radius);      ///< Blur process.
 
-			void paste(graphics& dst, int x, int y) const;    ///< Paste the graphics object into the dest at (x, y)
-			void paste(native_window_type dst, const ::nana::rectangle&, int sx, int sy) const;  ///< Paste the graphics object into a platform-dependent window at (x, y)
-			void paste(native_window_type dst, int dx, int dy, unsigned width, unsigned height, int sx, int sy) const;
-			void paste(drawable_type dst, int x, int y) const;
-			void paste(const ::nana::rectangle& r_src, graphics& dst, int x, int y) const;
 			void rgb_to_wb(bool skip_transparent_pixels = false);   ///< Transform a color graphics into black&white.
-
-			void stretch(const ::nana::rectangle& src_r, graphics& dst, const ::nana::rectangle& dst_r) const;
-			void stretch(graphics& dst, const ::nana::rectangle&) const;
 
 			void flush();
 

@@ -1,4 +1,4 @@
-/*
+/**
 *	Window Layout Implementation
 *	Nana C++ Library(http://www.nanapro.org)
 *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/detail/window_layout.hpp
+*	@file nana/gui/detail/window_layout.hpp
 *
 */
 
