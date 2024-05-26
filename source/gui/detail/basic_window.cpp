@@ -240,6 +240,7 @@ namespace nana
 									   category::root_tag**, 
 									   int dpi)
 				: dpi            (dpi),
+				  drawer         (dpi),
 				  widget_notifier(std::move(wdg_notifier)), 
 				  other          (category::flags::root, dpi)
 			{

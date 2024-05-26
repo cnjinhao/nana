@@ -118,7 +118,8 @@ namespace nana::detail
 					 Category**,
 					 int dpi   ///< the dpi or scaling is needed to intitialize any bitmap graphics
 		             )
-			: dpi(dpi), 
+			: dpi   (dpi), 
+			  drawer(dpi),
 			  widget_notifier(std::move(wdg_notifier)), 
 			  other(Category::value, dpi)
 		{

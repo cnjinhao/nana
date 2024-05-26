@@ -231,8 +231,9 @@ namespace nana
 			std::vector<std::pair<std::function<void(paint::graphics&)>, bool>*> draws;	//Drawing function and flag for clearable
 		};
 
-		drawer::drawer()
-			: data_impl_{ new data_implement }
+		drawer::drawer(int dpi)
+			: data_impl_{ new data_implement },
+			  graphics{ dpi }
 		{}
 
 		drawer::~drawer()
@@ -246,6 +247,7 @@ namespace nana
 		void drawer::bind(basic_window* cw)
 		{
 			data_impl_->window_handle = cw;
+			graphics.set_dpi(cw->dpi);
 		}
 
 		void drawer::typeface_changed()

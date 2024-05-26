@@ -122,7 +122,7 @@ namespace nana
 				not_overridden
 			};
 		public:
-			drawer();
+			drawer(int dpi = 96);
 			~drawer();
 
 			void bind(basic_window*);

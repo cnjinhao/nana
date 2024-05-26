@@ -1,4 +1,4 @@
-/*
+/**
  *	A Timer Implementation
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
@@ -6,13 +6,13 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/timer.hpp
- *	@description:
+ *	@file nana/gui/timer.hpp
+ *	@description
  *		A timer can repeatedly call a piece of code. The duration between 
  *	calls is specified in milliseconds. Timer is different from other graphics
  *	controls, it has no graphics interface.
  *
- *	@contributors: rbrugo(#417)
+ *	@contributors rbrugo(#417)
  */
 
 #ifndef NANA_GUI_TIMER_HPP
