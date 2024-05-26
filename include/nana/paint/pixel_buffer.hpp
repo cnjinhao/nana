@@ -20,7 +20,7 @@
 
 namespace nana{	namespace paint
 {
-	/// Alpha blend operations \todo: decide to put before or after scaling
+	/// Alpha blend operations 
 	enum class alpha_methods
 	{
 		straight_alpha,	///< DestColor = SrcColor * SrcAlpha + DestColor * (1 - SrcAlpha), DestAlpha = SrcAlpha * SrcAlpha + (1 - SrcAlpha) * DestAlpha
@@ -28,7 +28,7 @@ namespace nana{	namespace paint
 		direct_copy,	///< DestColor = SrcColor, DestAlpha = SrcAlpha
 	};
 
-	/// \todo: decide to put before or after dpi scaling
+	/// dpi scaling SS: put after scaling
 	class pixel_buffer 
 	{
 		struct pixel_buffer_storage;

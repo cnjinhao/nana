@@ -263,9 +263,9 @@ namespace paint
 		{
 			int             dpi  { 97   };
 			float           scale{ 1.0f };				/// \todo:
-			std::shared_ptr<::nana::detail::drawable_impl_type> platform_drawable;
 			font			font_shadow;
-			drawable_type	handle{ nullptr };			///< refers to the platform-specific drawable_impl_type object
+			std::shared_ptr<::nana::detail::drawable_impl_type> platform_drawable;
+			drawable_type	handle{ nullptr };			///< just refers to the platform-specific drawable_impl_type object above
 			::nana::size	size;						///< system-side size, dpi-scaled
 			pixel_buffer	pxbuf;
 			bool            changed{ false };
@@ -317,7 +317,6 @@ namespace paint
 			}
 			return *this;
 		}
-
 
 		graphics::graphics(graphics&& other)
 			: impl_(std::move(other.impl_))
@@ -390,14 +389,14 @@ namespace paint
 					return;
 				}
 
-				//The object will be deleted while dwptr_ is performing a release.
+				// The object will be deleted while dwptr_ is performing a release. 
+				// Real constructor of drawable_impl_type. \todo: why not use make_unique?
 				std::shared_ptr<nana::detail::drawable_impl_type> dw{ new nana::detail::drawable_impl_type, detail::drawable_deleter{} };
 
-				///\todo: make sure to set correct 'dpi' size before Reuse the old font
 				if (impl_->platform_drawable)
 				{
 					drawable_type reuse = impl_->platform_drawable.get();
-					dw->font = reuse->font;
+					dw->font = reuse->font;              // the correct 'dpi' size of font was set before for reuse by set_dpi
 					dw->string.tab_length = reuse->string.tab_length;
 				}
 				else

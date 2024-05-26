@@ -1391,7 +1391,9 @@ namespace detail
 				return;
 
 			wd->dpi = native_interface::window_dpi(wd->root);
-			wd->drawer.graphics.set_dpi(wd->dpi);    ///\todo: revise if glass_buffer and root_graphics is needed to be updated
+			wd->drawer.graphics.set_dpi(wd->dpi);    
+			///\todo: glass_buffer and root_graphics need to be updated too.
+			/// implement a wd->update_dpi(dpi) method to update all the window elements.
 
 			for (auto child : wd->children)
 			{

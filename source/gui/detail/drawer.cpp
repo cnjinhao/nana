@@ -614,7 +614,7 @@ namespace nana
 		{
 			wd->flags.action_before = wd->flags.action;
 
-			auto r = visual;
+			auto r = visual;  /// \todo: dpi scale to SS
 			r.pare_off(-static_cast<int>(weight()));
 			rectangle good_r;
 			if (overlap(r, rectangle{ wd->root_graph->size() }, good_r))

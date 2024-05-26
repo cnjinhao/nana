@@ -19,14 +19,13 @@ namespace paint
 {
 namespace detail
 {
-	nana::size drawable_size(drawable_type);
+	nana::size drawable_size(drawable_type);  ///< return dpi: system side
 
-	std::unique_ptr<unsigned char[]> alloc_fade_table(double fade_rate);
-	void free_fade_table(const unsigned char*);
+	std::unique_ptr<unsigned char[]> alloc_fade_table(double fade_rate);  ///\todo: here ?
 
 	//color = bgcolor * fade_rate + fgcolor * (1 - fade_rate);
-	nana::pixel_color_t fade_color(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor, const unsigned char* const fade_table);
-	nana::pixel_color_t fade_color_intermedia(pixel_color_t fgcolor, const unsigned char* fade_table);
+	nana::pixel_color_t fade_color              (pixel_color_t bgcolor, nana::pixel_color_t fgcolor           , const unsigned char* const fade_table);
+	nana::pixel_color_t fade_color_intermedia   (pixel_color_t fgcolor                                        , const unsigned char*       fade_table);
 	nana::pixel_color_t fade_color_by_intermedia(pixel_color_t bgcolor, nana::pixel_color_t fgcolor_intermedia, const unsigned char* const fade_table);
 
 	//dw color = dw color * fade_rate + bdcolor * (1 - fade_rate)
