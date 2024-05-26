@@ -1693,7 +1693,7 @@ namespace api
 		if (is_window(wd) && wd->annex.content_measurer)
 		{
 			paint::graphics* graph = &wd->drawer.graphics;
-			paint::graphics temp_graph;
+			paint::graphics temp_graph(graph->get_dpi());
 			if (graph->empty())
 			{
 				temp_graph.make({ 1, 1 });
