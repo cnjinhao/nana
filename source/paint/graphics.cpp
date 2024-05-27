@@ -263,7 +263,7 @@ namespace paint
 		struct graphics::implementation
 		{
 			int             dpi  { 97   };
-			float           scale{ 1.0f };				/// \todo:
+			float           scale{ dpi / 96.0f };				/// \todo:
 			font			font_shadow;
 			std::shared_ptr<::nana::detail::drawable_impl_type> platform_drawable;
 			drawable_type	handle{ nullptr };			///< just refers to the platform-specific drawable_impl_type object above
@@ -289,8 +289,7 @@ namespace paint
             return impl_->dpi;
         }
 		graphics::graphics(int dpi)
-			: impl_(new implementation{.dpi  {dpi?dpi: api::screen_dpi()}, 
-					                   .scale{(dpi?dpi: api::screen_dpi())/96.0f}})
+			: impl_(new implementation{.dpi  {dpi?dpi: api::screen_dpi()}})
 		{
 			auto info = typeface().info();
 			nana::paint::font ft{ info.value(), impl_->dpi };
