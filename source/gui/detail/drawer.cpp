@@ -233,8 +233,8 @@ namespace nana
 		};
 
 		drawer::drawer(int dpi)
-			: data_impl_{ new data_implement },
-			  graphics{ dpi }
+			: graphics{ dpi },
+			  data_impl_{ new data_implement }
 		{}
 
 		drawer::~drawer()

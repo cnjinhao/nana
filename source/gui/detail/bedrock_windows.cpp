@@ -742,11 +742,11 @@ namespace detail
 		unsigned width  = static_cast<unsigned>(r->right  - r->left) - wd->extra_width;
 		unsigned height = static_cast<unsigned>(r->bottom - r->top ) - wd->extra_height;
 
-		     if(wd->max_track_size.width && (wd->max_track_size.width < req_width)) 	req_width = wd->max_track_size.width;
-		else if(wd->min_track_size.width && (wd->min_track_size.width > req_width))	    req_width = wd->min_track_size.width;
+		if (wd->max_track_size.width  && (wd->max_track_size.width  < req_width ))  req_width  = wd->max_track_size.width;
+		if (wd->min_track_size.width  && (wd->min_track_size.width  > req_width ))  req_width  = wd->min_track_size.width;
 
-		     if(wd->max_track_size.height && (wd->max_track_size.height < req_height))	req_height = wd->max_track_size.height;
-		else if(wd->min_track_size.height && (wd->min_track_size.height > req_height))	req_height = wd->min_track_size.height;
+		if (wd->max_track_size.height && (wd->max_track_size.height < req_height))	req_height = wd->max_track_size.height;
+		if (wd->min_track_size.height && (wd->min_track_size.height > req_height))	req_height = wd->min_track_size.height;
 
 		if(req_width != width)
 		{
