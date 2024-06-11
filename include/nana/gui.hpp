@@ -18,7 +18,9 @@
 #include "gui/compact.hpp"
 #include "gui/screen.hpp"
 #include "gui/widgets/form.hpp"
+#ifndef NANA_DRAWING_REMOVED
 #include "gui/drawing.hpp"
+#endif
 #include "gui/msgbox.hpp"
 #include "gui/place.hpp"
 

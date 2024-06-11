@@ -19,7 +19,6 @@
 #include <nana/gui/widgets/textbox.hpp>
 #include <nana/gui/element.hpp>
 #include <nana/gui/compact.hpp>
-#include <nana/gui/drawing.hpp>
 #include <nana/gui/screen.hpp>
 #include <nana/gui/detail/virtual_keyboard.hpp>
 #include <nana/gui/programming_interface.hpp>
@@ -76,7 +75,7 @@ namespace nana::detail
 
 				_m_adjust_size(padding);
 
-				nana::drawing{ *this }.draw([this](nana::paint::graphics& graph) {
+				this->drawing([this](nana::paint::graphics& graph) {
 					_m_render(graph);
 				});
 				
@@ -328,7 +327,7 @@ namespace nana::detail
 
 				cntpart_.graph.make(r.dimension());
 
-				nana::drawing{ *this }.draw([this](nana::paint::graphics& graph) {
+				this->drawing([this](nana::paint::graphics& graph) {
 					_m_render(graph);
 					});
 

@@ -533,6 +533,9 @@ namespace api
 	/// Configures the numeric keyboard. It returns true if virtual keyboard is enabled and
 	/// the specified window is a text editor window, false otherwise.
 	bool keyboard_numeric(window, bool padding);
+
+	std::function<void(paint::graphics&)> drawing(window);
+	void drawing(window, std::function<void(paint::graphics&)>);
 }//end namespace api
 
 namespace API = api;

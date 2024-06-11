@@ -361,8 +361,8 @@ namespace nana
 
 				rectangle r{ pos() + move_pos, size() };
 				container_.reset(new form(host_window_, r.pare_off(-1), form::appear::bald<form::appear::sizable>()));
-				drawing dw(container_->handle());
-				dw.draw([](paint::graphics& graph)
+				
+				drawing([](paint::graphics& graph)
 				{
 					graph.rectangle(false, colors::coral);
 				});

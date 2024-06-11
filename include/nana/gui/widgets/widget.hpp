@@ -127,6 +127,10 @@ namespace nana
 
 		operator dummy_bool_type() const;
 		operator window() const;
+
+		std::function<void(paint::graphics&)> drawing() const;
+		void drawing(std::function<void(paint::graphics&)>);
+
 	protected:
 		std::unique_ptr<::nana::detail::widget_notifier_interface> _m_wdg_notifier();
 	private:

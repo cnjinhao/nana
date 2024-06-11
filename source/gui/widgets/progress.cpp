@@ -231,7 +231,7 @@ namespace nana
 		unsigned progress::value(unsigned val)
 		{
 			internal_scope_guard lock;
-			if(api::empty_window(this->handle()) == false)
+			if(api::is_window(this->handle()))
 				return get_drawer_trigger().progress()->value(&val);
 			return 0;
 		}

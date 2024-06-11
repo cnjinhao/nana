@@ -21,9 +21,11 @@
 
 namespace nana
 {
-	class animation;
+	class [[deprecated("Deprecated in 1.8")]] animation;
         /// Holds the frames and frame builders. Have reference semantics for efficiency.
-	class frameset
+
+
+	class [[deprecated("Deprecated in 1.8")]] frameset
 	{
 		friend class animation;
 	public:
@@ -38,7 +40,7 @@ namespace nana
 		std::shared_ptr<impl> impl_;
 	};
             /// Easy way to display an animation or create an animated GUI
-	class animation
+	class [[deprecated("Deprecated in 1.8")]] animation
 	{
 		struct branch_t
 		{

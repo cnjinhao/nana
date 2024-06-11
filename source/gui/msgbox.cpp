@@ -20,7 +20,6 @@
 
 #include <nana/gui/compact.hpp>
 #include <nana/gui/msgbox.hpp>
-#include <nana/gui/drawing.hpp>
 #include <nana/gui/widgets/form.hpp>
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/widgets/button.hpp>
@@ -53,8 +52,8 @@ namespace nana
 					owner_(wd), pick_(msgbox::pick_yes)
 			{
 				this->caption(title);
-				drawing dw(*this);
-				dw.draw([this](paint::graphics& graph)
+
+				this->drawing([this](paint::graphics& graph)
 				{
 					graph.rectangle(rectangle{0, 0, graph.width(), graph.height() - 50}, true, colors::white);
 					if(ico_.empty() == false)

@@ -89,7 +89,7 @@ namespace nana {
 
 						auto const scroll = cv_scroll->scroll(arg.which);
 
-						if (scroll && (!api::empty_window(arg.window_handle)))
+						if (scroll && api::is_window(arg.window_handle))
 						{
 							auto align_px = (scroll->value() % scroll->step());
 							if (align_px)

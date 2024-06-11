@@ -10,6 +10,7 @@
  *	@file: nana/gui/drawing.cpp
  */
 
+#ifndef NANA_DRAWING_REMOVED
 #include "detail/basic_window.hpp"
 #include <nana/gui/drawing.hpp>
 #include <nana/gui/programming_interface.hpp>
@@ -92,3 +93,4 @@ namespace nana
 	//end class drawing
 }//end namespace nana
 
+#endif //NANA_DRAWING_REMOVED

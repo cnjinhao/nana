@@ -771,20 +771,6 @@ namespace nana
 			}
 		}
 
-		/*
-		void branch(const std::string& name, const frameset& frms)
-		{
-			impl_->branches[name].frames = frms;
-		}
-
-		void branch(const std::string& name, const frameset& frms, std::function<std::size_t(const std::string&, std::size_t, std::size_t&)> condition)
-		{
-			auto & br = impl_->branches[name];
-			br.frames = frms;
-			br.condition = condition;
-		}
-		*/
-
 		void animation::looped(bool enable)
 		{
 			if(impl_->looped != enable)

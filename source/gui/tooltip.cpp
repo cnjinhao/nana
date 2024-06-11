@@ -328,7 +328,7 @@ namespace nana
 		void tooltip::set(window wd, const std::string& text)
 		{
 			internal_scope_guard lock;
-			if(false == api::empty_window(wd))
+			if(api::is_window(wd))
 				ctrl::instance()->set(wd, text);
 		}
 

@@ -1753,5 +1753,23 @@ namespace api
 		return false;
 #endif	
 	}
+
+	std::function<void(paint::graphics&)> drawing(window wd)
+	{
+		internal_scope_guard lock;
+		if (!is_window(wd))
+			return {};
+
+		return wd->drawer.drawing();
+	}
+
+	void drawing(window wd, std::function<void(paint::graphics&)> fn)
+	{
+		internal_scope_guard lock;
+		if (!is_window(wd))
+			return;
+
+		wd->drawer.drawing(std::move(fn));
+	}
 }//end namespace api
 }//end namespace nana

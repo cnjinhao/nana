@@ -152,9 +152,14 @@ namespace nana
 			void attached(widget&, drawer_trigger&);
 			drawer_trigger* detached();
 		public:
+			std::function<void(paint::graphics&)> drawing() const;
+			void drawing(std::function<void(paint::graphics&)>&&);
+
+#ifndef NANA_DRAWING_REMOVED
 			void clear();
 			void* draw(std::function<void(paint::graphics&)> &&, bool diehard);
 			void erase(void* diehard);
+#endif
 		private:
 			void _m_effect_bground_subsequent();
 			method_state& _m_mth_state(int pos);
