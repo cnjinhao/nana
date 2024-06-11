@@ -735,7 +735,6 @@ namespace nana
 			{
 				nana::size size = _m_client_size();
 
-				unsigned int two = platform_abstraction::dpi_scale(widget_->handle(), 2u);
 				size.width += platform_abstraction::dpi_scale(widget_->handle(), detail_.border.x) * 2u;
 				size.height += platform_abstraction::dpi_scale(widget_->handle(), detail_.border.y) * 2u;
 

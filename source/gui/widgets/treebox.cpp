@@ -845,6 +845,8 @@ namespace nana
 
 			bool set_selected_multi(node_type* node, bool crtl, bool shift)
 			{
+				(void)shift;
+
 				if (crtl)
 				{
 					data.stop_drawing = true;
@@ -956,7 +958,7 @@ namespace nana
 				if(node_state.selected != node)
 				{
 					data.stop_drawing = true;
-					if (node_state.selected && single_selection || node == nullptr)
+					if ((node_state.selected && single_selection) || !node)
 					{
 						auto nodes_copy = node_state.nodes_selected;
 						node_state.clear();
@@ -1911,12 +1913,9 @@ namespace nana
 
 		//class trigger
 		//struct treebox_node_type
-		trigger::treebox_node_type::treebox_node_type()
-			:expanded(false), hidden(false), checked(checkstate::unchecked), selected(false)
-		{}
 
 		trigger::treebox_node_type::treebox_node_type(std::string text)
-			:text(std::move(text)), expanded(false), hidden(false), checked(checkstate::unchecked), selected(false)
+			:text(std::move(text))
 		{}
 
 		trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)

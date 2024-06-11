@@ -1750,6 +1750,7 @@ namespace api
 		return restrict::bedrock.vkeyboard().numeric(wd, padding);
 #else
 		(void)wd;
+		(void)padding;
 		return false;
 #endif	
 	}
