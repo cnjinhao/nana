@@ -20,7 +20,7 @@ namespace nana
 	/// \brief Draw pictures on a widget by specifying a drawing method that will be employed every time the widget refreshes. 
     /// By the end of drawing, the picture may not be displayed immediately. 
     /// If a picture need to be displayed immediately call nana::gui::api::refresh_window() .
-	class drawing
+	class [[deprecated("Deprecated in 1.8")]] drawing
 		:private nana::noncopyable
 	{
 		struct draw_fn_handle;
