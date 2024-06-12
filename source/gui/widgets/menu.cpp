@@ -150,17 +150,6 @@ namespace nana
 				auto wstr = to_wstring(text);
 				tr.render(pos, { wstr.c_str(), wstr.length() }, text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 			}
-#ifdef __cpp_char8_t
-			void item_text(graph_reference graph, const nana::point& pos, std::u8string_view title, unsigned text_pixels, const attr& at) override
-			{
-				graph.palette(true, at.enabled ? colors::black : colors::gray_border);
-				nana::paint::text_renderer tr(graph);
-
-				auto wstr = to_wstring(title);
-				tr.render(pos, { wstr.c_str(), wstr.length() }, text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
-			}
-#endif
-
 
 			void sub_arrow(graph_reference graph, const nana::point& pos, unsigned pixels, const attr&) override
 			{
@@ -342,14 +331,6 @@ namespace nana
 			menu_->text(pos_, title);
 			return *this;
 		}
-
-#ifdef __cpp_char8_t
-		menu_item_type::item_proxy& menu_item_type::item_proxy::text(std::u8string_view title)
-		{
-			menu_->text(pos_, to_string(title));
-			return *this;
-		}
-#endif
 
 		std::string menu_item_type::item_proxy::text() const
 		{
@@ -1264,13 +1245,6 @@ namespace nana
 		{
 			impl_->mbuilder.data().items.at(index)->text.swap(text_utf8);
 		}
-
-#ifdef __cpp_char8_t
-		void menu::text(std::size_t index, std::u8string_view text)
-		{
-			impl_->mbuilder.data().items.at(index)->text = to_string(text);
-		}
-#endif
 
 		std::string menu::text(std::size_t index) const
 		{
