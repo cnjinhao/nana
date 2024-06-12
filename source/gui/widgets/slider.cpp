@@ -118,7 +118,7 @@ namespace nana
 
 				const auto label_size = graph.text_extent_size(data.text) + size{ schm.vernier_text_margin * 2, 0 };
 
-				paint::graphics graph_vern{ label_size };
+				paint::graphics graph_vern{ label_size, graph.get_dpi() };
 				graph_vern.rectangle(true, schm.color_vernier);
 
 				int arrow_pos;
@@ -148,9 +148,9 @@ namespace nana
 
 				if (label_pos.x > data.position)
 				{
-					for (::nana::size::value_type l = 0; l < arrow_size.height; ++l)
+					for (::nana::size::value_type L = 0; L < arrow_size.height; ++L)
 					{
-						auto ptr = arrow_pxbuf + l * arrow_size.width;
+						auto ptr = arrow_pxbuf + L * arrow_size.width;
 
 						for (::nana::size::value_type x = 0; x < arrow_size.width / 2; ++x)
 							std::swap(ptr[x], ptr[(arrow_size.width - 1) - x]);
@@ -183,9 +183,9 @@ namespace nana
 
 				const size label_size = (graph.text_extent_size(data.text) + size{ schm.vernier_text_margin * 2, 0 }).shift();
 
-				paint::graphics graph_vern{ label_size };
+				paint::graphics graph_vern{ label_size, graph.get_dpi() };
 
-				paint::graphics graph_horz{ size(label_size).shift() };
+				paint::graphics graph_horz{ size(label_size).shift(), graph.get_dpi() };
 				graph_horz.rectangle(true, schm.color_vernier);
 				graph_horz.string({ static_cast<int>(schm.vernier_text_margin), static_cast<int>(graph_horz.height() - label_size.width) / 2 }, data.text, schm.color_vernier_text);
 
@@ -431,7 +431,7 @@ namespace nana
 				{
 					api::release_capture(other_.wd);
 
-					if (other_.wd != api::find_window(api::cursor_position()))
+					if (other_.wd != api::find_window_cursor())
 					{
 						slider_state_.mouse_state = ::nana::mouse_action::normal;
 						attr_.is_draw_adorn = false;

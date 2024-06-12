@@ -1,4 +1,4 @@
-/*
+/**
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(https://nana.acemind.cn)
 *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
@@ -7,8 +7,12 @@
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/detail/bedrock_pi.cpp
+*	@file nana/gui/detail/bedrock_pi.cpp
+*   @contributors  Jinhao, Ariel Vina-Rodriguez
 */
+
+#include <sstream>
+#include <algorithm>
 
 #include "../../detail/platform_spec_selector.hpp"
 #include "basic_window.hpp"
@@ -21,9 +25,6 @@
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
-
-#include <sstream>
-#include <algorithm>
 
 namespace nana
 {
@@ -245,15 +246,12 @@ namespace nana
 			if (wd_manager().available(wd))
 			{
 				auto * thrd = get_thread_context(wd->thread_id);
-				if (nullptr == thrd)
-					return;
+				if (nullptr == thrd) return;
 
-				auto pos = native_interface::cursor_position();
-				auto native_handle = native_interface::find_window(pos.x, pos.y);
-				if (!native_handle)
-					return;
+				nana::point pos;
+				auto native_handle = native_interface::find_cursor_window(pos);
+				if (!native_handle) return;
 
-				native_interface::calc_window_point(native_handle, pos);
 				if (wd != wd_manager().find_window(native_handle, pos))
 					return;
 

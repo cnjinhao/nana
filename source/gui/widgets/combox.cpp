@@ -225,7 +225,7 @@ namespace nana
 
 						if (api::is_transparent_background(this->widget_ptr()->handle()))
 						{
-							paint::graphics trns_graph{ graph.size() };
+							paint::graphics trns_graph{ graph.size(), graph.get_dpi() };
 							if (api::dev::copy_transparent_background(this->widget_ptr()->handle(), trns_graph))
 							{
 								graph.blend(rectangle{ trns_graph.size() }, trns_graph, {}, 0.5);
@@ -527,9 +527,9 @@ namespace nana
 
 			size_t _m_button_size()
 			{
-				double dpiScale = api::window_dpi(widget_->handle()) / 96.0;
-
-				return static_cast<size_t>(scheme_ptr_->button_size * dpiScale);
+				//double dpiScale = api::window_dpi(widget_->handle()) / 96.0;
+                /// \todo DPI ?
+				return scheme_ptr_->button_size; //static_cast<size_t>(scheme_ptr_->button_size * dpiScale);
 			}
 
 			void _m_draw_push_button(bool enabled)

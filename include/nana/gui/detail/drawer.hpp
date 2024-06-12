@@ -122,7 +122,7 @@ namespace nana
 				not_overridden
 			};
 		public:
-			drawer();
+			drawer(int dpi = 96);
 			~drawer();
 
 			void bind(basic_window*);
@@ -195,7 +195,7 @@ namespace nana
 				}
 			}
 		public:
-			nana::paint::graphics graphics;
+			nana::paint::graphics graphics;  ///< The graphics object for drawing \todo: set dpi
 		private:
 			struct data_implement;
 

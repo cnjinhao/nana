@@ -1,4 +1,4 @@
-/*
+/**
  *	Window Layout Implementation
  *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
@@ -6,7 +6,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/window_layout.hpp
+ *	@file nana/gui/detail/window_layout.hpp
  *
  */
 
@@ -53,20 +53,18 @@ namespace detail
 
 		static void paste_children_to_graphics(basic_window*, nana::paint::graphics& graph);
 
-		//read_visual_rectangle
-		//@brief:	Reads the visual rectangle of a window, the visual rectangle's reference frame is to root widget,
-		//			the visual rectangle is a rectangular block that a window should be displayed on screen.
-		//			The result is a rectangle that is a visible area for its ancesters.
+		///read_visual_rectangle
+		///@brief:	Reads the visual rectangle of a window, the visual rectangle's reference frame is to root widget,
+		///			the visual rectangle is a rectangular block that a window should be displayed on screen.
+		///			The result is a rectangle that is a visible area for its ancesters.
 		static bool read_visual_rectangle(basic_window*, nana::rectangle& visual);
 
-		//read_overlaps
-		//	reads the overlaps that are overlapped a rectangular block
+		///	reads the overlaps that are overlapped a rectangular block
 		static bool read_overlaps(basic_window*, const nana::rectangle& vis_rect, std::vector<wd_rectangle>& blocks);
 
 		static bool enable_effects_bground(basic_window *, bool enabled);
 
-		//make_bground
-		//		update the glass buffer of a glass window.
+		///		update the glass buffer of a glass window.
 		static void make_bground(basic_window* const);
 	private:
 

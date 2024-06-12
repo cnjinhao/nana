@@ -16,6 +16,7 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
+//#include <windef.h>
 
 #include <iostream>	//use std::cerr
 
@@ -55,6 +56,45 @@ namespace nana
 
 namespace detail
 {
+	///\todo: here temp, to avoid including windef.h in native_window_interface.hpp
+	::RECT scale_to_dpi_(const ::RECT& r, int dpi)
+    {
+        ::RECT scaled_r       {.left  = MulDiv(r.left,    dpi, 96), 
+						       .top   = MulDiv(r.top,     dpi, 96),
+						       .right = MulDiv(r.right,   dpi, 96), 
+							   .bottom= MulDiv(r.bottom,  dpi, 96) } ;
+
+        if constexpr (dpi_debugging)
+        {
+            std::cout << "   orig rect= " << r.left                         << ", " << r.top                          <<
+                         "   with size= " << r.right - r.left               << ", " << r.bottom - r.top               << '\n';
+            std::cout << " scaled rect= " << scaled_r.left                  << ", " << scaled_r.top                   << 
+                         "   with size= " << scaled_r.right - scaled_r.left << ", " << scaled_r.bottom - scaled_r.top << '\n';
+        }
+        return scaled_r;
+    }
+	::RECT scale_to_dpi_(native_window_type wd, const ::RECT& r)
+    {
+		int dpi = static_cast<int>(native_interface::window_dpi(wd));
+		return scale_to_dpi_(r, dpi);
+    }
+
+	::RECT unscale_dpi_(const ::RECT& r, int dpi)
+    {
+        ::RECT scaled_r       {.left  = MulDiv(r.left,   96,  dpi), 
+						       .top   = MulDiv(r.top,    96,  dpi),
+						       .right = MulDiv(r.right,  96,  dpi), 
+							   .bottom= MulDiv(r.bottom, 96,  dpi) } ;
+
+        if constexpr (dpi_debugging)
+        {
+            std::cout << " unscaled rect= " << scaled_r.left                  << ", " << scaled_r.top                   << 
+                           "   with size= " << scaled_r.right - scaled_r.left << ", " << scaled_r.bottom - scaled_r.top << '\n';
+        }
+        return scaled_r;
+    }
+
+
 	namespace restrict
 	{
 		typedef struct tagTRACKMOUSEEVENT{
@@ -174,8 +214,7 @@ namespace detail
 		std::map<int, std::function<void()>> accel_commands;
 	};
 
-	//class bedrock defines a static object itself to implement a static singleton
-	//here is the definition of this object
+	/// class bedrock defines a static object itself to implement a static singleton, here is the definition of this object
 	bedrock bedrock::bedrock_object;
 
 	static LRESULT WINAPI Bedrock_WIN32_WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -192,22 +231,22 @@ namespace detail
 		:	pi_data_(new pi_data),
 			impl_(new private_impl)
 	{
-		detail::native_interface::start_dpi_awareness(config_dpi_aware);
+		native_interface::start_dpi_awareness(config_dpi_aware);
 
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
 		WNDCLASSEX wincl;
-		wincl.hInstance = windows_module_handle();
+		wincl.hInstance     = windows_module_handle();
 		wincl.lpszClassName = L"NanaWindowInternal";
-		wincl.lpfnWndProc = &Bedrock_WIN32_WindowProc;
-		wincl.style = CS_DBLCLKS | CS_OWNDC;
-		wincl.cbSize = sizeof(wincl);
-		wincl.hIcon = ::LoadIcon (0, IDI_APPLICATION);
-		wincl.hIconSm = wincl.hIcon;
-		wincl.hCursor = ::LoadCursor (0, IDC_ARROW);
-		wincl.lpszMenuName = 0;
-		wincl.cbClsExtra = 0;
-		wincl.cbWndExtra = 0;
+		wincl.lpfnWndProc   = &Bedrock_WIN32_WindowProc;
+		wincl.style         = CS_DBLCLKS | CS_OWNDC;
+		wincl.cbSize        = sizeof(wincl);
+		wincl.hIcon         = ::LoadIcon (0, IDI_APPLICATION);
+		wincl.hIconSm       = wincl.hIcon;
+		wincl.hCursor       = ::LoadCursor (0, IDC_ARROW);
+		wincl.lpszMenuName  = 0;
+		wincl.cbClsExtra    = 0;
+		wincl.cbWndExtra    = 0;
 		wincl.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
 
 		::RegisterClassEx(&wincl);
@@ -234,7 +273,6 @@ namespace detail
 		restrict::imm_get_composition_string = reinterpret_cast<restrict::imm_get_composition_string_type>(
 				::GetProcAddress(imm32, "ImmGetCompositionStringW"));
 
-		/// \todo: generalize dpi to v2 awareness
 		platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
 	}
 
@@ -320,11 +358,13 @@ namespace detail
 		return bedrock_object;
 	}
 
+	/// uses *update_area for direct call to PostMessage: \todo: dpi_scale ??  Use US
 	void bedrock::flush_surface(basic_window* wd, bool forced, const rectangle* update_area)
 	{
 		if (nana::system::this_thread_id() != wd->thread_id)
 		{
-			auto stru = reinterpret_cast<detail::messages::map_thread*>(::HeapAlloc(::GetProcessHeap(), 0, sizeof(detail::messages::map_thread)));
+			auto stru = reinterpret_cast<detail::messages::map_thread*>(
+				::HeapAlloc(::GetProcessHeap(), 0, sizeof(detail::messages::map_thread)));
 			if (stru)
 			{
 				stru->forced = forced;
@@ -333,10 +373,14 @@ namespace detail
 				if (update_area)
 				{
 					stru->ignore_update_area = false;
-					stru->update_area = *update_area;
+					stru->update_area = *update_area;  ///\todo: dpi_scale ?? no: obtained directly from lParam to be PostMessage (system-side)
 				}
 
-				if (FALSE == ::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::remote_flush_surface, reinterpret_cast<WPARAM>(wd), reinterpret_cast<LPARAM>(stru)))
+				if (FALSE == ::PostMessage(reinterpret_cast<HWND>(wd->root), 
+										   nana::detail::messages::remote_flush_surface, 
+										   reinterpret_cast<WPARAM>(wd), 
+										   reinterpret_cast<LPARAM>(stru))   // pointer to a nana defined and controled structure: US not SS !! \todo: no dpi scale !
+					                       )
 					::HeapFree(::GetProcessHeap(), 0, stru);
 			}
 		}
@@ -541,8 +585,11 @@ namespace detail
 
 		if (set_key_state)
 		{
-			arg.pos.x = pmdec.mouse.x - wd->pos_root.x;
-			arg.pos.y = pmdec.mouse.y - wd->pos_root.y;
+			arg.pos.x = static_cast<int>(pmdec.mouse.x);  /// \todo: is system-side dpi to user-side ok here?
+			arg.pos.y = static_cast<int>(pmdec.mouse.y);
+			platform_abstraction::untransform_dpi(arg.pos, wd->dpi);
+			arg.pos -= wd->pos_root;
+
 			arg.alt = (::GetKeyState(VK_MENU) < 0);
 			arg.shift = pmdec.mouse.button.shift;
 			arg.ctrl = pmdec.mouse.button.ctrl;
@@ -563,8 +610,11 @@ namespace detail
 		arg.upwards = (pmdec.mouse.button.wheel_delta >= 0);
 		arg.distance = static_cast<unsigned>(arg.upwards ? pmdec.mouse.button.wheel_delta : -pmdec.mouse.button.wheel_delta);
 
-		arg.pos.x = static_cast<int>(point.x) - wd->pos_root.x;
-		arg.pos.y = static_cast<int>(point.y) - wd->pos_root.y;
+		arg.pos.x = static_cast<int>(point.x);  /// \todo: is system-side dpi to user-side ok here?
+		arg.pos.y = static_cast<int>(point.y);
+		platform_abstraction::untransform_dpi(arg.pos, wd->dpi);
+		arg.pos -= wd->pos_root;
+
 		arg.left_button = pmdec.mouse.button.left;
 		arg.mid_button = pmdec.mouse.button.middle;
 		arg.right_button = pmdec.mouse.button.right;
@@ -572,24 +622,25 @@ namespace detail
 		arg.shift = pmdec.mouse.button.shift;
 	}
 
-	//trivial_message
-	//	The Windows messaging always sends a message to the window thread queue when the calling is in other thread.
-	//If messages can be finished without expecting Nana's window manager, the trivail_message function would
-	//handle those messages. This is a method to avoid a deadlock, that calling waits for the handling and they require
-	//Nana's window manager.
+
+	///	The Windows messaging always sends a message to the window thread queue when the calling is in other thread.
+	/// 
+	/// If messages can be finished without expecting Nana's window manager, the trivail_message function would
+	/// handle those messages. This is a method to avoid a deadlock, that calling waits for the handling and they require
+	/// Nana's window manager.
 	bool trivial_message(HWND wd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT & ret)
 	{
 		bedrock & bedrock = bedrock::instance();
 		switch(msg)
 		{
-		case nana::detail::messages::async_activate:
-			::EnableWindow(wd, true);
+		case nana::detail::messages::async_activate:	//wParam = 0, lParam = window . Not send back to Windows DefWindowProc
+			::EnableWindow(wd, true); 
 			::SetActiveWindow(wd);
 			return true;
-		case nana::detail::messages::async_set_focus:
+		case nana::detail::messages::async_set_focus:   //wParam = 0, lParam = window . Not send back to Windows DefWindowProc
 			::SetFocus(wd);
 			return true;
-		case nana::detail::messages::operate_caret:
+		case nana::detail::messages::operate_caret: 
 			//Refer to basis.hpp for this specification.
 			switch(wParam)
 			{
@@ -597,14 +648,16 @@ namespace detail
 				::DestroyCaret();
 				break;
 			case 2: //SetPos
-				::SetCaretPos(reinterpret_cast<nana::detail::messages::caret*>(lParam)->x, reinterpret_cast<nana::detail::messages::caret*>(lParam)->y);
+				::SetCaretPos(reinterpret_cast<nana::detail::messages::caret*>(lParam)->x, 
+							  reinterpret_cast<nana::detail::messages::caret*>(lParam)->y); 
+				/// \todo: system-side dpi ok? direct use of lParam set in native_interface::caret_pos?
 				delete reinterpret_cast<nana::detail::messages::caret*>(lParam);
 				break;
 			}
 			return true;
-		case nana::detail::messages::remote_flush_surface:
+		case nana::detail::messages::remote_flush_surface:  // wParam = window, lParam = detail::messages::map_thread. Not send back to Windows DefWindowProc
 			{
-				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);
+				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);  //lParam   \todo: User-side dpi  
 				bedrock.wd_manager().map(reinterpret_cast<basic_window*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
 				::UpdateWindow(wd);
 				::HeapFree(::GetProcessHeap(), 0, stru);
@@ -671,6 +724,7 @@ namespace detail
 		case WM_MOUSELEAVE:
 		case WM_MOUSEWHEEL:	//The WM_MOUSELAST may not include the WM_MOUSEWHEEL/WM_MOUSEHWHEEL when the version of SDK is low.
 		case WM_MOUSEHWHEEL:
+			// The messages above are not trivial messages - not send back to Windows DefWindowProc
 			return false;
 		default:
 			if((WM_MOUSEFIRST <= msg && msg <= WM_MOUSELAST) || (WM_KEYFIRST <= msg && msg <= WM_KEYLAST))
@@ -683,18 +737,16 @@ namespace detail
 
 	void adjust_sizing(basic_window* wd, ::RECT * const r, int edge, unsigned req_width, unsigned req_height)
 	{
-		unsigned width = static_cast<unsigned>(r->right - r->left) - wd->extra_width;
-		unsigned height = static_cast<unsigned>(r->bottom - r->top) - wd->extra_height;
+		///\todo: all here user-side dpi ?? r from *r = unscale_dpi_(*r, msgwnd->dpi);	in 	Bedrock_WIN32_WindowProc	///\todo: to user-side dpi ok?)
 
-		if(wd->max_track_size.width && (wd->max_track_size.width < req_width))
-			req_width = wd->max_track_size.width;
-		else if(wd->min_track_size.width && (wd->min_track_size.width > req_width))
-			req_width = wd->min_track_size.width;
+		unsigned width  = static_cast<unsigned>(r->right  - r->left) - wd->extra_width;
+		unsigned height = static_cast<unsigned>(r->bottom - r->top ) - wd->extra_height;
 
-		if(wd->max_track_size.height && (wd->max_track_size.height < req_height))
-			req_height = wd->max_track_size.height;
-		else if(wd->min_track_size.height && (wd->min_track_size.height > req_height))
-			req_height = wd->min_track_size.height;
+		if (wd->max_track_size.width  && (wd->max_track_size.width  < req_width ))  req_width  = wd->max_track_size.width;
+		if (wd->min_track_size.width  && (wd->min_track_size.width  > req_width ))  req_width  = wd->min_track_size.width;
+
+		if (wd->max_track_size.height && (wd->max_track_size.height < req_height))	req_height = wd->max_track_size.height;
+		if (wd->min_track_size.height && (wd->min_track_size.height > req_height))	req_height = wd->min_track_size.height;
 
 		if(req_width != width)
 		{
@@ -702,16 +754,12 @@ namespace detail
 			{
 			case WMSZ_LEFT:
 			case WMSZ_BOTTOMLEFT:
-			case WMSZ_TOPLEFT:
-				r->left = r->right - static_cast<int>(req_width) - wd->extra_width;
-				break;
+			case WMSZ_TOPLEFT: 		r->left = r->right - static_cast<int>(req_width) - wd->extra_width; 	break;
 			case WMSZ_RIGHT:
 			case WMSZ_BOTTOMRIGHT:
 			case WMSZ_TOPRIGHT:
 			case WMSZ_TOP:
-			case WMSZ_BOTTOM:
-				r->right = r->left + static_cast<int>(req_width) + wd->extra_width;
-				break;
+			case WMSZ_BOTTOM:		r->right = r->left + static_cast<int>(req_width) + wd->extra_width;		break;
 			}
 		}
 
@@ -721,16 +769,12 @@ namespace detail
 			{
 			case WMSZ_TOP:
 			case WMSZ_TOPLEFT:
-			case WMSZ_TOPRIGHT:
-				r->top = r->bottom - static_cast<int>(req_height) - wd->extra_height;
-				break;
+			case WMSZ_TOPRIGHT:		r->top = r->bottom - static_cast<int>(req_height) - wd->extra_height;	break;
 			case WMSZ_BOTTOM:
 			case WMSZ_BOTTOMLEFT:
 			case WMSZ_BOTTOMRIGHT:
 			case WMSZ_LEFT:
-			case WMSZ_RIGHT:
-				r->bottom = r->top + static_cast<int>(req_height) + wd->extra_height;
-				break;
+			case WMSZ_RIGHT:		r->bottom = r->top + static_cast<int>(req_height) + wd->extra_height;	break;
 			}
 		}
 	}
@@ -802,6 +846,7 @@ namespace detail
 			auto msgwnd = root_wd;
 
 			detail::bedrock::root_guard rw_guard{ brock, root_wd };
+			::nana::point pos;
 
 			switch (message)
 			{
@@ -814,13 +859,20 @@ namespace detail
 				}
 				break;
 			case WM_DPICHANGED:  /// \todo: generalize dpi to v2 awareness
-				wd_manager.update_dpi(msgwnd);
-				{
-				
+			{
 				auto r = reinterpret_cast<const RECT*>(lParam);
-				auto dpi_x = HIWORD(wParam);
+				auto dpi_x = HIWORD(wParam);    /// \todo: always equals? we take it from native_interface::windows_dpi
 				auto dpi_y = LOWORD(wParam);
-				
+
+				if constexpr (dpi_debugging) 
+				{
+					std::cout << "WM_DPICHANGED: dpi_x = " << dpi_x  << ", dpi_y = " << dpi_y << '\n'
+						      << "window_dpi= " << api::window_dpi(msgwnd);
+					std::cout << "SetWindowPos: " << r->left << ", r->top = " << r->top << 
+						              ", size = " << r->right - r->left << ", " << r->bottom - r->top << '\n';
+				}
+				platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
+				wd_manager.update_dpi(msgwnd);  /// \todo: pass dpi = dpi_x to update_dpi  ??
 				::SetWindowPos(root_window,
 					NULL,
 					r->left,
@@ -828,7 +880,9 @@ namespace detail
 					r->right - r->left,
 					r->bottom - r->top,
 					SWP_NOZORDER | SWP_NOACTIVATE);
-				}
+				
+				wd_manager.refresh_tree(msgwnd);
+			}
 				break;
 			case WM_IME_STARTCOMPOSITION:
 				break;
@@ -892,15 +946,16 @@ namespace detail
 					wd_manager.do_lazy_refresh(msgwnd, false);
 				}
 				break;
-			case WM_GETMINMAXINFO:
+			case WM_GETMINMAXINFO:  ///\todo: reset MINMAXINFO pointed by lParam to the new values, system-side dpi ok?
 			{
 				bool take_over = false;
-				auto mmi = reinterpret_cast<MINMAXINFO*>(lParam);
+				auto mmi = reinterpret_cast<MINMAXINFO*>(lParam); ///\todo : system-side dpi ok?
 
 				if (!msgwnd->min_track_size.empty())
 				{
-					mmi->ptMinTrackSize.x = static_cast<LONG>(msgwnd->min_track_size.width + msgwnd->extra_width);
-					mmi->ptMinTrackSize.y = static_cast<LONG>(msgwnd->min_track_size.height + msgwnd->extra_height);
+					///\todo : user-side dpi to system-side ok?
+					mmi->ptMinTrackSize.x = static_cast<LONG>(platform_abstraction::dpi_scale(msgwnd->min_track_size.width  + msgwnd->extra_width , msgwnd->dpi));
+					mmi->ptMinTrackSize.y = static_cast<LONG>(platform_abstraction::dpi_scale(msgwnd->min_track_size.height + msgwnd->extra_height, msgwnd->dpi));
 					take_over = true;
 				}
 
@@ -908,12 +963,11 @@ namespace detail
 				{
 					if (msgwnd->max_track_size.width && msgwnd->max_track_size.height)
 					{
-						mmi->ptMaxTrackSize.x = static_cast<LONG>(msgwnd->max_track_size.width + msgwnd->extra_width);
-						mmi->ptMaxTrackSize.y = static_cast<LONG>(msgwnd->max_track_size.height + msgwnd->extra_height);
-						if (mmi->ptMaxSize.x > mmi->ptMaxTrackSize.x)
-							mmi->ptMaxSize.x = mmi->ptMaxTrackSize.x;
-						if (mmi->ptMaxSize.y > mmi->ptMaxTrackSize.y)
-							mmi->ptMaxSize.y = mmi->ptMaxTrackSize.y;
+						mmi->ptMaxTrackSize.x = static_cast<LONG>(platform_abstraction::dpi_scale(msgwnd->max_track_size.width  + msgwnd->extra_width , msgwnd->dpi));
+						mmi->ptMaxTrackSize.y = static_cast<LONG>(platform_abstraction::dpi_scale(msgwnd->max_track_size.height + msgwnd->extra_height, msgwnd->dpi));
+
+						if (mmi->ptMaxSize.x > mmi->ptMaxTrackSize.x)	mmi->ptMaxSize.x = mmi->ptMaxTrackSize.x;
+						if (mmi->ptMaxSize.y > mmi->ptMaxTrackSize.y)	mmi->ptMaxSize.y = mmi->ptMaxTrackSize.y;
 
 						take_over = true;
 					}
@@ -958,7 +1012,10 @@ namespace detail
 					break;
 
 				pressed_wd = nullptr;
-				msgwnd = wd_manager.find_window(native_window, { pmdec.mouse.x, pmdec.mouse.y });
+				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window)); ///\todo: use root_wd->dpi here?
+				msgwnd = wd_manager.find_window(native_window, pos);
+
 				if (msgwnd && msgwnd->flags.enabled)
 				{
 					if (msgwnd->flags.take_active && !msgwnd->flags.ignore_mouse_focus)
@@ -982,8 +1039,9 @@ namespace detail
 				//Ignore mouse events when a window has been pressed by pressing spacebar
 				if (pressed_wd_space)
 					break;
-
-				msgwnd = wd_manager.find_window(native_window, { pmdec.mouse.x, pmdec.mouse.y });
+				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));  ///\todo: use root_wd->dpi here?
+				msgwnd = wd_manager.find_window(native_window, pos);
 
 				//Don't take care about whether msgwnd is equal to the pressed_wd.
 				//
@@ -1024,9 +1082,8 @@ namespace detail
 						//If a root_window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
 						if (msgwnd->root != native_interface::get_focus_window())
 						{
-							auto pos = native_interface::cursor_position();
-							auto rootwd = native_interface::find_window(pos.x, pos.y);
-							native_interface::calc_window_point(rootwd, pos);
+							nana::point pos;
+							auto rootwd = native_interface::find_cursor_window(pos);
 							if (msgwnd != wd_manager.find_window(rootwd, pos))
 							{
 								//call the drawer mouse up event for restoring the surface graphics
@@ -1045,12 +1102,13 @@ namespace detail
 				//mouse_click, mouse_up
 			case WM_LBUTTONUP:
 			case WM_MBUTTONUP:
-			case WM_RBUTTONUP:
+			case WM_RBUTTONUP: 
 				//Ignore mouse events when a window has been pressed by pressing spacebar
 				if (pressed_wd_space)
 					break;
-
-				msgwnd = wd_manager.find_window(native_window, { pmdec.mouse.x, pmdec.mouse.y });
+				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));///\todo: use root_wd->dpi here?
+				msgwnd = wd_manager.find_window(native_window, pos);
 				if (nullptr == msgwnd)
 					break;
 
@@ -1104,8 +1162,10 @@ namespace detail
 				//Ignore mouse events when a window has been pressed by pressing spacebar
 				if (pressed_wd_space)
 					break;
-
-				msgwnd = wd_manager.find_window(native_window, {pmdec.mouse.x, pmdec.mouse.y});
+				pos = point{ pmdec.mouse.x, pmdec.mouse.y };  /// client mouse position in native_window \todo: keep dpi in wd??
+				platform_abstraction::untransform_dpi(pos, native_interface::window_dpi(native_window));///\todo: use root_wd->dpi here?
+				msgwnd = wd_manager.find_window(native_window, pos);
+				//msgwnd = wd_manager.find_window(native_window, {pmdec.mouse.x, pmdec.mouse.y});
 				if (wd_manager.available(hovered_wd) && (msgwnd != hovered_wd))
 				{
 					brock.event_msleave(hovered_wd);
@@ -1122,7 +1182,7 @@ namespace detail
 				else if(msgwnd)
 				{
 					bool prev_captured_inside;
-					if(wd_manager.capture_window_entered(pmdec.mouse.x, pmdec.mouse.y, prev_captured_inside))
+					if(wd_manager.capture_window_entered(pos.x, pos.y, prev_captured_inside))
 					{
 						event_code evt_code;
 						if(prev_captured_inside)
@@ -1276,9 +1336,10 @@ namespace detail
 				break;
 			case WM_SIZING:
 				{
-					::RECT* const r = reinterpret_cast<RECT*>(lParam);
-					unsigned width = static_cast<unsigned>(r->right - r->left) - msgwnd->extra_width;
-					unsigned height = static_cast<unsigned>(r->bottom - r->top) - msgwnd->extra_height;
+					::RECT* r = reinterpret_cast<RECT*>(lParam);				///\todo: system-side dpi ok?
+					*r = unscale_dpi_(*r, msgwnd->dpi);							///\todo: to user-side dpi ok?)
+					unsigned width  = static_cast<unsigned>(r->right  - r->left) - msgwnd->extra_width;
+					unsigned height = static_cast<unsigned>(r->bottom - r->top ) - msgwnd->extra_height;
 
 					if(msgwnd->max_track_size.width || msgwnd->min_track_size.width)
 					{
@@ -1286,6 +1347,7 @@ namespace detail
 						{
 							if(msgwnd->max_track_size.width && (width > msgwnd->max_track_size.width))
 								r->left = r->right - static_cast<int>(msgwnd->max_track_size.width) - msgwnd->extra_width;
+
 							if(msgwnd->min_track_size.width && (width < msgwnd->min_track_size.width))
 								r->left = r->right - static_cast<int>(msgwnd->min_track_size.width) - msgwnd->extra_width;
 						}
@@ -1349,8 +1411,10 @@ namespace detail
 					if (arg.width != width || arg.height != height)
 					{
 						adjust_sizing(msgwnd, r, static_cast<int>(wParam), arg.width, arg.height);
+						*r = scale_to_dpi_(*r, msgwnd->dpi);	///\todo: back to system-side dpi ok?
 						return TRUE;
 					}
+					*r = scale_to_dpi_(*r, msgwnd->dpi);	///\todo: back to system-side dpi ok?
 				}
 				break;
 			case WM_SIZE:
@@ -1358,7 +1422,11 @@ namespace detail
 					wd_manager.size(msgwnd, size(pmdec.size.width, pmdec.size.height), true, true);
 				break;
 			case WM_MOVE:
-				brock.event_move(msgwnd, (int)(short) LOWORD(lParam), (int)(short) HIWORD(lParam));
+				{
+                    point p  ( (int)(short) LOWORD(lParam), 
+							   (int)(short) HIWORD(lParam));
+					brock.event_move(msgwnd, p.x, p.y);
+                }
 				break;
 			case WM_PAINT:
 				{
@@ -1728,7 +1796,7 @@ namespace detail
 
 	void bedrock::map_through_widgets(basic_window* wd, native_drawable_type drawable)
 	{
-		auto graph_context = reinterpret_cast<HDC>(wd->root_graph->handle()->context);
+		auto graph_context = reinterpret_cast<HDC>(wd->root_graph->handle()->context);  // destination HDC
 
 		for (auto child : wd->children)
 		{
@@ -1736,8 +1804,11 @@ namespace detail
 
 			if (::nana::category::flags::widget == child->other.category)
 			{
-				::BitBlt(reinterpret_cast<HDC>(drawable), child->pos_root.x, child->pos_root.y, static_cast<int>(child->dimension.width), static_cast<int>(child->dimension.height),
-					graph_context, child->pos_root.x, child->pos_root.y, SRCCOPY);
+				///\todo: dpi scale
+				auto pos_root = platform_abstraction::dpi_scale(child->pos_root, wd->dpi);  
+				auto dimension = platform_abstraction::dpi_scale(child->dimension, wd->dpi);
+				::BitBlt(reinterpret_cast<HDC>(drawable), pos_root.x, pos_root.y, static_cast<int>(dimension.width), static_cast<int>(dimension.height),
+				    	graph_context, pos_root.x, pos_root.y, SRCCOPY);
 			}
 			else if (::nana::category::flags::lite_widget == child->other.category)
 				map_through_widgets(child, drawable);
@@ -1844,8 +1915,8 @@ namespace detail
 		wd->root_widget->other.attribute.root->state_cursor = nana::cursor::arrow;
 		wd->root_widget->other.attribute.root->state_cursor_window = nullptr;
 
-		auto pos = native_interface::cursor_position();
-		auto native_handle = native_interface::find_window(pos.x, pos.y);
+		nana::point pos;
+		auto native_handle = native_interface::find_cursor_window(pos);
 
 		if (!native_handle)
 		{
@@ -1854,7 +1925,6 @@ namespace detail
 			return;
 		}
 
-		native_interface::calc_window_point(native_handle, pos);
 		auto rev_wd = wd_manager().find_window(native_handle, pos);
 		if (rev_wd)
 		{

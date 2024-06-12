@@ -250,7 +250,7 @@ namespace nana
 			//bool found_data = false;
 			if (simple_mode_)
 			{
-				auto hovered_wd = api::find_window(point(pt.x, pt.y));
+				auto hovered_wd = api::find_window_from_system_screen_point(point(pt.x, pt.y));
 
 				if ((hovered_wd && (hovered_wd == this->current_source())) || this->has(this->current_source(), hovered_wd))
 					*req_effect &= DROPEFFECT_COPY;
@@ -770,7 +770,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 						if (MotionNotify == msg_pkt.u.xevent.type)
 						{
 							auto pos = api::cursor_position();
-							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window(pos.x, pos.y));
+							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window_from_system_screen_point(pos));
 
 							const char* icon = nullptr;
 							if(hovered_.native_wd != native_cur_wd)
@@ -786,7 +786,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 							}
 
 
-							auto cur_wd = api::find_window(api::cursor_position());
+							auto cur_wd = api::find_window_from_system_screen_point(api::cursor_position());
 
 							if(hovered_.window_handle != cur_wd)
 							{
@@ -831,7 +831,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 						if (MotionNotify == msg_pkt.u.xevent.type)
 						{
 							auto pos = api::cursor_position();
-							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window(pos.x, pos.y));
+							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window_from_system_screen_point(pos));
 
 							xdnd_proto.mouse_move(native_cur_wd, pos, data.requested_action);
 						}
@@ -1029,7 +1029,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 
 			if (has_dropped)
 			{
-				auto drop_wd = api::find_window(api::cursor_position());
+				auto drop_wd = api::find_window_cursor();
 				auto i = impl_->targets.find(drop_wd);
 				if ((impl_->targets.end() != i) && i->second)
 					i->second();

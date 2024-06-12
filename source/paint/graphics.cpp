@@ -1,4 +1,4 @@
-/*
+/**
  *	Paint Graphics Implementation
  *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
@@ -7,8 +7,15 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/graphics.cpp
+ *	@file nana/paint/graphics.cpp
  */
+#include <algorithm>
+
+#if defined(NANA_WINDOWS)
+	#include <windows.h>
+#elif defined(NANA_X11)
+	#include <X11/Xlib.h>
+#endif
 
 #include "../detail/platform_spec_selector.hpp"
 #include <nana/gui/detail/bedrock.hpp>
@@ -18,12 +25,7 @@
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/unicode_bidi.hpp>
-#include <algorithm>
-#if defined(NANA_WINDOWS)
-	#include <windows.h>
-#elif defined(NANA_X11)
-	#include <X11/Xlib.h>
-#endif
+#include <nana/gui/programming_interface.hpp>
 
 #include "../detail/platform_abstraction.hpp"
 
@@ -35,12 +37,6 @@ namespace nana
 
 	namespace detail
 	{
-		font_style::font_style(unsigned weight, bool italic, bool underline, bool strike_out) :
-			weight(weight),
-			italic(italic),
-			underline(underline),
-			strike_out(strike_out)
-		{}
 
 		font_style& font_style::change_weight(unsigned w)
 		{
@@ -125,13 +121,14 @@ namespace paint
 		}
 
 		/// \todo: generalize dpi to v2 awareness
-		font::font(const font_info& fi, std::size_t dpi):
+		font::font(const font_info& fi, int dpi):
 			impl_(new impl_type)
 		{
 			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), {});
 		}
+
 		/// \todo: generalize dpi to v2 awareness
-		font::font(const std::string& font_family, double size_pt, const font_style& fs, std::size_t dpi):
+		font::font(const std::string& font_family, double size_pt, const font_style& fs, int dpi):
 			impl_(new impl_type)
 		{
 			font_info fi;
@@ -142,7 +139,7 @@ namespace paint
 		}
 
 		/// \todo: generalize dpi to v2 awareness
-		font::font(double size_pt, const path_type& ttf, const font_style& fs, std::size_t dpi) :
+		font::font(double size_pt, const path_type& ttf, const font_style& fs, int dpi) :
 			impl_(new impl_type)
 		{
 			font_info fi;
@@ -176,12 +173,15 @@ namespace paint
 			return impl_->real_font->font_info().family;
 		}
 
-		double font::size(bool fixed) const
+		double font::size(bool fixed, int dpi) const
 		{
 			double size_pt = (empty() ? 0.0 : impl_->real_font->font_info().size_pt);
 
 			if (fixed && (0.0 == size_pt))
 				return platform_abstraction::font_default_pt();
+
+			if (!dpi) dpi = platform_abstraction::current_dpi();
+            size_pt = size_pt * 96.0 / dpi;
 
 			return size_pt;
 		}
@@ -259,24 +259,49 @@ namespace paint
 		}
 	//end class font
 
-	//class graphics
+	//class graphics. /// \todo add dpi, scale, and/or wd/widget? to the graphics constructor
 		struct graphics::implementation
 		{
-			std::shared_ptr<::nana::detail::drawable_impl_type> platform_drawable;
+			int             dpi  { 97   };
+			float           scale{ dpi / 96.0f };				/// \todo:
 			font			font_shadow;
-			drawable_type	handle{ nullptr };
-			::nana::size	size;
+			std::shared_ptr<::nana::detail::drawable_impl_type> platform_drawable;
+			drawable_type	handle{ nullptr };			///< just refers to the platform-specific drawable_impl_type object above
+			::nana::size	size;						///< system-side size, dpi-scaled
 			pixel_buffer	pxbuf;
-			bool changed{ false };
+			bool            changed{ false };
 		};
 
-		graphics::graphics()
-			: impl_(new implementation)
-		{}
-
-		graphics::graphics(const nana::size& sz)
-			: impl_(new implementation)
+		void graphics::set_dpi(int dpi)
+        {
+            if (dpi == impl_->dpi) return;
+			auto sz = this->size();
+        	auto info = typeface().info();
+			graphics duplicate(std::move(*this));
+			impl_->dpi = dpi;
+			nana::paint::font ft{ info.value(), dpi };
+			typeface(ft);
+			make(sz);  // this will scale the size to the dpi
+			//bitblt(0, 0, duplicate);
+        }
+		int graphics::get_dpi() const
+        {
+            return impl_->dpi;
+        }
+		graphics::graphics(int dpi)
+			: impl_(new implementation{.dpi  {dpi?dpi: api::screen_dpi()}})
 		{
+			auto info = typeface().info();
+			nana::paint::font ft{ info.value(), impl_->dpi };
+			typeface(ft);
+		}
+
+		graphics::graphics(const nana::size& sz, int dpi)
+			: impl_(new implementation{.dpi{dpi}, .scale{dpi/96.0f}})
+		{
+			auto info = typeface().info();
+			nana::paint::font ft{ info.value(), dpi };
+			typeface(ft);
 			make(sz);
 		}
 
@@ -293,7 +318,6 @@ namespace paint
 			}
 			return *this;
 		}
-
 
 		graphics::graphics(graphics&& other)
 			: impl_(std::move(other.impl_))
@@ -355,8 +379,9 @@ namespace paint
 				impl_.swap(other.impl_);
 		}
 
-		void graphics::make(const ::nana::size& sz)
+		void graphics::make(const ::nana::size& sz_)
 		{
+			auto sz = platform_abstraction::dpi_scale(sz_, impl_->dpi);
 			if (impl_->handle == nullptr || impl_->size != sz)
 			{
 				if (sz.empty())
@@ -365,14 +390,14 @@ namespace paint
 					return;
 				}
 
-				//The object will be deleted while dwptr_ is performing a release.
+				// The object will be deleted while dwptr_ is performing a release. 
+				// Real constructor of drawable_impl_type. \todo: why not use make_unique?
 				std::shared_ptr<nana::detail::drawable_impl_type> dw{ new nana::detail::drawable_impl_type, detail::drawable_deleter{} };
 
-				//Reuse the old font
 				if (impl_->platform_drawable)
 				{
 					drawable_type reuse = impl_->platform_drawable.get();
-					dw->font = reuse->font;
+					dw->font = reuse->font;              // the correct 'dpi' size of font was set before for reuse by set_dpi
 					dw->string.tab_length = reuse->string.tab_length;
 				}
 				else
@@ -466,8 +491,8 @@ namespace paint
 					impl_->handle = dw.get();
 					impl_->size = sz;
 
-					impl_->handle->string.tab_pixels = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
-					impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" ", 1).width;
+					impl_->handle->string.tab_pixels        = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;  // dpi unscaled to SS
+					impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" " , 1).width;  // dpi unscaled to SS
 				}
 			}
 
@@ -478,7 +503,7 @@ namespace paint
 		void graphics::resize(const ::nana::size& sz)
 		{
 			graphics duplicate(std::move(*this));
-			make(sz);
+			make(sz);  // this will scale the size to the dpi
 			bitblt(0, 0, duplicate);
 		}
 
@@ -489,13 +514,13 @@ namespace paint
 			impl_->font_shadow = f;
 			if(impl_->handle && (false == f.empty()))
 			{
-				impl_->handle->font = f.impl_->real_font;
+				impl_->handle->font = f.impl_->real_font; /// \todo: scale_dpi before? no, the font don't know the target dpi. Set it before!  
 #if defined(NANA_WINDOWS)
 				::SelectObject(impl_->handle->context, reinterpret_cast<HFONT>(f.impl_->real_font->native_handle()));
 #endif
-
-				impl_->handle->string.tab_pixels = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
-				impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" ", 1).width;
+				/// scaled, system-side size
+				impl_->handle->string.tab_pixels        = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
+				impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" " , 1).width;
 
 				if (impl_->changed == false)
 					impl_->changed = true;
@@ -512,12 +537,12 @@ namespace paint
 		size graphics::text_extent_size(std::string_view text) const
 		{
 			throw_not_utf8(text);
-			return detail::text_extent_size(impl_->handle, text.data(), text.length());
+			return platform_abstraction::unscale_dpi(detail::text_extent_size(impl_->handle, text.data(), text.length()), impl_->dpi) ;
 		}
 
 		size graphics::text_extent_size(std::wstring_view text) const
 		{
-			return detail::text_extent_size(impl_->handle, text.data(), text.length());
+			return platform_abstraction::unscale_dpi(detail::text_extent_size(impl_->handle, text.data(), text.length()), impl_->dpi) ;
 		}
 
 #ifdef __cpp_char8_t
@@ -527,7 +552,7 @@ namespace paint
 		}
 #endif
 		
-		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const
+		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const  /// \todo: not used?
 		{
 			end = std::clamp(end, static_cast<std::size_t>(0), static_cast<std::size_t>(text.size()));
 
@@ -552,14 +577,14 @@ namespace paint
 #elif defined(NANA_X11)
 			sz = text_extent_size(text.substr(begin, end - begin));
 #endif
-			return sz;
+			return platform_abstraction::unscale_dpi(sz, impl_->dpi) ;
 		}
 
-		std::unique_ptr<unsigned[]> graphics::glyph_pixels(std::wstring_view text) const
+		std::unique_ptr<unsigned[]> graphics::glyph_pixels(std::wstring_view text) const   ///\todo: return vector?
 		{
 			if (nullptr == impl_->handle || nullptr == impl_->handle->context) return {};
 
-			auto pxbuf = std::unique_ptr<unsigned[]>{ new unsigned[text.size() ? text.size() : 1] };
+			auto pxbuf = std::unique_ptr<unsigned[]>{ new unsigned[text.size() ? text.size() : 1] };  ///\todo: vector?
 
 			if (!text.empty())
 			{
@@ -570,10 +595,14 @@ namespace paint
 				::GetTextExtentExPoint(impl_->handle->context, text.data(), static_cast<int>(text.size()), 0, 0, dx, &extents);
 
 				pxbuf[0] = (text[0] == '\t' ? tab_pixels : dx[0]);
+				// unscale_dpi
+				pxbuf[0] = platform_abstraction::unscale_dpi(pxbuf[0], impl_->dpi);
 
 				for (std::size_t i = 1; i < text.size(); ++i)
 				{
 					pxbuf[i] = (text[i] == '\t' ? tab_pixels : dx[i] - dx[i - 1]);
+					// unscale_dpi
+					pxbuf[i] = platform_abstraction::unscale_dpi(pxbuf[i], impl_->dpi);
 				}
 				delete[] dx;
 #elif defined(NANA_X11) && defined(NANA_USE_XFT)
@@ -583,7 +612,7 @@ namespace paint
 			return pxbuf;
 		}
 
-		::nana::size graphics::bidi_extent_size(std::string_view utf8str) const
+		nana::size graphics::bidi_extent_size(std::string_view utf8str) const
 		{
 			return bidi_extent_size(to_wstring(utf8str));
 		}
@@ -596,14 +625,14 @@ namespace paint
 				auto const reordered = unicode_reorder(text.data(), text.size());
 				for (auto & i : reordered)
 				{
-					nana::size t = text_extent_size(std::wstring_view(i.begin, i.end - i.begin));
+					nana::size t = text_extent_size(std::wstring_view(i.begin, i.end - i.begin));   /// user-side
 
 					sz.width += t.width;
 					if (sz.height < t.height)
 						sz.height = t.height;
 				}
 			}
-			return sz;
+			return sz ;
 		}
 #ifdef __cpp_char8_t
 		::nana::size graphics::bidi_extent_size(std::u8string_view text) const
@@ -619,9 +648,13 @@ namespace paint
 #if defined(NANA_WINDOWS)
 				::TEXTMETRIC tm;
 				::GetTextMetrics(impl_->handle->context, &tm);
-				ascent = static_cast<unsigned>(tm.tmAscent);
-				descent = static_cast<unsigned>(tm.tmDescent);
-				internal_leading = static_cast<unsigned>(tm.tmInternalLeading);
+				// uscale_dpi before
+				ascent  = static_cast<unsigned>(tm.tmAscent);   
+				ascent  = platform_abstraction::unscale_dpi(ascent, impl_->dpi) ; 
+				descent = static_cast<unsigned>(tm.tmDescent); 
+				descent = platform_abstraction::unscale_dpi(descent, impl_->dpi) ; 
+				internal_leading = static_cast<unsigned>(tm.tmInternalLeading);  
+				internal_leading = platform_abstraction::unscale_dpi(internal_leading, impl_->dpi) ; 
 				return true;
 #elif defined(NANA_X11)
 				if(impl_->handle->font)
@@ -658,30 +691,34 @@ namespace paint
 		void graphics::line_begin(int x, int y)
 		{
 			if(!impl_->handle)	return;
+			auto p = platform_abstraction::dpi_scale(point(x,y), impl_->dpi);
+
 #if defined(NANA_WINDOWS)
-			::MoveToEx(impl_->handle->context, x, y, 0);
+			::MoveToEx(impl_->handle->context, p.x, p.y, 0);
 
 #elif defined(NANA_X11)
-			impl_->handle->line_begin_pos.x = x;
-			impl_->handle->line_begin_pos.y = y;
+			impl_->handle->line_begin_pos = p;
 #endif
 		}
 
 		void graphics::bitblt(int x, int y, const graphics& src)
 		{
-			nana::rectangle r(src.size());
+			nana::rectangle r(src.size()); 
 			r.x = x;
 			r.y = y;
 			bitblt(r, src);
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst, native_window_type src)
+		void graphics::bitblt(const nana::rectangle& r_dst_, native_window_type src)
 		{
 			if(impl_->handle)
 			{
+				auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);  
+
 #if defined(NANA_WINDOWS)
 				HDC dc = ::GetDC(reinterpret_cast<HWND>(src));
-				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, dc, 0, 0, SRCCOPY);
+				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, 
+						 dc, 0, 0, SRCCOPY);
 				::ReleaseDC(reinterpret_cast<HWND>(src), dc);
 #elif defined(NANA_X11)
 				::XCopyArea(nana::detail::platform_spec::instance().open_display(),
@@ -692,13 +729,18 @@ namespace paint
 			}
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst, native_window_type src, const nana::point& p_src)
+		void graphics::bitblt(const nana::rectangle& r_dst_, native_window_type src, const nana::point& p_src_)  /// \todo: unused?
 		{
 			if(impl_->handle)
 			{
+				auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi);   
+				auto p_src = platform_abstraction::dpi_scale(p_src_, nana::detail::native_interface::window_dpi(src));  
+
 #if defined(NANA_WINDOWS)
+				
 				HDC dc = ::GetDC(reinterpret_cast<HWND>(src));
-				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, dc, p_src.x, p_src.y, SRCCOPY);
+				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, 
+						 dc, p_src.x, p_src.y, SRCCOPY);
 				::ReleaseDC(reinterpret_cast<HWND>(src), dc);
 #elif defined(NANA_X11)
 				::XCopyArea(nana::detail::platform_spec::instance().open_display(),
@@ -709,12 +751,14 @@ namespace paint
 			}
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst, const graphics& src)
+		void graphics::bitblt(const nana::rectangle& r_dst_, const graphics& src)
 		{
 			if(impl_->handle && src.impl_->handle)
 			{
+                auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi); 
 #if defined(NANA_WINDOWS)
-				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, src.impl_->handle->context, 0, 0, SRCCOPY);
+				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, 
+						 src.impl_->handle->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
 				::XCopyArea(nana::detail::platform_spec::instance().open_display(),
 						src.impl_->handle->pixmap, impl_->handle->pixmap, impl_->handle->context,
@@ -724,12 +768,15 @@ namespace paint
 			}
 		}
 
-		void graphics::bitblt(const nana::rectangle& r_dst, const graphics& src, const nana::point& p_src)
+		void graphics::bitblt(const nana::rectangle& r_dst_, const graphics& src, const nana::point& p_src_)
 		{
 			if(impl_->handle && src.impl_->handle)
 			{
+				 auto r_dst = platform_abstraction::dpi_scale(r_dst_, impl_->dpi); 
+				 auto p_src = platform_abstraction::dpi_scale(p_src_, src.impl_->dpi); ///\todo: use dpi src?
 #if defined(NANA_WINDOWS)
-				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, src.impl_->handle->context, p_src.x, p_src.y, SRCCOPY);
+				::BitBlt(impl_->handle->context, r_dst.x, r_dst.y, r_dst.width, r_dst.height, 
+						 src.impl_->handle->context, p_src.x, p_src.y, SRCCOPY);
 #elif defined(NANA_X11)
 				::XCopyArea(nana::detail::platform_spec::instance().open_display(),
 						src.impl_->handle->pixmap, impl_->handle->pixmap, impl_->handle->context,
@@ -739,8 +786,9 @@ namespace paint
 			}
 		}
 
-		void graphics::blend(const nana::rectangle& r, const ::nana::color& clr, double fade_rate)
+		void graphics::blend(const nana::rectangle& r_, const ::nana::color& clr, double fade_rate)
 		{
+			auto r = platform_abstraction::dpi_scale(r_, impl_->dpi);  ///\todo : scale dpi? for blend(drawable_type dw, ??
 			if (impl_->handle)
 			{
 				nana::paint::detail::blend(impl_->handle, r, clr.px_color(), fade_rate);
@@ -748,27 +796,31 @@ namespace paint
 			}
 		}
 
-		void graphics::blend(const ::nana::rectangle& blend_r, const graphics& graph, const point& blend_graph_point, double fade_rate)///< blends with the blend_graph.
+		void graphics::blend(const ::nana::rectangle& blend_r_, const graphics& graph, const point& blend_graph_point_, double fade_rate)///< blends with the blend_graph.
 		{
 			if (graph.impl_->handle && impl_->handle && (graph.impl_->handle != impl_->handle))
 			{
 				pixel_buffer graph_px;
+				auto blend_r = platform_abstraction::dpi_scale(blend_r_, impl_->dpi);
+				auto blend_graph_point = platform_abstraction::dpi_scale(blend_graph_point_, graph.impl_->dpi);   
 
 				nana::rectangle r{ blend_graph_point, blend_r.dimension() };
 
-				graph_px.attach(graph.impl_->handle, r);
-				graph_px.blend(r, impl_->handle, blend_r.position(), 1 - fade_rate);
+				graph_px.attach(graph.impl_->handle, r);                                
+				graph_px.blend(r, impl_->handle, blend_r.position(), 1 - fade_rate);  
 
 				if (graph.impl_->changed == false) graph.impl_->changed = true;
 			}
 		}
 
-		void graphics::blur(const nana::rectangle& r, std::size_t radius)
+		void graphics::blur(const nana::rectangle& r, std::size_t radius_) /// \todo: scale dpi ?
 		{
 			if(impl_->handle)
 			{
+				// convert to unsigned int and back to size_t 
+				auto radius = static_cast<std::size_t>(platform_abstraction::dpi_scale(static_cast<unsigned>(radius_), impl_->dpi));
 				pixel_buffer pixbuf(impl_->handle, 0, 0);
-				pixbuf.blur(r, radius);
+				pixbuf.blur(r, radius);                        /// \todo: scale dpi ?
 				pixbuf.paste(impl_->handle, point{});
 			}
 		}
@@ -778,16 +830,16 @@ namespace paint
 			if(impl_->handle)
 			{
 				//Create the color table for performance
-				float* tablebuf = new float[0x100 * 3];
-				float* table_red = tablebuf;
+				float* tablebuf    = new float[0x100 * 3];
+				float* table_red   = tablebuf;
 				float* table_green = tablebuf + 0x100;
-				float* table_blue = tablebuf + 0x200;
+				float* table_blue  = tablebuf + 0x200;
 
 				for(int i = 0; i < 0x100; ++i)
 				{
-					table_red[i] = (i * 0.3f);
+					table_red  [i] = (i * 0.3f);
 					table_green[i] = (i * 0.59f);
-					table_blue[i] = (i * 0.11f);
+					table_blue [i] = (i * 0.11f);
 				}
 
 				pixel_buffer pixbuf(impl_->handle, 0, 0);
@@ -851,13 +903,16 @@ namespace paint
 		{
 			if(impl_->handle && dst.impl_->handle && impl_->handle != dst.impl_->handle)
 			{
+				auto p = platform_abstraction::dpi_scale(point(x, y), dst.impl_->dpi); 
+				auto sz = platform_abstraction::dpi_scale(size(), dst.impl_->dpi);
 #if defined(NANA_WINDOWS)
-				::BitBlt(dst.impl_->handle->context, x, y, impl_->size.width, impl_->size.height, impl_->handle->context, 0, 0, SRCCOPY);
+				::BitBlt(dst.impl_->handle->context, p.x, p.y, sz.width, sz.height, 
+						 impl_->handle->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
 				Display* display = nana::detail::platform_spec::instance().open_display();
 				::XCopyArea(display,
 					impl_->handle->pixmap, dst.impl_->handle->pixmap, impl_->handle->context,
-						0, 0, impl_->size.width, impl_->size.height, x, y);
+						0, 0, sz.width, sz.height, p.x, p.y);
 
 				::XFlush(display);
 #endif
@@ -874,11 +929,14 @@ namespace paint
 		{
 			if(impl_->handle)
 			{
+				auto p = platform_abstraction::dpi_scale(nana::rectangle(dx, dy, width, height), nana::detail::native_interface::window_dpi(dst));
+				point s = platform_abstraction::dpi_scale(point(sx, sy), impl_->dpi);
 #if defined(NANA_WINDOWS)
 				HDC dc = ::GetDC(reinterpret_cast<HWND>(dst));
 				if(dc)
 				{
-					::BitBlt(dc, dx, dy, width, height, impl_->handle->context, sx, sy, SRCCOPY);
+					::BitBlt(dc, p.x, p.y, p.width, p.height, 
+							 impl_->handle->context, s.x, s.y, SRCCOPY);
 					::ReleaseDC(reinterpret_cast<HWND>(dst), dc);
 				}
 #elif defined(NANA_X11)
@@ -890,7 +948,7 @@ namespace paint
 
 				::XCopyArea(display,
 					impl_->handle->pixmap, reinterpret_cast<Window>(dst), impl_->handle->context,
-						sx, sy, width, height, dx, dy);
+						s.x, s.y, width, height, p.x, p.y);
 
 				XWindowAttributes attr;
 				spec.set_error_handler();
@@ -907,42 +965,49 @@ namespace paint
 		{
 			if(impl_->handle && dst && impl_->handle != dst)
 			{
+				auto p = platform_abstraction::dpi_scale(point(x, y), impl_->dpi);  ///\todo: how to get dpi of dst?
 #if defined (NANA_WINDOWS)
-				::BitBlt(dst->context, x, y, impl_->size.width, impl_->size.height, impl_->handle->context, 0, 0, SRCCOPY);
+
+				::BitBlt(dst->context, p.x, p.y, impl_->size.width, impl_->size.height, 
+						 impl_->handle->context, 0, 0, SRCCOPY);
 #elif defined(NANA_X11)
 				Display * display = nana::detail::platform_spec::instance().open_display();
 				::XCopyArea(display,
 					impl_->handle->pixmap, dst->pixmap, impl_->handle->context,
-						0, 0, impl_->size.width, impl_->size.height, x, y);
+						0, 0, impl_->size.width, impl_->size.height, p.x, p.y);
 				::XFlush(display);
 #endif
 			}
 		}
 
-
-		void graphics::paste(const nana::rectangle& r_src, graphics& dst, int x, int y) const
+		void graphics::paste(const nana::rectangle& r_src_, graphics& dst, int x_, int y_) const
 		{
 			if(impl_->handle && dst.impl_->handle && impl_->handle != dst.impl_->handle)
 			{
+                auto r_src = platform_abstraction::dpi_scale(r_src_, impl_->dpi);
+                auto p = platform_abstraction::dpi_scale(point(x_, y_), dst.impl_->dpi);  ///\todo: how to get dpi of dst?
 #if defined(NANA_WINDOWS)
-				::BitBlt(dst.impl_->handle->context, x, y, r_src.width, r_src.height, impl_->handle->context, r_src.x, r_src.y, SRCCOPY);
+				::BitBlt(dst.impl_->handle->context, p.x, p.y, r_src.width, r_src.height, 
+						 impl_->handle->context, r_src.x, r_src.y, SRCCOPY);
 #elif defined(NANA_X11)
 				Display* display = nana::detail::platform_spec::instance().open_display();
 				::XCopyArea(display,
 					impl_->handle->pixmap, dst.impl_->handle->pixmap, impl_->handle->context,
-						r_src.x, r_src.y, r_src.width, r_src.height, x, y);
+						r_src.x, r_src.y, r_src.width, r_src.height, p.x, p.y);
 
 				::XFlush(display);
 #endif
 			}
 		}
 
-		void graphics::stretch(const nana::rectangle& src_r, graphics& dst, const nana::rectangle& r) const
+		void graphics::stretch(const nana::rectangle& src_r_, graphics& dst, const nana::rectangle& dst_r_) const
 		{
 			if(impl_->handle && dst.impl_->handle && (impl_->handle != dst.impl_->handle))
 			{
+				auto src_r = platform_abstraction::dpi_scale(src_r_, impl_->dpi);
+				auto dst_r = platform_abstraction::dpi_scale(dst_r_, dst.impl_->dpi);
 				pixel_buffer pixbuf(impl_->handle, 0, 0);
-				pixbuf.stretch(src_r, dst.impl_->handle, r);
+				pixbuf.stretch(src_r, dst.impl_->handle, dst_r);
 			}
 		}
 
@@ -959,15 +1024,16 @@ namespace paint
 		}
 
 		unsigned graphics::width() const{
-			return impl_->size.width;
+			return platform_abstraction::unscale_dpi(impl_->size.width, impl_->dpi);
 		}
 
 		unsigned graphics::height() const{
-			return impl_->size.height;
+			return platform_abstraction::unscale_dpi(impl_->size.height, impl_->dpi);
 		}
 
-		nana::size graphics::size() const{
-			return this->impl_->size;
+		nana::size graphics::size() const
+		{
+			return platform_abstraction::unscale_dpi(impl_->size, impl_->dpi);
 		}
 
 		void graphics::setsta()
@@ -1067,12 +1133,13 @@ namespace paint
 		{
 			if (impl_->handle)
 			{
+                auto p = platform_abstraction::dpi_scale(point(x, y), impl_->dpi);
 #if defined(NANA_WINDOWS)
-				::SetPixel(impl_->handle->context, x, y, impl_->handle->bgcolor_native);
+				::SetPixel(impl_->handle->context, p.x, p.y, impl_->handle->bgcolor_native);
 #elif defined(NANA_X11)
 				Display* disp = nana::detail::platform_spec::instance().open_display();
 				impl_->handle->update_color();
-				::XDrawPoint(disp, impl_->handle->pixmap, impl_->handle->context, x, y);
+				::XDrawPoint(disp, impl_->handle->pixmap, impl_->handle->context, p.x, p.y);
 #endif
 				if (impl_->changed == false) impl_->changed = true;
 			}
@@ -1107,10 +1174,11 @@ namespace paint
 			string(pos, utf8str);
 		}
 
-		void graphics::string(const nana::point& text_pos, std::wstring_view str)
+		void graphics::string(const nana::point& text_pos_, std::wstring_view str)
 		{
 			if (impl_->handle && !str.empty())
 			{
+				auto text_pos = platform_abstraction::dpi_scale(text_pos_, impl_->dpi);
 #if defined(NANA_POSIX)
 				impl_->handle->update_text_color();
 #endif
@@ -1121,7 +1189,7 @@ namespace paint
 				if (i != end)
 				{
 					auto pos = text_pos;
-					std::size_t tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.tab_pixels;
+					std::size_t tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.tab_pixels;  /// system-side ?
 					while (true)
 					{
 						auto len = i - begin;
@@ -1171,9 +1239,11 @@ namespace paint
 		}
 #endif
 
-		void graphics::line(const nana::point& pos1, const nana::point& pos2)
+		void graphics::line(const nana::point& pos1_, const nana::point& pos2_)
 		{
 			if (!impl_->handle)	return;
+			auto pos1 = platform_abstraction::dpi_scale(pos1_, impl_->dpi);
+			auto pos2 = platform_abstraction::dpi_scale(pos2_, impl_->dpi);
 #if defined(NANA_WINDOWS)
 			if (pos1 != pos2)
 			{
@@ -1206,9 +1276,10 @@ namespace paint
 			line_to(pos);
 		}
 
-		void graphics::line_to(const point& pos)
+		void graphics::line_to(const point& pos_)
 		{
 			if (!impl_->handle)	return;
+			auto pos = platform_abstraction::dpi_scale(pos_, impl_->dpi);
 #if defined(NANA_WINDOWS)
 			auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, impl_->handle->bgcolor_native));
 
@@ -1237,10 +1308,11 @@ namespace paint
 			rectangle(::nana::rectangle{ size() }, solid);
 		}
 
-		void graphics::rectangle(const ::nana::rectangle& r, bool solid)
+		void graphics::rectangle(const ::nana::rectangle& r_, bool solid)
 		{
-			if (r.width && r.height && impl_->handle && r.right() > 0 && r.bottom() > 0)
+			if (r_.width && r_.height && impl_->handle && r_.right() > 0 && r_.bottom() > 0)
 			{
+				auto r = platform_abstraction::dpi_scale(r_, impl_->dpi);
 #if defined(NANA_WINDOWS)
 
 				auto brush = ::CreateSolidBrush(impl_->handle->bgcolor_native);
@@ -1302,8 +1374,9 @@ namespace paint
 			}
 		}
 
-		void graphics::gradual_rectangle(const ::nana::rectangle& rct, const ::nana::color& from, const ::nana::color& to, bool vertical)
+		void graphics::gradual_rectangle(const ::nana::rectangle& rct_, const ::nana::color& from, const ::nana::color& to, bool vertical)
 		{
+			auto rct = platform_abstraction::dpi_scale(rct_, impl_->dpi);
 #if defined(NANA_WINDOWS)
 			if (impl_->pxbuf.open(impl_->handle))
 			{
@@ -1369,10 +1442,15 @@ namespace paint
 		}
 
 #define NANA_WINDOWS_RGB(a)	(((DWORD)(a) & 0xFF)<<16) |  ((DWORD)(a) & 0xFF00) | (((DWORD)(a) & 0xFF0000) >> 16 )
-		void graphics::round_rectangle(const ::nana::rectangle& r, unsigned radius_x, unsigned radius_y, const color& clr, bool solid, const color& solid_clr)
+
+		void graphics::round_rectangle(const ::nana::rectangle& r_, unsigned radius_x_, unsigned radius_y_, const color& clr, bool solid, const color& solid_clr)
 		{
 			if (impl_->handle)
 			{
+				auto      r = platform_abstraction::dpi_scale(        r_, impl_->dpi);
+				auto radius_x = platform_abstraction::dpi_scale(radius_x_, impl_->dpi);
+				auto radius_y = platform_abstraction::dpi_scale(radius_y_, impl_->dpi);
+
 #if defined(NANA_WINDOWS)
 				impl_->handle->set_color(clr);
 

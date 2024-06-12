@@ -1,4 +1,4 @@
-/*
+/**
  *	Window Manager Implementation
  *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
@@ -7,11 +7,15 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/window_manager.cpp
+ *	@file nana/gui/detail/window_manager.cpp
  *	@list of contributions:
  *		Katsuhisa Yuasa,
  *		wwriter, added a feature: disabling tabstop(#626)
  */
+
+#include <stdexcept>
+#include <algorithm>
+#include <iterator>
 
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
@@ -24,10 +28,6 @@
 #include "effects_renderer.hpp"
 #include "window_register.hpp"
 #include "inner_fwd_implement.hpp"
-
-#include <stdexcept>
-#include <algorithm>
-#include <iterator>
 
 namespace nana
 {
@@ -145,9 +145,9 @@ namespace nana
 			other.wpassoc = nullptr;	//moved-from
 		}
 
-		root_misc::root_misc(basic_window * wd, unsigned width, unsigned height)
+		root_misc::root_misc(basic_window * wd, const size& sz)
 			: window(wd),
-			root_graph({ width, height })
+			root_graph(sz, wd->dpi)
 		{
 			condition.ignore_tab = false;
 			condition.pressed = nullptr;
@@ -366,7 +366,10 @@ namespace detail
 			auto result = native_interface::create_window(native, nested, r, app);
 			if (result.native_handle)
 			{
-				auto wd = new basic_window(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
+				auto wd = new basic_window(owner, 
+										                          widget_notifier_interface::get_notifier(wdg), 
+										                          (category::root_tag**)nullptr,
+										                          result.dpi);
 				if (nested)
 				{
 					wd->owner = nullptr;
@@ -381,9 +384,10 @@ namespace detail
 				internal_scope_guard lock;
 
 				//create Root graphics Buffer and manage it
-				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, result.width, result.height));
+				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, result.client_size));
 
-				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
+				wd->bind_native_window(result.native_handle, result.client_size.width, result.client_size.height, 
+									   result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd);
 
 				bedrock::inc_window(wd->thread_id);
@@ -400,15 +404,23 @@ namespace detail
 				throw std::invalid_argument("invalid parent/owner handle");
 
 			if (parent->flags.destroying)
-				throw std::logic_error("the specified parent is destory");
+				throw std::logic_error("the specified parent is destroying");
 
 			auto wdg_notifier = widget_notifier_interface::get_notifier(wdg);
 
 			basic_window * wd;
 			if (is_lite)
-				wd = new basic_window(parent, std::move(wdg_notifier), r, (category::lite_widget_tag**)nullptr);
+				wd = new basic_window(parent, 
+									  std::move(wdg_notifier), 
+									  r, 
+									  (category::lite_widget_tag**)nullptr,
+				                      parent->dpi);
 			else
-				wd = new basic_window(parent, std::move(wdg_notifier), r, (category::widget_tag**)nullptr);
+				wd = new basic_window(parent, 
+									  std::move(wdg_notifier), 
+									  r, 
+									  (category::widget_tag**)nullptr,
+									  parent->dpi);
 
 			impl_->wd_register.insert(wd);
 			return wd;
@@ -460,7 +472,7 @@ namespace detail
 			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) == false)	return;
 
-			rectangle update_area(wd->pos_owner, wd->dimension);
+			rectangle update_area(wd->pos_owner, wd->dimension); // user-side 
 
 			auto parent = wd->parent;
 			if (parent)
@@ -474,8 +486,8 @@ namespace detail
 				update_area.y += parent->pos_owner.y;
 				parent = parent->parent;
 			}
-
-			update(parent, false, false, &update_area);
+			// update_area = unscale_dpi(update_area, wd->dpi);
+			update(parent, false, false, &update_area); // user-side
 		}
 
 		void window_manager::destroy_handle(basic_window* wd)
@@ -511,8 +523,7 @@ namespace detail
 			}
 		}
 
-		//show
-		//@brief: show or hide a window
+		/// show or hide a window
 		bool window_manager::show(basic_window* wd, bool visible)
 		{
 			internal_scope_guard lock;
@@ -573,7 +584,7 @@ namespace detail
 			return attr_.capture.window;
 		}
 
-		//move the wnd and its all children window, x and y is a relatively coordinate for wnd's parent window
+		/// move the wnd and all its children window, x and y are relative coordinate to wnd's parent window
 		bool window_manager::move(basic_window* wd, int x, int y, bool passive)
 		{
 			internal_scope_guard lock;
@@ -634,6 +645,7 @@ namespace detail
 			const bool size_changed = (r.width != wd->dimension.width || r.height != wd->dimension.height);
 			if(category::flags::root != wd->other.category)
 			{
+				// wd is not a root window: move the window and its children (the system will not move any of then)
 				//Move child widgets
 				if(r.x != wd->pos_owner.x || r.y != wd->pos_owner.y)
 				{
@@ -750,8 +762,8 @@ namespace detail
 			}
 
 			//Before resizing the window, creates the new graphics
-			paint::graphics graph;
-			paint::graphics root_graph;
+			paint::graphics graph(wd->dpi);
+			paint::graphics root_graph(wd->dpi);
 			if (category::flags::lite_widget != wd->other.category)
 			{
 				//If allocation fails, here throws std::bad_alloc.
@@ -828,18 +840,19 @@ namespace detail
 			return nullptr;
 		}
 
-		//Copy the root buffer that wnd specified into DeviceContext
+		/// Copy the root buffer that wd specified into DeviceContext
 		void window_manager::map(basic_window* wd, bool forced, const rectangle* update_area)
 		{
 			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
-				bedrock::instance().flush_surface(wd, forced, update_area);
+				bedrock::instance().flush_surface(wd, forced, update_area); // used to PostMessage, no dpi scaling needed
 		}
 
-		//update
-		//@brief:	update is used for displaying the screen-off buffer.
-		//			Because of a good efficiency, if it is called in an event procedure and the event procedure window is the
-		//			same as update's, update would not map the screen-off buffer and just set the window for lazy refresh
+
+		/// for displaying the screen-off buffer.
+		///
+		/// for better efficiency, if it is called in an event procedure and the event procedure window is the
+		/// same as update's, update would not map the screen-off buffer and just set the window for lazy refresh
 		bool window_manager::update(basic_window* wd, bool redraw, bool forced, const rectangle* update_area)
 		{
 			internal_scope_guard lock;
@@ -1108,7 +1121,7 @@ namespace detail
 			if (!this->available(wd))
 				return;
 
-			nana::point pos = native_interface::cursor_position();
+			nana::point pos = native_interface::cursor_screen_position();
 			auto & attr_cap = attr_.capture.history;
 
 			if (captured)
@@ -1375,11 +1388,10 @@ namespace detail
 			if (!available(wd))
 				return;
 
-			auto info = wd->drawer.graphics.typeface().info();
-
-			nana::paint::font ft{ info.value(), native_interface::window_dpi(wd->root) };
-
-			wd->drawer.graphics.typeface(ft);
+			wd->dpi = native_interface::window_dpi(wd->root);
+			wd->drawer.graphics.set_dpi(wd->dpi);    
+			///\todo: glass_buffer and root_graphics need to be updated too.
+			/// implement a wd->update_dpi(dpi) method to update all the window elements.
 
 			for (auto child : wd->children)
 			{
@@ -1524,6 +1536,7 @@ namespace detail
 			{
 				wd->parent = for_new;
 				wd->root = for_new->root;
+				wd->dpi = for_new->dpi;
 				wd->root_graph = for_new->root_graph;
 				wd->root_widget = for_new->root_widget;
 
@@ -1547,6 +1560,7 @@ namespace detail
 						else
 						{
 							child->root = wd->root;
+							child->dpi = wd->dpi;
 							child->root_graph = wd->root_graph;
 							child->root_widget = wd->root_widget;
 							set_pos_root(child, delta_pos);

@@ -1,4 +1,4 @@
-/*
+/**
 *	A Basic Window Widget Definition
 *	Nana C++ Library(https://nana.acemind.cn)
 *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/detail/basic_window.cpp
+*	@file nana/gui/detail/basic_window.cpp
 */
 
 #include "basic_window.hpp"
@@ -39,7 +39,7 @@ namespace nana
 						native_interface::caret_create(owner_->root, size_);
 
 						visibility_ = visible_state::invisible;
-						this->position(position_);
+						this->position(position_);  /// \todo: position_ = position_; ? just call update()
 					}
 					else
 						native_interface::caret_destroy(owner_->root);
@@ -214,8 +214,11 @@ namespace nana
 
 		//struct basic_window
 			//struct basic_window::other_tag
-				basic_window::other_tag::other_tag(category::flags categ)
-					: category(categ), active_window(nullptr), upd_state(update_state::none)
+				basic_window::other_tag::other_tag(category::flags categ, int dpi)
+					: category     (categ), 
+					  active_window(nullptr), 
+					  glass_buffer (dpi),
+					  upd_state    (update_state::none)
 				{
 					if (category::flags::root == categ)
 						attribute.root = new attr_root_tag;
@@ -230,11 +233,18 @@ namespace nana
 				}
 			//end struct basic_window::other_tag
 
-			//basic_window
-			//@brief: constructor for the root window
-			basic_window::basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, category::root_tag**)
-				: widget_notifier(std::move(wdg_notifier)), other(category::flags::root)
+
+			/// constructor for the root window
+			basic_window::basic_window(basic_window* owner, 
+									   std::unique_ptr<widget_notifier_interface>&& wdg_notifier, 
+									   category::root_tag**, 
+									   int dpi)
+				: dpi            (dpi),
+				  drawer         (dpi),
+				  widget_notifier(std::move(wdg_notifier)), 
+				  other          (category::flags::root, dpi)
 			{
+				if (owner) dpi = owner->dpi;  ///\todo: set dpi anyway? in all graphics?
 				drawer.bind(this);
 				_m_init_pos_and_size(nullptr, rectangle());
 				this->_m_initialize(owner);
@@ -259,6 +269,7 @@ namespace nana
 				if(category::flags::root == this->other.category)
 				{
 					this->root = wd;
+					this->dpi = native_interface::window_dpi(wd);  ///< \todo: cache the dpi??
 					dimension.width = width;
 					dimension.height = height;
 					this->extra_width = extra_width;
@@ -404,6 +415,7 @@ namespace nana
 					owner = nullptr;
 					root_widget = wd->root_widget;
 					root = wd->root;
+					dpi = wd->dpi;
 					root_graph = wd->root_graph;
 					index = static_cast<unsigned>(wd->children.size());
 					wd->children.emplace_back(this);

@@ -13,6 +13,7 @@
 
 #ifndef NANA_GUI_DETAIL_BASIC_WINDOW_HPP
 #define NANA_GUI_DETAIL_BASIC_WINDOW_HPP
+
 #include <nana/push_ignore_diagnostic>
 #include <nana/gui/detail/drawer.hpp>
 #include <nana/gui/detail/events_holder.hpp>
@@ -22,6 +23,7 @@
 #include <nana/basic_types.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/effects.hpp>
+#include <nana/gui/programming_interface.hpp> 
 
 namespace nana::widgets::skeletons
 {
@@ -101,11 +103,23 @@ namespace nana::detail
 		};
 
 		/// constructor for the root window
-		basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&&, category::root_tag**);
+		basic_window(basic_window* owner, 
+					 std::unique_ptr<widget_notifier_interface>&&, 
+					 category::root_tag**, 
+					 int dpi  ///< the dpi or scaling is needed to intitialize any bitmap graphics
+		            );
 
 		template<typename Category>
-		basic_window(basic_window* parent, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, const rectangle& r, Category**)
-			: widget_notifier(std::move(wdg_notifier)), other(Category::value)
+		basic_window(basic_window* parent, 
+					 std::unique_ptr<widget_notifier_interface>&& wdg_notifier, 
+					 const rectangle& r, 
+					 Category**,
+					 int dpi   ///< the dpi or scaling is needed to intitialize any bitmap graphics
+		             )
+			: dpi   (dpi), 
+			  drawer(dpi),
+			  widget_notifier(std::move(wdg_notifier)), 
+			  other(Category::value, dpi)
 		{
 			drawer.bind(this);
 			if(parent)
@@ -142,12 +156,13 @@ namespace nana::detail
 		void _m_init_pos_and_size(basic_window* parent, const rectangle&);
 		void _m_initialize(basic_window* parent);
 	public:
+		int dpi{ 96 };	      ///< \todo: DPI of the window, cached value of the root, root_widget's and root_graph.
 #if defined(NANA_POSIX)
 		point	pos_native;
 #endif
-		point	pos_root;	///< coordinates of the root window
-		point	pos_owner;
-		size	dimension;
+		point	pos_root;	   ///< coordinates of the root window  \todo: dpi? user or system-side ?
+		point	pos_owner;     ///< coordinates of the owner window \todo: dpi? user or system-side ?
+		size	dimension;     ///< size of thes window             \todo: dpi? user or system-side ?
 		::nana::size	min_track_size;
 		::nana::size	max_track_size;
 
@@ -188,7 +203,6 @@ namespace nana::detail
 			mouse_action	action;
 			mouse_action	action_before;
 		}flags;
-
 
 		struct annex_components
 		{
@@ -239,7 +253,7 @@ namespace nana::detail
 				attr_root_tag * root;
 			}attribute;
 
-			other_tag(category::flags);
+			other_tag(category::flags, int dpi);
 			~other_tag();
 		}other;
 

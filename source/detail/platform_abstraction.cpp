@@ -1,3 +1,19 @@
+/**
+ *	Platform Abstraction Implementation
+ *	Nana C++ Library 
+ *  Documentation https://nana.acemind.cn/documentation
+ *  Sources: https://github.com/cnjinhao/nana
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file nana/source/detail/platform_abstraction.cpp
+ *  @contributors  Jinhao 
+ */
+
+
 #include <set>
 #include <mutex>
 
@@ -12,12 +28,13 @@
 
 
 #ifdef NANA_WINDOWS
-
+//#   include <windef.h>
 #	ifndef _WIN32_WINNT
 #		define _WIN32_WINNT  0x0501
 #	endif
 
 #	include <windows.h>
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /******************************************************************
@@ -761,7 +778,7 @@ namespace nana
 			}
 		}
 
-		std::shared_ptr<font_interface> open_font(font_info fi, std::size_t dpi, const path_type& ttf)
+		std::shared_ptr<font_interface> open_font(font_info fi, int dpi, const path_type& ttf)
 		{
 			if (0 == dpi)
 			{
@@ -866,7 +883,7 @@ namespace nana
 				);
 		}
 
-		// Returns the DPI-dependent font size, in pixels
+		/// Returns the DPI-dependent font size, in pixels \todo: ??
 		static font_height_type _m_set_default_values(font_info& fi, std::size_t dpi)
 		{
 #ifdef NANA_WINDOWS
@@ -877,7 +894,7 @@ namespace nana
 
 			//Translate pt to px
 			auto hDC = ::GetDC(nullptr);
-			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
+			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72.0);
 
 			if (wfont_family.empty() || (0 == font_height))
 			{
@@ -906,9 +923,9 @@ namespace nana
 
 				if (0 == font_height)
 				{
-					auto correspond_dpi = detail::native_interface::system_dpi();
-					fi.size_pt = static_cast<double>(std::abs(metrics.lfMessageFont.lfHeight) * 72 / correspond_dpi);
-					font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
+					auto correspond_dpi = detail::native_interface::system_dpi(); /// \todo OK
+					fi.size_pt = static_cast<double>(std::abs(metrics.lfMessageFont.lfHeight) * 72.0 / correspond_dpi);
+					font_height = -static_cast<LONG>(fi.size_pt * dpi / 72.0);
 				}
 			}
 
@@ -931,8 +948,8 @@ namespace nana
 			std::wstring wfont_family = nana::detail::to_nstring(fi.family);
 
 			//Translate pt to px
-			auto hDC = ::GetDC(nullptr);
-			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
+			auto hDC = ::GetDC(nullptr);  /// \todo OK??
+			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72.0);
 			::ReleaseDC(nullptr, hDC);
 
 			::LOGFONT lf{};
@@ -1153,11 +1170,11 @@ namespace nana
 
 		//end class revertible_mutex
 
-    /// \todo: generalize dpi to v2 awareness
+    /// \todo: generalize dpi to v2 awareness. Set for each monitor
 	struct platform_runtime
 	{
 		platform_abstraction::revertible_mutex mutex;
-		std::size_t		dpi{ 0 };
+		int    		dpi{ 96 };
 		std::shared_ptr<font_interface> font;
 		font_service font_svc;
 	};
@@ -1260,8 +1277,8 @@ namespace nana
 
 	void platform_abstraction::initialize()
 	{
-		if (nullptr == data::storage)
-			data::storage = new platform_runtime;
+		if (data::storage) return;
+		data::storage = new platform_runtime{.dpi{screen_dpi()}};
 	}
 
 	void platform_abstraction::shutdown()
@@ -1288,8 +1305,7 @@ namespace nana
 	{
 #ifdef NANA_WINDOWS
 		//Create default font object.
-		NONCLIENTMETRICS metrics = {};
-		metrics.cbSize = sizeof metrics;
+		NONCLIENTMETRICS metrics = {.cbSize = sizeof(NONCLIENTMETRICS)};
 #if(WINVER >= 0x0600)
 #if defined(NANA_MINGW)
 		OSVERSIONINFO osvi = {};
@@ -1340,37 +1356,31 @@ namespace nana
 		return r.font;
 	}
 
-	void platform_abstraction::set_current_dpi(std::size_t dpi)
+	void platform_abstraction::set_current_dpi(int dpi)
 	{
 		platform_storage().dpi = dpi;
 	}
 
 	/// \todo: generalize dpi to v2 awareness
-	std::size_t platform_abstraction::current_dpi()
+	int platform_abstraction::current_dpi()
 	{
 		return platform_storage().dpi;
 	}
 
-	int platform_abstraction::dpi_scale(int size)
+	int platform_abstraction::dpi_scale(int scalar)
 	{
-		double dpiScale = static_cast<double>(current_dpi() / 96.0);
-
-		return static_cast<int>(size * dpiScale);
+		return dpi_scale(scalar, current_dpi());
 	}
 
-	nana::size platform_abstraction::dpi_scale(nana::size size)
+	nana::size platform_abstraction::dpi_scale(const nana::size& size)
 	{
-		double dpiScale = static_cast<double>(current_dpi() / 96.0);
-
-		return { static_cast<size::value_type>(size.width * dpiScale), static_cast<size::value_type>(size.height * dpiScale) };
+		return dpi_scale(size, current_dpi());
 	}
 
-	nana::point platform_abstraction::dpi_scale(nana::point point)
-	{
-		double dpiScale = static_cast<double>(current_dpi() / 96.0);
-
-		return { static_cast<nana::point::value_type>(point.x * dpiScale), static_cast<nana::point::value_type>(point.y * dpiScale) };
-	}
+	nana::point platform_abstraction::dpi_scale(const nana::point& point)
+    {
+        return dpi_scale(point, current_dpi());
+    }
 
 	int platform_abstraction::dpi_scale(window wd, int scalar)
 	{
@@ -1400,12 +1410,120 @@ namespace nana
 		return { static_cast<nana::point::value_type>(point.x * dpiScale), static_cast<nana::point::value_type>(point.y * dpiScale) };
 	}
 
-	std::shared_ptr<platform_abstraction::font> platform_abstraction::open_font(const font_info& fi, std::size_t dpi, const path_type& ttf)
+	std::shared_ptr<platform_abstraction::font> platform_abstraction::open_font(const font_info& fi, int dpi, const path_type& ttf)
 	{
 		nana::internal_scope_guard lock;
 		return platform_storage().font_svc.open_font(fi, dpi, ttf);
 	}
 
+	/// dpi scaling for int
+	int platform_abstraction::dpi_scale(const int scalar, int dpi)
+    {
+        return static_cast<int>(static_cast<long long> (dpi) * scalar / 96);
+    }
+	int platform_abstraction::dpi_transform(int& scalar, int dpi)
+    {
+        return scalar = static_cast<int>(static_cast<long long> (dpi) * scalar / 96);
+    }
+	int platform_abstraction::unscale_dpi(const int scalar, int dpi)
+    {
+        return static_cast<int>(static_cast<long long> (scalar) * 96 / dpi);
+    }
+	int platform_abstraction::untransform_dpi(int& scalar, int dpi)
+	{
+	    return scalar = static_cast<int>(static_cast<long long>(scalar) * 96 / dpi);
+	}
+	/// dpi scaling for unsigned int
+	unsigned int platform_abstraction::dpi_scale(const unsigned int scalar, int dpi)
+    {
+        return static_cast<unsigned int>(static_cast<long long>(dpi) * scalar / 96);
+    }
+	unsigned int platform_abstraction::dpi_transform(unsigned int& scalar, int dpi)
+    {
+        return scalar = static_cast<unsigned int>(static_cast<long long> (dpi) * scalar / 96);
+    }
+	unsigned int platform_abstraction::unscale_dpi(const unsigned int scalar, int dpi)
+    {
+        return static_cast<unsigned int>(static_cast<long long> (scalar) * 96 / dpi);
+    }
+	unsigned int platform_abstraction::untransform_dpi(unsigned int& scalar, int dpi)
+    {
+        return scalar = static_cast<unsigned int>(static_cast<long long> (scalar) * 96 / dpi);
+    }
+	
+	/// dpi scaling for nana::size
+	nana::size platform_abstraction::dpi_scale(const nana::size& sz, int dpi)
+    {
+        return { static_cast<size::value_type>(static_cast<long long> (dpi) * sz.width  / 96), 
+			     static_cast<size::value_type>(static_cast<long long> (dpi) * sz.height / 96) };
+    }
+	nana::size platform_abstraction::dpi_transform(nana::size& sz, int dpi)
+    {
+        sz.width  = static_cast<size::value_type>(static_cast<long long> (dpi) * sz.width  / 96);
+		sz.height = static_cast<size::value_type>(static_cast<long long> (dpi) * sz.height / 96);
+		return sz;
+    }
+	nana::size platform_abstraction::unscale_dpi(const nana::size& sz, int dpi)
+    {
+        return { static_cast<size::value_type>(static_cast<long long>(sz.width)  * 96 / dpi), 
+		         static_cast<size::value_type>(static_cast<long long> (sz.height) * 96 / dpi) };
+    }
+	nana::size platform_abstraction::untransform_dpi(nana::size& sz, int dpi)
+    {
+        sz.width  = static_cast<size::value_type>(static_cast<long long> (sz.width)  * 96 / dpi);
+		sz.height = static_cast<size::value_type>(static_cast<long long> (sz.height) * 96 / dpi);
+		return sz;
+    }
+
+	/// dpi scaling for nana::point
+	nana::point platform_abstraction::dpi_scale(const nana::point& pt, int dpi)
+    {
+        return { static_cast<nana::point::value_type>(static_cast<long long> (dpi) * pt.x / 96), 
+		         static_cast<nana::point::value_type>(static_cast<long long> (dpi) * pt.y / 96) };
+    }
+	nana::point platform_abstraction::dpi_transform(nana::point& pt, int dpi)
+    {
+        pt.x = static_cast<nana::point::value_type>(static_cast<long long> (dpi) * pt.x / 96);
+		pt.y = static_cast<nana::point::value_type>(static_cast<long long> (dpi) * pt.y / 96);
+		return pt;
+    }
+	nana::point platform_abstraction::unscale_dpi(const nana::point& pt, int dpi)
+    {
+        return { static_cast<nana::point::value_type>(static_cast<long long> (pt.x) * 96 / dpi), 
+	             static_cast<nana::point::value_type>(static_cast<long long> (pt.y) * 96 / dpi) };
+    }
+    nana::point platform_abstraction::untransform_dpi(nana::point& pt, int dpi)
+    {
+        pt.x = static_cast<nana::point::value_type>(static_cast<long long> (pt.x) * 96 / dpi);
+		pt.y = static_cast<nana::point::value_type>(static_cast<long long> (pt.y) * 96 / dpi);
+		return pt;
+    }
+	
+	/// dpi scaling for nana::rectangle
+    nana::rectangle platform_abstraction::dpi_scale(const nana::rectangle& r, int dpi)
+    {
+        return nana::rectangle{ dpi_scale(r.position(), dpi), 
+			                    dpi_scale(r.dimension(), dpi) };
+    }
+	nana::rectangle platform_abstraction::dpi_transform(nana::rectangle& r, int dpi)
+    {
+        r.position (dpi_scale( r.position(), dpi));
+		r.dimension(dpi_scale(r.dimension(), dpi));
+		return r;
+    }
+	nana::rectangle platform_abstraction::unscale_dpi(const nana::rectangle& r, int dpi)
+    {
+        return nana::rectangle{ unscale_dpi(r.position() , dpi), 
+		                        unscale_dpi(r.dimension(), dpi) };
+    }
+	nana::rectangle platform_abstraction::untransform_dpi(nana::rectangle& r, int dpi)
+    {
+        r.position (unscale_dpi( r.position(), dpi));	
+		r.dimension(unscale_dpi(r.dimension(), dpi));
+		return r;
+    }
+	
+	
 	void platform_abstraction::font_resource(bool try_add, const path_type& ttf)
 	{
 #ifdef NANA_WINDOWS
@@ -1427,29 +1545,9 @@ namespace nana
 		}
 #endif
 	}
-	/// \todo: generalize dpi to v2 awareness
-	unsigned platform_abstraction::screen_dpi(bool x_requested)
+ 
+	int platform_abstraction::screen_dpi(bool x_requested)
 	{
-#ifdef NANA_WINDOWS
-		auto hdc = ::GetDC(nullptr);
-		auto dots = static_cast<unsigned>(::GetDeviceCaps(hdc, (x_requested ? LOGPIXELSX : LOGPIXELSY)));
-		::ReleaseDC(nullptr, hdc);
-		return dots;
-#else
-		auto & spec = ::nana::detail::platform_spec::instance();
-		auto disp = spec.open_display();
-		auto screen = ::XDefaultScreen(disp);
-
-		double dots = 0.5;
-
-		if (x_requested)
-			dots += ((((double)DisplayWidth(disp, screen)) * 25.4) /
-			((double)DisplayWidthMM(disp, screen)));
-		else
-			dots += ((((double)DisplayHeight(disp, screen)) * 25.4) /
-			((double)DisplayHeightMM(disp, screen)));
-
-		return static_cast<unsigned>(dots);
-#endif
+         return detail::native_interface::system_dpi(x_requested);
 	}
 }

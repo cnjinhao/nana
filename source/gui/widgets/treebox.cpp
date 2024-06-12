@@ -120,7 +120,7 @@ namespace nana
 				comp_attribute_t attr;
 				if(comp_attribute(component::text, attr))
 				{
-					nana::paint::graphics item_graph({ item_r_.width, item_r_.height });
+					nana::paint::graphics item_graph({ item_r_.width, item_r_.height }, graph_->get_dpi());
 					item_graph.typeface(graph_->typeface());
 
 					renderer_->begin_paint(*widget_);
@@ -1735,7 +1735,7 @@ namespace nana
 					{
 						if (api::is_transparent_background(window_handle_))
 						{
-							paint::graphics item_graph{ attr.area.dimension() };
+							paint::graphics item_graph{ attr.area.dimension(), graph.get_dpi() };
 							item_graph.rectangle(false, *fg_ptr);
 							item_graph.rectangle(rectangle{ attr.area.dimension() }.pare_off(1), true, *bg_ptr);
 
@@ -1912,25 +1912,6 @@ namespace nana
 		//Treebox Implementation
 
 		//class trigger
-		//struct treebox_node_type
-
-		trigger::treebox_node_type::treebox_node_type(std::string text)
-			:text(std::move(text))
-		{}
-
-		trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)
-		{
-			if(this != &rhs)
-			{
-				text = rhs.text;
-				value = rhs.value;
-				checked = rhs.checked;
-				selected = rhs.selected;
-				img_idstr = rhs.img_idstr;
-			}
-			return *this;
-		}
-		//end struct treebox_node_type
 
 		trigger::trigger()
 			:	impl_(new implementation)
@@ -2092,7 +2073,7 @@ namespace nana
 			if(p)
 				p->value.second.text.swap(title);
 			else
-				p = impl_->attr.tree_cont.insert(node, key, treebox_node_type(std::move(title)));
+				p = impl_->attr.tree_cont.insert(node, key, treebox_node_type{.text=std::move(title)});
 
 			if (p)
 				impl_->draw(true);
@@ -2102,7 +2083,7 @@ namespace nana
 
 		trigger::node_type* trigger::insert(const std::string& path, std::string&& title)
 		{
-			auto x = impl_->attr.tree_cont.insert(path, treebox_node_type(std::move(title)));
+			auto x = impl_->attr.tree_cont.insert(path, treebox_node_type{.text=std::move(title)});
 			if (x)
 				impl_->draw(true);
 			return x;

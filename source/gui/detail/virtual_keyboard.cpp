@@ -309,7 +309,8 @@ namespace nana::detail
 				langs_(langs),
 				mode_(mode),
 				behave_(behave),
-				im_(_m_default_im())
+				im_(_m_default_im()),
+				cntpart_{.graph=paint::graphics(api::window_dpi(wd))}
 			{
 				cntpart_.lang = im_->lang();
 
@@ -781,7 +782,7 @@ namespace nana::detail
 				if (pressed_key_ == key.value)
 					r.pare_off(-2);
 
-				graph.rectangle(r, true, _m_key_color(key.value));
+				graph.rectangle(r, true, _m_key_color(key.value));  // scaled ok by graphics
 
 				if (key_types::character == key.type || key_types::digital == key.type || key_types::symbol == key.type)
 				{

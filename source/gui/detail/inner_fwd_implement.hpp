@@ -1,4 +1,4 @@
-/*
+/**
  *	Implementations of Inner Forward Declaration
  *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/inner_fwd_implement.hpp
+ *	@file nana/gui/detail/inner_fwd_implement.hpp
  *
  */
 
@@ -77,7 +77,7 @@ namespace nana{
 			}condition;
 
 			root_misc(root_misc&&);
-			root_misc(basic_window * wd, unsigned width, unsigned height);
+			root_misc(basic_window * wd, const size& sz);
 			~root_misc();
 
 #ifdef NANA_X11

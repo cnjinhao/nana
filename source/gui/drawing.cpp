@@ -1,4 +1,4 @@
-/*
+/**
  *	A Drawing Implementation
  *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/drawing.cpp
+ *	@file nana/gui/drawing.cpp
  */
 
 #ifndef NANA_DRAWING_REMOVED

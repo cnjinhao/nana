@@ -44,7 +44,7 @@ namespace nana
 
 				unsigned operator()(const int top, const wchar_t * buf, std::size_t bufsize)
 				{
-					auto const drawable = graph_.handle();
+					//auto const drawable = graph_.handle(); std::vector<unicode_bidi::entity>
 					auto const reordered = unicode_reorder(buf, bufsize);
 					
 					unsigned return_max_height = 0;
@@ -52,7 +52,8 @@ namespace nana
 					std::vector<nana::size> word_metrics;
 					for (auto & ent : reordered)
 					{
-						auto word_sz = detail::text_extent_size(drawable, ent.begin, ent.end - ent.begin);
+						/// \todo: dpi scale ??
+						auto word_sz = graph_.text_extent_size({ent.begin,  static_cast<unsigned>(ent.end - ent.begin) }); 
 						word_metrics.push_back(word_sz);
 
 						string_px += word_sz.width;
@@ -81,7 +82,7 @@ namespace nana
 								if (pos.x + static_cast<int>(wdm->width) <= right_ - static_cast<int>(ellipsis_px_))
 								{
 									//This word can be fully painted.
-									detail::draw_string(drawable, pos, ent.begin, ent.end - ent.begin);
+									graph_.string(pos, {ent.begin,  static_cast<unsigned>(ent.end - ent.begin) });
 								}
 								else
 								{
@@ -89,7 +90,7 @@ namespace nana
 
 									nana::rectangle r{ nana::size{ static_cast<unsigned>(right_ - ellipsis_px_) - pos.x, wdm->height } };
 
-									nana::paint::graphics dummy({ r.width, r.height });
+									nana::paint::graphics dummy({ r.width, r.height }, graph_.get_dpi());
 									dummy.typeface(graph_.typeface());
 
 									dummy.bitblt(r, graph_, pos);
@@ -98,7 +99,7 @@ namespace nana
 									r.y = top;
 									graph_.bitblt(r, dummy);
 									if (ellipsis_px_)
-										detail::draw_string(drawable, point{ right_ - static_cast<int>(ellipsis_px_), top }, L"...", 3);
+										graph_.string(point{ right_ - static_cast<int>(ellipsis_px_), top }, L"...");
 									break;
 								}
 							}
@@ -114,7 +115,7 @@ namespace nana
 						pos.x = (right_ - left_ - string_px) / 2;
 						for (auto & ent : reordered)
 						{
-							detail::draw_string(drawable, pos, ent.begin, ent.end - ent.begin);
+							graph_.string(pos, {ent.begin,  static_cast<unsigned>(ent.end - ent.begin) });
 							pos.x += (wdm++)->width;
 						}
 						break;
@@ -124,7 +125,7 @@ namespace nana
 						for (auto i = reordered.crbegin(); i != reordered.crend(); ++i)
 						{
 							pos.x -= (wdm--)->width;
-							detail::draw_string(drawable, pos, i->begin, i->end - i->begin);
+							graph_.string(pos, {i->begin,  static_cast<unsigned>(i->end - i->begin) });
 						}
 						break;
 					}
@@ -155,7 +156,7 @@ namespace nana
 				{
 					unsigned return_max_height = 0;
 
-					auto const drawable = graph.handle();
+					//auto const drawable = graph.handle();
 					unsigned string_px = 0;
 
 					std::vector<nana::size> word_metrics;
@@ -164,7 +165,8 @@ namespace nana
 
 					for(auto & i : reordered)
 					{
-						auto word_sz = detail::text_extent_size(drawable, i.begin, i.end - i.begin);
+						/// \todo: dpi scale ??
+						auto word_sz = graph.text_extent_size({i.begin, static_cast<unsigned>(i.end - i.begin) });
 						
 						word_metrics.emplace_back(word_sz);
 						string_px += word_sz.width;
@@ -206,7 +208,7 @@ namespace nana
 										idx_splitted = find_splitted(idx_head, len, pos.x, right, pxbuf);
 										if(idx_splitted == len)
 										{
-											detail::draw_string(drawable, pos, i.begin + idx_head, idx_splitted - idx_head);
+											graph.string(pos, {i.begin + idx_head, idx_splitted - idx_head});  // bidi_string ??
 
 											for(std::size_t i = idx_head; i < len; ++i)
 												pos.x += static_cast<int>(pxbuf[i]);
@@ -216,7 +218,7 @@ namespace nana
 										//Check the word whether it is splittable.
 										if(splittable(i.begin, idx_splitted))
 										{
-											detail::draw_string(drawable, pos, i.begin + idx_head, idx_splitted - idx_head);
+											graph.string(pos, {i.begin + idx_head, idx_splitted - idx_head});  // bidi_string ??
 											idx_head = idx_splitted;
 											pos.x = left;
 											pos.y += static_cast<int>(max_height);
@@ -235,8 +237,9 @@ namespace nana
 
 											if(u != head)
 											{
-												detail::draw_string(drawable, pos, head, u - head);
-												idx_head += u - head;
+												const std::size_t ln =  u - head;
+												graph.string(pos, {head, ln });  
+												idx_head += ln;
 												pos.x = left;
 												pos.y += static_cast<int>(max_height);
 											}
@@ -251,7 +254,7 @@ namespace nana
 												std::size_t splen = u - head;
 												pos.y += static_cast<int>(max_height);
 												pos.x = left;
-												detail::draw_string(drawable, pos, head, splen);
+												graph.string(pos, {head, splen});  // bidi_string ??
 
 												for(std::size_t k = idx_head; k < idx_head + splen; ++k)
 													pos.x += static_cast<int>(pxbuf[k]);
@@ -271,14 +274,14 @@ namespace nana
 								{
 									pos.x = left;
 									pos.y += static_cast<int>(max_height);
-									detail::draw_string(drawable, pos, i.begin, 1);
+									graph.string(pos, {i.begin, 1});  // bidi_string ??
 									pos.x += static_cast<int>(wdm->width);
 								}
 								max_height = 0;
 							}
 							else
 							{
-								detail::draw_string(drawable, pos, i.begin, i.end - i.begin);
+								graph.string(pos, {i.begin, static_cast<unsigned>(i.end - i.begin) });  // bidi_string ??
 								pos.x += static_cast<int>(wdm->width);
 							}
 
@@ -299,7 +302,7 @@ namespace nana
 							for(auto & ent : reordered)
 							{
 								if (pos.x + static_cast<int>(wdm->width) > 0)
-									detail::draw_string(drawable, pos, ent.begin, ent.end - ent.begin);
+									graph.string(pos, {ent.begin, static_cast<unsigned>(ent.end - ent.begin) });  // bidi_string ??
 
 								pos.x += static_cast<int>(wdm->width);
 								++wdm;
@@ -317,7 +320,7 @@ namespace nana
 								std::size_t len = ent.end - ent.begin;
 
 								pos.x -= static_cast<int>(wdm->width);
-								detail::draw_string(drawable, pos, ent.begin, len);
+								graph.string(pos, {ent.begin, len});  // bidi_string ??
 								++wdm;
 							}							
 						}
@@ -373,7 +376,7 @@ namespace nana
 				{
 					unsigned return_max_height = 0;
 
-					auto drawable = graph.handle();
+					//auto drawable = graph.handle();
 					
 					std::vector<nana::size> word_metrics;
 
@@ -382,7 +385,8 @@ namespace nana
 
 					for(auto & i : reordered)
 					{
-						auto word_sz = detail::text_extent_size(drawable, i.begin, i.end - i.begin);
+						/// \todo: dpi scale ??
+						auto word_sz = graph.text_extent_size({i.begin, static_cast<unsigned>(i.end - i.begin) });
 						word_metrics.emplace_back(word_sz);
 						string_px += word_sz.width;
 

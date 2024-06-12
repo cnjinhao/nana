@@ -262,6 +262,7 @@ namespace api
 			internal_scope_guard lock;
 			if(is_window(wd))
 			{
+				wd->drawer.graphics.set_dpi(wd->dpi);  ///\todo:  make(wd->dimension, wd->dpi)
 				wd->drawer.graphics.make(wd->dimension);
 				wd->drawer.graphics.rectangle(true, wd->annex.scheme->background.get_color());
 				wd->drawer.attached(wdg, dr);
@@ -627,14 +628,15 @@ namespace api
 
 	::nana::point cursor_position()
 	{
-		return interface_type::cursor_position();
+		return interface_type::cursor_screen_position();
 	}
+
 	/// generalized to dpi awareness v2
 	::nana::rectangle make_center(unsigned width, unsigned height) noexcept
 	{
 		auto screen = interface_type::primary_monitor_size();
 	    if constexpr (dpi_debugging)
-			std::cout << "API::make_center() on screen: (" << screen.width << ", " << screen.height << ") " << std::endl;
+			std::cout << "API::make_center() on screen: (" << screen.width << ", " << screen.height << ")\n ";
 		return{
 			static_cast<int>(width  > screen.width  ? 0 : (screen.width  - width ) >> 1),
 			static_cast<int>(height > screen.height ? 0 : (screen.height - height) >> 1),
@@ -921,9 +923,10 @@ namespace api
 
 	nana::size window_size(window wd)
 	{
-		nana::rectangle r;
-		api::get_window_rectangle(wd, r);
-		return{ r.width, r.height };
+		internal_scope_guard lock;
+		if(is_window(wd))
+			return wd->dimension;
+		return {};
 	}
 
 	void window_size(window wd, const size& sz)
@@ -1562,9 +1565,21 @@ namespace api
 		return restrict::wd_manager().calc_window_point(wd, pos);
 	}
 
-	window find_window(const nana::point& pos)
+	window find_window_cursor() ///<Finds a window which the cursor is over.
+    {
+        ::nana::point pos;
+        return find_window_cursor(pos);
+    }
+	
+	window find_window_cursor(::nana::point& pos) ///<Finds a window which the cursor is over.
+    {
+		auto wd = interface_type::find_cursor_window(pos);
+        return restrict::wd_manager().find_window(wd, pos, true);
+    }
+
+	window find_window_from_system_screen_point(const nana::point& pos)
 	{
-		auto wd = interface_type::find_window(pos.x, pos.y);
+		auto wd = interface_type::find_window_from_system_screen_point(pos);
 		if(wd)
 		{
 			::nana::point clipos{pos};
@@ -1678,7 +1693,7 @@ namespace api
 		if (is_window(wd) && wd->annex.content_measurer)
 		{
 			paint::graphics* graph = &wd->drawer.graphics;
-			paint::graphics temp_graph;
+			paint::graphics temp_graph(graph->get_dpi());
 			if (graph->empty())
 			{
 				temp_graph.make({ 1, 1 });
@@ -1693,19 +1708,19 @@ namespace api
 		
 		return{};
 	}
-	/// \todo: generalize dpi to v2 awareness
-	unsigned screen_dpi(bool x_requested)
+	
+	int screen_dpi(bool x_requested)   ///< unused ?
 	{
 		return ::nana::platform_abstraction::screen_dpi(x_requested);
 	}
 
-	std::size_t window_dpi(window wd)
+    int window_dpi(window wd)
 	{
 		internal_scope_guard lock;
 		if (is_window(wd))
 			return interface_type::window_dpi(wd->root);
 		
-		return 0;
+		return 96;
 	}
 
 	dragdrop_status window_dragdrop_status(::nana::window wd)

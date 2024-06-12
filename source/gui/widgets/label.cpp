@@ -214,7 +214,7 @@ namespace nana
 			void _m_set_default(const ::nana::paint::font& ft, const ::nana::color& fgcolor)
 			{
 				def_.font_name = ft.name();
-				def_.font_size = ft.size();
+				def_.font_size = ft.size(); /// \todo: set dpi ?? system dpi will be used.
 				def_.font_bold = ft.bold();
 				def_.fgcolor = fgcolor;
 
@@ -278,7 +278,7 @@ namespace nana
 					{
 						paint::font::font_style fs;
 						fs.weight = (bold ? 800 : 400);
-						transient_.current_font = paint::font{ name, fontsize, fs };
+						transient_.current_font = paint::font{ name, fontsize, fs, graph.get_dpi() };  /// \todo: set dpi ?? system dpi will be used.
 						graph.typeface(transient_.current_font);
 					}
 					transient_.current_fblock = fp;
@@ -959,7 +959,7 @@ namespace nana
 			//First Check the graph of label
 			//Then take a substitute for graph when the graph of label is zero-sized.
 			nana::paint::graphics * graph_ptr = impl->graph;
-			nana::paint::graphics substitute;
+			nana::paint::graphics substitute(graph_ptr->get_dpi());
 			if(graph_ptr->empty())
 			{
 				graph_ptr = &substitute;

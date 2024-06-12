@@ -1,4 +1,4 @@
-/*
+/**
  *	Paint Image Implementation
  *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
@@ -7,8 +7,8 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/image.hpp
- *	@description:	class image is used for load an image file into memory.
+ *	@file nana/paint/image.hpp
+ *	@description	class image is used for load an image file into memory.
  */
 
 #ifndef NANA_PAINT_IMAGE_HPP
@@ -47,7 +47,7 @@ namespace paint
 		void close() noexcept;
 
 		/// Saves the image as a Windows bitmap file
-		bool save(std::filesystem::path) const;
+		bool save(std::filesystem::path file) const;
 
 		bool alpha() const noexcept;
 		nana::size size() const noexcept;
