@@ -1,7 +1,7 @@
 /**
  *	An Implementation of Place for Layout
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -31,7 +31,6 @@
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/widgets/panel.hpp>
 #include <nana/gui/dragger.hpp>
-#include <nana/gui/drawing.hpp>
 
 #include "place_parts.hpp"
 
@@ -2188,8 +2187,8 @@ namespace nana
 			{
 				auto host_size = api::window_size(impl_ptr_->window_handle);
 				indicator_.docker.reset(new form(impl_ptr_->window_handle, { static_cast<int>(host_size.width) / 2 - 16, static_cast<int>(host_size.height) / 2 - 16, 32, 32 }, form::appear::bald<>()));
-				drawing dw(indicator_.docker->handle());
-				dw.draw([](paint::graphics& graph)
+
+				indicator_.docker->drawing([](paint::graphics& graph)
 				{
 					graph.rectangle(false, colors::midnight_blue);
 					graph.rectangle({ 1, 1, 30, 30 }, true, colors::light_sky_blue);
@@ -2228,8 +2227,7 @@ namespace nana
 					indicator_.dock_area.reset(new panel<true>(impl_ptr_->window_handle, {}, false));
 					indicator_.dock_area->move(this->field_area);
 
-					::nana::drawing dw(indicator_.dock_area->handle());
-					dw.draw([this](paint::graphics& graph)
+					indicator_.dock_area->drawing([this](paint::graphics& graph)
 					{
 						indicator_.graph.paste(this->field_area, graph, 0, 0);
 

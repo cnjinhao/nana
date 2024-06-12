@@ -1,8 +1,6 @@
 /**
  *	A List Box Implementation
- *	Nana C++ Library 
- *  Documentation https://nana.acemind.cn/documentation
- *  Sources: https://github.com/cnjinhao/nana
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 

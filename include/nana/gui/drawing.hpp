@@ -1,7 +1,7 @@
 /**
  *	A Drawing Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -9,6 +9,9 @@
  *
  *	@file nana/gui/drawing.hpp
  */
+
+#ifndef NANA_DRAWING_REMOVED
+
 #ifndef NANA_GUI_DRAWING_HPP
 #define NANA_GUI_DRAWING_HPP
 
@@ -21,7 +24,7 @@ namespace nana
 	/// \brief Draw pictures on a widget by specifying a drawing method that will be employed every time the widget refreshes. 
     /// By the end of drawing, the picture may not be displayed immediately. 
     /// If a picture need to be displayed immediately call nana::gui::api::refresh_window() .
-	class drawing
+	class [[deprecated("Deprecated in 1.8, please use widget::drawing instead")]] drawing
 		:private nana::noncopyable
 	{
 		struct draw_fn_handle;
@@ -53,3 +56,5 @@ namespace nana
 
 #include <nana/pop_ignore_diagnostic>
 #endif
+
+#endif //NANA_DRAWING_REMOVED

@@ -1,6 +1,6 @@
 /*
  *	An Animation Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -770,20 +770,6 @@ namespace nana
 				push_back(std::move(fs));
 			}
 		}
-
-		/*
-		void branch(const std::string& name, const frameset& frms)
-		{
-			impl_->branches[name].frames = frms;
-		}
-
-		void branch(const std::string& name, const frameset& frms, std::function<std::size_t(const std::string&, std::size_t, std::size_t&)> condition)
-		{
-			auto & br = impl_->branches[name];
-			br.frames = frms;
-			br.condition = condition;
-		}
-		*/
 
 		void animation::looped(bool enable)
 		{

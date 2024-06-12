@@ -1,6 +1,6 @@
 /*
  *	A Treebox Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -845,6 +845,8 @@ namespace nana
 
 			bool set_selected_multi(node_type* node, bool crtl, bool shift)
 			{
+				(void)shift;
+
 				if (crtl)
 				{
 					data.stop_drawing = true;
@@ -956,7 +958,7 @@ namespace nana
 				if(node_state.selected != node)
 				{
 					data.stop_drawing = true;
-					if ((node_state.selected && single_selection) || node == nullptr)
+					if ((node_state.selected && single_selection) || !node)
 					{
 						auto nodes_copy = node_state.nodes_selected;
 						node_state.clear();

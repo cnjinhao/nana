@@ -1,6 +1,6 @@
 /*
  *	Nana GUI Programming Interface Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -1765,8 +1765,27 @@ namespace api
 		return restrict::bedrock.vkeyboard().numeric(wd, padding);
 #else
 		(void)wd;
+		(void)padding;
 		return false;
 #endif	
+	}
+
+	std::function<void(paint::graphics&)> drawing(window wd)
+	{
+		internal_scope_guard lock;
+		if (!is_window(wd))
+			return {};
+
+		return wd->drawer.drawing();
+	}
+
+	void drawing(window wd, std::function<void(paint::graphics&)> fn)
+	{
+		internal_scope_guard lock;
+		if (!is_window(wd))
+			return;
+
+		wd->drawer.drawing(std::move(fn));
 	}
 }//end namespace api
 }//end namespace nana

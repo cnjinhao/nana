@@ -1,9 +1,7 @@
 /**
  *	A Basic Window Widget Definition
- *	Nana C++ Library 
- *  Documentation https://nana.acemind.cn/documentation
- *  Sources: https://github.com/cnjinhao/nana
- *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at

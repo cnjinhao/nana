@@ -1,6 +1,6 @@
 /**
  *	Nana GUI Header
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -18,7 +18,9 @@
 #include "gui/compact.hpp"
 #include "gui/screen.hpp"
 #include "gui/widgets/form.hpp"
+#ifndef NANA_DRAWING_REMOVED
 #include "gui/drawing.hpp"
+#endif
 #include "gui/msgbox.hpp"
 #include "gui/place.hpp"
 

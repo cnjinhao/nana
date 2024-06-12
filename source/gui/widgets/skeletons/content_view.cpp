@@ -1,7 +1,7 @@
 /**
 *	A Content View Implementation
-*	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2017-2024 Jinhao(cnjinhao@hotmail.com)
+*	Nana C++ Library(https://nana.acemind.cn)
+*	Copyright(C) 2017-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -90,7 +90,7 @@ namespace nana {
 
 						auto const scroll = cv_scroll->scroll(arg.which);
 
-						if (scroll && (!api::empty_window(arg.window_handle)))
+						if (scroll && api::is_window(arg.window_handle))
 						{
 							auto align_px = (scroll->value() % scroll->step());
 							if (align_px)

@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE or copy at 
@@ -118,8 +118,6 @@ namespace nana
 					checkstate	checked  {checkstate::unchecked};
 					std::string img_idstr;
 				};  
-
-				struct pseudo_node_type{};
 
 				using tree_cont_type = widgets::detail::tree_cont<treebox_node_type>;
 				using node_type = tree_cont_type::node_type;
@@ -386,7 +384,7 @@ namespace nana
 	}//end namespace drawerbase
 
     /// \brief  Displays a hierarchical list of items, such as the files and directories on a disk.
-    /// See also in [documentation](http://nanapro.org/en-us/documentation/widgets/treebox.htm)
+    /// See also in [documentation](https://nana.acemind.cn/documentation)
     class treebox
 		:public widget_object <category::widget_tag,
 		                        drawerbase::treebox::trigger,

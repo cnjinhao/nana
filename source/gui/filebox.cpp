@@ -1,6 +1,6 @@
 /*
 *	Filebox
-*	Nana C++ Library(http://www.nanapro.org)
+*	Nana C++ Library(https://nana.acemind.cn)
 *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
@@ -711,9 +711,7 @@ namespace nana
 			{
 				file_container_.clear();
 
-				drawing dw{ls_file_};
-				dw.clear();
-				dw.draw([](paint::graphics& graph){
+				drawing([](paint::graphics& graph){
 					std::string text = "Permission denied to access the directory";
 					auto txt_sz = graph.text_extent_size(text);
 					auto sz = graph.size();
@@ -746,7 +744,7 @@ namespace nana
 
 		void _m_list_fs()
 		{
-			drawing{ls_file_}.clear();
+			ls_file_.drawing({});
 
 			auto filter = filter_.caption();
 			ls_file_.auto_draw(false);

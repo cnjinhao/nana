@@ -1,7 +1,7 @@
 /**
  *	The fundamental widget class implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -127,6 +127,10 @@ namespace nana
 
 		operator dummy_bool_type() const;
 		operator window() const;
+
+		std::function<void(paint::graphics&)> drawing() const;
+		void drawing(std::function<void(paint::graphics&)>);
+
 	protected:
 		std::unique_ptr<::nana::detail::widget_notifier_interface> _m_wdg_notifier();
 	private:
