@@ -293,14 +293,9 @@ namespace nana
 			return handle();
 		}
 
-		std::function<void(paint::graphics&)> widget::drawing() const
+		drawing_handle widget::drawing(std::function<void(paint::graphics&)> draw_fn)
 		{
-			return api::drawing(handle());
-		}
-
-		void widget::drawing(std::function<void(paint::graphics&)> draw_fn)
-		{
-			api::drawing(handle(), std::move(draw_fn));
+			return api::drawing(handle(), std::move(draw_fn));
 		}
 
 		std::unique_ptr<::nana::detail::widget_notifier_interface> widget::_m_wdg_notifier()

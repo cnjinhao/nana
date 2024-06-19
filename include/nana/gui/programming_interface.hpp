@@ -534,8 +534,8 @@ namespace api
 	/// the specified window is a text editor window, false otherwise.
 	bool keyboard_numeric(window, bool padding);
 
-	std::function<void(paint::graphics&)> drawing(window);
-	void drawing(window, std::function<void(paint::graphics&)>);
+	drawing_handle drawing(window, std::function<void(paint::graphics&)>) noexcept;
+	void remove_drawing(window, drawing_handle) noexcept;
 }//end namespace api
 
 namespace API = api;

@@ -29,7 +29,10 @@ namespace nana
 		struct native_window_handle_impl;
 		struct native_drawable_impl;
 		struct event_handle_impl;
+		struct drawing_handle_impl;
 	}
+
+	using drawing_handle = detail::drawing_handle_impl*;
 
 #ifdef NANA_X11
 	namespace x11

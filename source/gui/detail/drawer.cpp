@@ -228,11 +228,7 @@ namespace nana
 			drawer_trigger*	realizer{ nullptr };
 			method_state	mth_state[event_size];
 
-			std::function<void(paint::graphics&)> draw;
-
-#ifndef NANA_DRAWING_REMOVED
 			std::vector<std::pair<std::function<void(paint::graphics&)>, bool>*> draws;	//Drawing function and flag for clearable
-#endif
 		};
 
 		drawer::drawer()
@@ -241,10 +237,8 @@ namespace nana
 
 		drawer::~drawer()
 		{
-#ifndef NANA_DRAWING_REMOVED
 			for(auto p : data_impl_->draws)
 				delete p;
-#endif
 
 			delete data_impl_;
 		}
@@ -422,22 +416,41 @@ namespace nana
 			return nullptr;
 		}
 
-		std::function<void(paint::graphics&)> drawer::drawing() const
+
+		drawing_handle drawer::drawing(std::function<void(paint::graphics&)>&& fn, bool diehard) noexcept
 		{
-			return data_impl_->draw;
+
+			std::pair<std::function<void(paint::graphics&)>, bool>* pdw = nullptr;
+			try {
+				pdw = new std::pair<std::function<void(paint::graphics&)>, bool>(std::move(fn), diehard);
+				data_impl_->draws.emplace_back(pdw);
+				return reinterpret_cast<drawing_handle>(pdw);
+			}
+			catch (...)
+			{
+				delete pdw;
+				return nullptr;
+			}
 		}
 
-		void drawer::drawing(std::function<void(paint::graphics&)>&& fn)
+		void drawer::erase(drawing_handle dw) noexcept
 		{
-			data_impl_->draw = std::move(fn);
+			for (auto i = data_impl_->draws.cbegin(); i != data_impl_->draws.cend(); ++i)
+			{
+				if (reinterpret_cast<drawing_handle>(*i) == dw)
+				{
+					delete (*i);
+					data_impl_->draws.erase(i);
+					return;
+				}
+			}
 		}
 
-#ifndef NANA_DRAWING_REMOVED
 		void drawer::clear()
 		{
 			for (auto i = data_impl_->draws.cbegin(); i != data_impl_->draws.cend();)
 			{
-				if ((*i)->second)
+				if (!(*i)->second)
 				{
 					delete (*i);
 					i = data_impl_->draws.erase(i);
@@ -447,42 +460,12 @@ namespace nana
 			}
 		}
 
-		void* drawer::draw(std::function<void(paint::graphics&)> && f, bool diehard)
-		{
-			if(f)
-			{
-				auto p = new std::pair<std::function<void(paint::graphics&)>, bool>(std::move(f), !diehard);
-				data_impl_->draws.emplace_back(p);
-				return p;
-			}
-			return nullptr;
-		}
-
-		void drawer::erase(void * p)
-		{
-			for (auto i = data_impl_->draws.begin(); i != data_impl_->draws.end(); ++i)
-			{
-				if (*i == p)
-				{
-					delete (*i);
-					data_impl_->draws.erase(i);
-					return;
-				}
-			}
-		}
-#endif
 		void drawer::_m_effect_bground_subsequent()
 		{
-			if (data_impl_->draw)
-				data_impl_->draw(graphics);
-
-			auto & effect = data_impl_->window_handle->effect;
-
-#ifndef NANA_DRAWING_REMOVED
 			for (auto * dw : data_impl_->draws)
 				dw->first(graphics);
-#endif
 
+			auto& effect = data_impl_->window_handle->effect;
 			if (effect.bground)
 			{
 				if (effect.bground_fade_rate >= 0.01)

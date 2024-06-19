@@ -10,7 +10,6 @@
  *	@file: nana/gui/drawing.cpp
  */
 
-#ifndef NANA_DRAWING_REMOVED
 #include "detail/basic_window.hpp"
 #include <nana/gui/drawing.hpp>
 #include <nana/gui/programming_interface.hpp>
@@ -55,42 +54,46 @@ namespace nana
 
 		void drawing::draw(const draw_fn_t& f)
 		{
+			internal_scope_guard lock;
 			if(api::empty_window(handle_))	return;
-			restrict::get_drawer(handle_).draw(draw_fn_t(f), false);		
+			restrict::get_drawer(handle_).drawing(draw_fn_t(f), false);		
 		}
 
 		void drawing::draw(draw_fn_t&& f)
 		{
+			internal_scope_guard lock;
 			if(api::empty_window(handle_))	return;
-			restrict::get_drawer(handle_).draw(std::move(f), false);
+			restrict::get_drawer(handle_).drawing(std::move(f), false);
 		}
 
 		drawing::diehard_t drawing::draw_diehard(const draw_fn_t& f)
 		{
+			internal_scope_guard lock;
 			if(api::empty_window(handle_)) return nullptr;
-			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).draw(draw_fn_t(f), true));
+			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).drawing(draw_fn_t(f), true));
 		}
 
 		drawing::diehard_t drawing::draw_diehard(draw_fn_t&& f)
 		{
+			internal_scope_guard lock;
 			if(api::empty_window(handle_))	return nullptr;
-			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).draw(std::move(f), true));
+			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).drawing(std::move(f), true));
 		}
 
 		void drawing::erase(diehard_t d)
 		{
+			internal_scope_guard lock;
 			//Fixed by Tumiz
 			//https://github.com/cnjinhao/nana/issues/153
 			if(!api::empty_window(handle_))
-				restrict::get_drawer(handle_).erase(d);
+				restrict::get_drawer(handle_).erase(reinterpret_cast<drawing_handle>(d));
 		}
 
 		void drawing::clear()
 		{
+			internal_scope_guard lock;
 			if(api::empty_window(handle_))	return;
 			restrict::get_drawer(handle_).clear();
 		}
 	//end class drawing
 }//end namespace nana
-
-#endif //NANA_DRAWING_REMOVED

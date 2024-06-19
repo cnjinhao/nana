@@ -1755,22 +1755,20 @@ namespace api
 #endif	
 	}
 
-	std::function<void(paint::graphics&)> drawing(window wd)
+	drawing_handle drawing(window wd, std::function<void(paint::graphics&)> fn) noexcept
 	{
 		internal_scope_guard lock;
 		if (!is_window(wd))
-			return {};
+			return nullptr;
 
-		return wd->drawer.drawing();
+		return wd->drawer.drawing(std::move(fn), false);
 	}
 
-	void drawing(window wd, std::function<void(paint::graphics&)> fn)
+	void remove_drawing(window wd, drawing_handle dw) noexcept
 	{
 		internal_scope_guard lock;
-		if (!is_window(wd))
-			return;
-
-		wd->drawer.drawing(std::move(fn));
+		if (is_window(wd))
+			wd->drawer.erase(dw);
 	}
 }//end namespace api
 }//end namespace nana
