@@ -10,8 +10,6 @@
  *	@file nana/gui/drawing.hpp
  */
 
-#ifndef NANA_DRAWING_REMOVED
-
 #ifndef NANA_GUI_DRAWING_HPP
 #define NANA_GUI_DRAWING_HPP
 
@@ -56,5 +54,3 @@ namespace nana
 
 #include <nana/pop_ignore_diagnostic>
 #endif
-
-#endif //NANA_DRAWING_REMOVED
