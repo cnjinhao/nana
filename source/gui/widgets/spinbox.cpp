@@ -14,6 +14,8 @@
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/element.hpp>
 #include <nana/gui/timer.hpp>
+#include <sstream>
+#include <iomanip>
 #include <algorithm>
 
 namespace nana
@@ -51,7 +53,7 @@ namespace nana
 			{
 			public:
 				range_numeric(T vbegin, T vlast, T step)
-					: begin_{ vbegin }, last_{ vlast }, step_{ step }, value_{ vbegin }
+					: begin_{ vbegin }, last_{ vlast }, step_{ step }, value_{ vbegin }, precision_{ 6 }
 				{}
 
 				std::pair<T, T> range() const
@@ -59,9 +61,43 @@ namespace nana
 					return std::make_pair(begin_, last_);
 				}
 
+				void precision(unsigned precision)
+				{
+					// Limit precision to reasonable range to prevent performance issues
+					precision_ = (precision > 15) ? 15 : precision;
+				}
+
+				unsigned precision() const
+				{
+					return precision_;
+				}
+
 				std::string value() const override
 				{
-					return std::to_string(value_);
+#ifdef __cpp_if_constexpr
+					if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
+					{
+						std::ostringstream oss;
+						oss << std::fixed << std::setprecision(precision_) << value_;
+						return oss.str();
+					}
+					else
+					{
+						return std::to_string(value_);
+					}
+#else
+					// C++14 compatible version
+					if (std::is_same<T, double>::value || std::is_same<T, float>::value)
+					{
+						std::ostringstream oss;
+						oss << std::fixed << std::setprecision(precision_) << value_;
+						return oss.str();
+					}
+					else
+					{
+						return std::to_string(value_);
+					}
+#endif
 				}
 
 				bool value(const std::string& value_str, bool & diff) override
@@ -163,11 +199,13 @@ namespace nana
 							value_ = begin_;
 					}
 				}
+
 			private:
 				T begin_;
 				T last_;
 				T step_;
 				T value_;
+				unsigned precision_;
 			};
 
 			class range_text
@@ -353,6 +391,38 @@ namespace nana
 				const range_interface* range() const
 				{
 					return range_.get();
+				}
+
+				void precision(unsigned precision)
+				{
+					auto numeric_double = dynamic_cast<range_numeric<double>*>(range_.get());
+					if (numeric_double)
+					{
+						numeric_double->precision(precision);
+						reset_text();
+						return;
+					}
+
+					auto numeric_float = dynamic_cast<range_numeric<float>*>(range_.get());
+					if (numeric_float)
+					{
+						numeric_float->precision(precision);
+						reset_text();
+						return;
+					}
+				}
+
+				unsigned precision() const
+				{
+					auto numeric_double = dynamic_cast<const range_numeric<double>*>(range_.get());
+					if (numeric_double)
+						return numeric_double->precision();
+
+					auto numeric_float = dynamic_cast<const range_numeric<float>*>(range_.get());
+					if (numeric_float)
+						return numeric_float->precision();
+
+					return 6; // Default precision for non-floating point types
 				}
 
 				void modifier(std::string&& prefix, std::string&& suffix)
@@ -779,6 +849,24 @@ namespace nana
 	void spinbox::modifier(const std::wstring & prefix, const std::wstring& suffix)
 	{
 		modifier(to_utf8(prefix), to_utf8(suffix));
+	}
+
+	void spinbox::precision(unsigned precision)
+	{
+		internal_scope_guard lock;
+		if (handle())
+		{
+			get_drawer_trigger().impl()->precision(precision);
+			API::refresh_window(handle());
+		}
+	}
+
+	unsigned spinbox::precision() const
+	{
+		internal_scope_guard lock;
+		if (handle())
+			return get_drawer_trigger().impl()->precision();
+		return 6;
 	}
 
 	auto spinbox::_m_caption() const noexcept -> native_string_type

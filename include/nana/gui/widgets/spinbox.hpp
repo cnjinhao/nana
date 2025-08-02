@@ -116,6 +116,14 @@ namespace nana
 		int to_int() const;
 		double to_double() const;
 
+		/// Sets the precision for double values (number of decimal places)
+		/// @param precision Number of decimal places to display (0-15, default is 6)
+		void precision(unsigned precision);
+
+		/// Gets the current precision for double values
+		/// @return Current precision setting
+		unsigned precision() const;
+
 		/// Sets the modifiers
 		void modifier(std::string prefix_utf8, std::string suffix_utf8);
 		void modifier(const std::wstring & prefix, const std::wstring& suffix);
