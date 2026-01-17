@@ -25,6 +25,7 @@
 	#include <pthread.h>
 	#include <sys/stat.h>
 	#include <spawn.h>
+	#include <errno.h>
 	#include <cstring>
 	#include <memory>
 
