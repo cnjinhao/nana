@@ -28,13 +28,20 @@
 	#include <errno.h>
 	#include <cstring>
 	#include <memory>
+	#ifdef __APPLE__
+		#include <crt_externs.h>
+	#endif
 
 static void posix_open_url(const char *url_utf8)
 {
     using nana::system::split_string_type;
     using nana::system::split_string;
 
+#ifdef __APPLE__
+    char **environ = *_NSGetEnviron();
+#else
     extern char **environ;
+#endif
     struct stat exists;
     const split_string_type path = getenv("PATH");
 
