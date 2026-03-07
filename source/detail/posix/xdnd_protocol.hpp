@@ -155,9 +155,11 @@ namespace nana{
 				    	std::string uri_list;
 				    	for(auto& file : data.files)
 				    	{
-				    		uri_list += "file://";
-				    		uri_list += file.u8string();
-				    		uri_list += "\r\n";
+					  uri_list += "file://";
+					  //uri_list += file.u8string();
+					  std::basic_string<char8_t> u8str( file.u8string() );
+					  uri_list += std::string( u8str.cbegin(), u8str.cend() );
+					  uri_list += "\r\n";
 				    	}
 
 				    	::XChangeProperty (spec_.open_display(),

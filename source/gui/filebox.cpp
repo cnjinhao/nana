@@ -1012,8 +1012,11 @@ namespace nana
 			{
 				for(auto i = selection_.targets.cbegin(); i != selection_.targets.cend();)
 				{
-					std::filesystem::path p{*i};
-					if(p.filename().u8string() == mfs.name)
+				        std::filesystem::path p{*i};
+					//if(p.filename().u8string() == mfs.name)
+					if(p.filename().u8string() ==
+					   std::basic_string<char8_t>( mfs.name.cbegin(),
+								       mfs.name.cend() ) )
 					{
 						if(!selection_.is_deselect_delayed)
 						{
@@ -1038,11 +1041,13 @@ namespace nana
 			{
 				for(auto i = selection_.targets.crbegin(); i != selection_.targets.crend(); ++i)
 				{
-					std::filesystem::path p{*i};
-					if(!filename_string.empty())
-						filename_string += ' ';
+				  std::filesystem::path p{*i};
+				  if(!filename_string.empty())
+				    filename_string += ' ';
 
-					filename_string += "\"" + p.filename().u8string() + "\"";
+				  //filename_string += "\"" + p.filename().u8string() + "\"";
+				  std::basic_string<char8_t> u8str( p.filename().u8string() );
+				  filename_string += "\"" + std::string( u8str.cbegin(), u8str.cend() ) + "\"";	
 				}
 			}
 
