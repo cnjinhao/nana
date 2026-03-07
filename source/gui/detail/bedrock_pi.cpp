@@ -103,8 +103,10 @@ namespace nana
 			if (!brock_.wd_manager().available(root_wd_))
 				return;
 
-			root_wd_->other.attribute.root->lazy_update = false;
-			root_wd_->other.attribute.root->update_requesters.clear();
+			if( nullptr != root_wd_->other.attribute.root ) {
+			  root_wd_->other.attribute.root->lazy_update = false;
+			  root_wd_->other.attribute.root->update_requesters.clear();
+			}
 		}
 		//end class root_guard
 

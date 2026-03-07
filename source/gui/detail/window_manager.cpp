@@ -1057,7 +1057,9 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
 
-			if (this->available(root_wd) && root_wd->other.attribute.root->update_requesters.size())
+			if (this->available(root_wd)
+			    && (nullptr != root_wd->other.attribute.root)
+			    && root_wd->other.attribute.root->update_requesters.size())
 			{
 				for (auto wd : root_wd->other.attribute.root->update_requesters)
 				{
