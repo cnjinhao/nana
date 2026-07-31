@@ -31,7 +31,7 @@
 inline bool config_dpi_aware = NANA_dpi_aware;
 
 /// \todo: replace by #ifdef DPI_DEBUGGING or just fully eliminate
-static constexpr bool dpi_debugging = true;  ///< set to true to print DPI relates values for debugging
+static constexpr bool dpi_debugging = false;  ///< set to true to print DPI relates values for debugging
 
 #include "c++defines.hpp"
 
