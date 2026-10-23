@@ -419,6 +419,8 @@ namespace nana
 
 		drawing_handle drawer::drawing(std::function<void(paint::graphics&)>&& fn, bool diehard) noexcept
 		{
+			if (!fn)		// an empty function would throw bad_function_call at the next refresh
+				return nullptr;
 
 			std::pair<std::function<void(paint::graphics&)>, bool>* pdw = nullptr;
 			try {
