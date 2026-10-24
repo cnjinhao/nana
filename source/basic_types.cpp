@@ -620,7 +620,7 @@ namespace nana
 		{
 			x += pixels;
 			y += pixels;
-			auto const px_twice = (pixels << 1);
+			auto const px_twice = pixels * 2;		// '<< 1' is undefined for negative pixels before C++20
 			if (px_twice > static_cast<int>(width))
 				width = 0;
 			else
