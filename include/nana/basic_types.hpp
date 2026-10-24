@@ -490,7 +490,7 @@ namespace nana
 
 		/// Pares the specified pixels off the rectangle.
 		/**
-		 * It's equal to x += pixels; y + pixels; width -= (pixels << 1); height -= (pixels << 1);
+		 * It's equal to x += pixels; y += pixels; width -= pixels * 2; height -= pixels * 2;
 		 * @param pixels The number of pixels to be pared. If the number that multiples pixels twice is larger than width/height, the width/height will be zero. If the pixels is a negative number, the width/height is add the number that multiple pixels twice.
 		 * @return The reference of *this.
 		 */
