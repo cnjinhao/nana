@@ -37,7 +37,8 @@ namespace nana{	namespace paint
 				if ((bmp_file->bfType != 0x4D42) || (bmp_file->bfSize != bytes))
 					return false;
 
-				auto const header_bytes = *reinterpret_cast<const std::uint32_t*>(bmp_file + 1);
+				std::uint32_t header_bytes;		// not 4-byte aligned (the file header is 14 bytes): copy it
+				std::memcpy(&header_bytes, bmp_file + 1, sizeof header_bytes);
 				
 				//There are two kind of base headers. Determinate it by size of header(The first ulong of header).
 				//Only Windows Bitmap(BITMAPINFOHEADER) is supported.
