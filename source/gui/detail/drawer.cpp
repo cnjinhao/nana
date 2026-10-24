@@ -422,6 +422,8 @@ namespace nana
 
 		drawing_handle drawer::drawing(std::function<void(paint::graphics&)>&& fn, bool diehard) noexcept
 		{
+			if (!fn)		// an empty function would throw bad_function_call at the next refresh
+				return nullptr;	// but this will hide a programming error. todo: how to handle this?
 
 			std::pair<std::function<void(paint::graphics&)>, bool>* pdw = nullptr;
 			try {

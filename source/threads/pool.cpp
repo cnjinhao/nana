@@ -128,8 +128,7 @@ namespace nana::threads
 					::WaitForSingleObject(thr->handle, INFINITE);
 					::CloseHandle(thr->handle);
 #elif defined(NANA_POSIX)
-					::pthread_join(thr->handle, 0);
-					::pthread_detach(thr->handle);
+					::pthread_join(thr->handle, 0);		// joined: detaching it afterwards is undefined
 #endif
 					delete thr;
 				}

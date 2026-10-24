@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iterator>
+#include <vector>
 
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
@@ -1365,20 +1366,25 @@ namespace detail
 		{
 			internal_scope_guard lock;
 
+			// Take the functions out first and call them after the loop: a function may add new ones (tooltip:
+			// close() -> destroy -> at_safe_place) or destroy windows, which invalidates the iterator of safe_place.
+			// Functions added meanwhile are called by the next call_safe_place.
+			std::vector<std::function<void()>> functions;
 			auto& safe_place = impl_->safe_place.table();
 			for (auto i = safe_place.begin(); i != safe_place.end();)
 			{
 				if (i->first->thread_id == thread_id)
 				{
-					auto functions = std::move(i->second);
+					for (auto& fn : i->second)
+						functions.emplace_back(std::move(fn));
 					i = safe_place.erase(i);
-
-					for (auto& fn : functions)
-						fn();
 				}
 				else
 					++i;
 			}
+
+			for (auto& fn : functions)
+				fn();
 		}
 
 		/// \todo: generalize dpi to v2 awareness - updates the window elements when DPI is changed.

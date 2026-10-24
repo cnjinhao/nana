@@ -931,7 +931,7 @@ namespace detail
 
 					if(msgwnd)
 					{
-						arg_keyboard modifiers_status;
+						arg_keyboard modifiers_status{};		// copied below: get_key_state() sets only alt, ctrl, shift
 						brock.get_key_state(modifiers_status);
 
 						KeySym keysym;
