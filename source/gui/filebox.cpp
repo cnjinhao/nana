@@ -711,13 +711,14 @@ namespace nana
 			{
 				file_container_.clear();
 
-				drawing([](paint::graphics& graph){
-					std::string text = "Permission denied to access the directory";
-					auto txt_sz = graph.text_extent_size(text);
-					auto sz = graph.size();
+				if (!denied_msg_)		// drawn once, on the list (it was drawn on the form, and never removed)
+					denied_msg_ = ls_file_.drawing([](paint::graphics& graph){
+						std::string text = "Permission denied to access the directory";
+						auto txt_sz = graph.text_extent_size(text);
+						auto sz = graph.size();
 
-					graph.string({static_cast<int>(sz.width - txt_sz.width) / 2, static_cast<int>(sz.height - txt_sz.height) / 2}, text, colors::dark_gray);
-				});
+						graph.string({static_cast<int>(sz.width - txt_sz.width) / 2, static_cast<int>(sz.height - txt_sz.height) / 2}, text, colors::dark_gray);
+					});
 
 				ls_file_.clear();
 			}
@@ -744,7 +745,11 @@ namespace nana
 
 		void _m_list_fs()
 		{
-			ls_file_.drawing({});
+			if (denied_msg_)			// a listed directory removes the "Permission denied" message
+			{
+				api::remove_drawing(ls_file_, denied_msg_);
+				denied_msg_ = nullptr;
+			}
 
 			auto filter = filter_.caption();
 			ls_file_.auto_draw(false);
@@ -1284,6 +1289,7 @@ namespace nana
 		button	btn_folder_;
 		treebox tree_;
 		listbox	ls_file_;
+		drawing_handle denied_msg_{ nullptr };	///< "Permission denied" message drawn on ls_file_; removed by _m_list_fs()
 
 		label lb_file_;
 		textbox	tb_file_;
