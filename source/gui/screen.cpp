@@ -45,7 +45,8 @@ namespace nana
 		}
 #else
 		real_display(std::size_t number, const ::nana::rectangle& r)
-			: index_(number), is_primary_(true), area_(r), workarea_(r)
+			: index_(number), is_primary_(true), area_(r), workarea_(r),
+			  dpi_(::nana::detail::native_interface::system_dpi()), scale_(dpi_ / 96.0)
 		{
 		}
 #endif
@@ -86,7 +87,7 @@ namespace nana
 		bool				is_primary_;
 		::nana::rectangle	area_;
 		::nana::rectangle	workarea_;
-		int                 dpi_;
+		int                 dpi_{ 96 };
 		double              scale_{ 1.0 };
 	};
 

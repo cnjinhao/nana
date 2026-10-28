@@ -12,6 +12,7 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_POSIX) && defined(NANA_X11)
+#include "../../detail/platform_abstraction.hpp"
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
@@ -122,6 +123,9 @@ namespace detail
 		: pi_data_(new pi_data), impl_(new private_impl)
 	{
 		nana::detail::platform_spec::instance().msg_set(timer_proc, window_proc_dispatcher);
+
+		// platform_spec is constructed now: system_dpi() can use its display
+		platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
 	}
 
 	bedrock::~bedrock()
