@@ -1278,7 +1278,13 @@ namespace nana
 	void platform_abstraction::initialize()
 	{
 		if (data::storage) return;
+#ifdef NANA_WINDOWS
 		data::storage = new platform_runtime{.dpi{screen_dpi()}};
+#else
+		// called from the platform_spec constructor: screen_dpi() would need platform_spec::instance()
+		// (recursive initialization). The bedrock constructor sets the DPI.
+		data::storage = new platform_runtime;
+#endif
 	}
 
 	void platform_abstraction::shutdown()
