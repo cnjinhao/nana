@@ -421,7 +421,7 @@ namespace nana
 		{
 			bool	looped{false};
 			std::atomic<bool>	paused{true};
-			std::size_t fps;
+			std::atomic<std::size_t> fps;
 
 			std::list<frameset> framesets;
 			std::map<std::string, branch_t> branches;
@@ -672,6 +672,8 @@ namespace nana
 				//Simply modify the fps parameter if the thread just has one animation.
 				if (thr->animations.size() == 1)
 				{
+					// the performance thread reads them with the mutex of thread variable
+					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
 					thr->fps = new_fps;
 					thr->interval = 1000.0 / double(new_fps);
 					return;
