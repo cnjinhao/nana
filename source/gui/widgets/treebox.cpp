@@ -2074,7 +2074,11 @@ namespace nana
 			if(p)
 				p->value.second.text.swap(title);
 			else
+#ifdef __cpp_designated_initializers
 				p = impl_->attr.tree_cont.insert(node, key, treebox_node_type{.text=std::move(title)});
+#else
+				p = impl_->attr.tree_cont.insert(node, key, treebox_node_type{ std::move(title) });
+#endif
 
 			if (p)
 				impl_->draw(true);
@@ -2084,7 +2088,11 @@ namespace nana
 
 		trigger::node_type* trigger::insert(const std::string& path, std::string&& title)
 		{
+#ifdef __cpp_designated_initializers
 			auto x = impl_->attr.tree_cont.insert(path, treebox_node_type{.text=std::move(title)});
+#else
+			auto x = impl_->attr.tree_cont.insert(path, treebox_node_type{ std::move(title) });
+#endif
 			if (x)
 				impl_->draw(true);
 			return x;

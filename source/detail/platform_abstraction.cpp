@@ -1279,7 +1279,12 @@ namespace nana
 	{
 		if (data::storage) return;
 #ifdef NANA_WINDOWS
+#ifdef __cpp_designated_initializers
 		data::storage = new platform_runtime{.dpi{screen_dpi()}};
+#else
+		data::storage = new platform_runtime;
+		data::storage->dpi = screen_dpi();
+#endif
 #else
 		// called from the platform_spec constructor: screen_dpi() would need platform_spec::instance()
 		// (recursive initialization). The bedrock constructor sets the DPI.
@@ -1311,7 +1316,12 @@ namespace nana
 	{
 #ifdef NANA_WINDOWS
 		//Create default font object.
+#ifdef __cpp_designated_initializers
 		NONCLIENTMETRICS metrics = {.cbSize = sizeof(NONCLIENTMETRICS)};
+#else
+		NONCLIENTMETRICS metrics{};
+		metrics.cbSize = sizeof(NONCLIENTMETRICS);
+#endif
 #if(WINVER >= 0x0600)
 #if defined(NANA_MINGW)
 		OSVERSIONINFO osvi = {};

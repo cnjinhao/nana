@@ -310,7 +310,11 @@ namespace nana::detail
 				mode_(mode),
 				behave_(behave),
 				im_(_m_default_im()),
+#ifdef __cpp_designated_initializers
 				cntpart_{.graph=paint::graphics(api::window_dpi(wd))}
+#else
+				cntpart_{ {}, {}, paint::graphics(api::window_dpi(wd)) }
+#endif
 			{
 				cntpart_.lang = im_->lang();
 

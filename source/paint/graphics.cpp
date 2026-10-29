@@ -289,7 +289,11 @@ namespace paint
             return impl_->dpi;
         }
 		graphics::graphics(int dpi)
+#ifdef __cpp_designated_initializers
 			: impl_(new implementation{.dpi  {dpi?dpi: api::screen_dpi()}})
+#else
+			: impl_(new implementation{ dpi?dpi: api::screen_dpi() })
+#endif
 		{
 			auto info = typeface().info();
 			nana::paint::font ft{ info.value(), impl_->dpi };
@@ -297,7 +301,11 @@ namespace paint
 		}
 
 		graphics::graphics(const nana::size& sz, int dpi)
+#ifdef __cpp_designated_initializers
 			: impl_(new implementation{.dpi{dpi}, .scale{dpi/96.0f}})
+#else
+			: impl_(new implementation{ dpi, dpi/96.0f })
+#endif
 		{
 			auto info = typeface().info();
 			nana::paint::font ft{ info.value(), dpi };

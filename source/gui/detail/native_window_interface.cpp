@@ -101,10 +101,17 @@ namespace detail{
 	// create helper function to scale RECT to dpi
 	RECT scale_to_dpi(const RECT& r, int dpi)
     {
+#ifdef __cpp_designated_initializers
         RECT scaled_r       {.left  = MulDiv(r.left,    dpi, 96), 
 						     .top   = MulDiv(r.top,     dpi, 96),
 						     .right = MulDiv(r.right,   dpi, 96), 
 						     .bottom= MulDiv(r.bottom,  dpi, 96) } ;
+#else
+        RECT scaled_r       {MulDiv(r.left,    dpi, 96),	// left, top, right, bottom
+						     MulDiv(r.top,     dpi, 96),
+						     MulDiv(r.right,   dpi, 96),
+						     MulDiv(r.bottom,  dpi, 96) } ;
+#endif
 
         if constexpr (dpi_debugging)
         {
@@ -123,10 +130,17 @@ namespace detail{
 
 	RECT unscale_dpi(const RECT& r, int dpi)
     {
+#ifdef __cpp_designated_initializers
         RECT scaled_r       {.left  = MulDiv(r.left,   96,  dpi), 
 						     .top   = MulDiv(r.top,    96,  dpi),
 						     .right = MulDiv(r.right,  96,  dpi), 
 						     .bottom= MulDiv(r.bottom, 96,  dpi) } ;
+#else
+        RECT scaled_r       {MulDiv(r.left,   96,  dpi),	// left, top, right, bottom
+						     MulDiv(r.top,    96,  dpi),
+						     MulDiv(r.right,  96,  dpi),
+						     MulDiv(r.bottom, 96,  dpi) } ;
+#endif
 
         if constexpr (dpi_debugging)
         {
@@ -1020,6 +1034,7 @@ namespace detail{
 #endif
 			int new_dpi = window_dpi(wd);
 			// unscale from system coordinates to App scale
+#ifdef __cpp_designated_initializers
 			window_result result = { .native_handle = wd,
 									 .client_size   = platform_abstraction::unscale_dpi(client_size, new_dpi),
 									 .extra_width   = platform_abstraction::unscale_dpi(extra_width,  new_dpi),
@@ -1027,6 +1042,15 @@ namespace detail{
 				                     .owner_dpi     = dpi,
 				                     .dpi           = new_dpi 
 			                       };
+#else
+			window_result result = { wd,
+									 platform_abstraction::unscale_dpi(client_size, new_dpi),
+									 platform_abstraction::unscale_dpi(extra_width,  new_dpi),
+									 platform_abstraction::unscale_dpi(extra_height, new_dpi),
+									 dpi,		// owner_dpi
+									 new_dpi	// dpi
+								   };
+#endif
 			return result;
 		}
 
