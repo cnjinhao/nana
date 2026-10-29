@@ -28,6 +28,7 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/window_manager.hpp>
+#include <nana/gui/detail/internal_scope_guard.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #include <errno.h>
 #include <sstream>
@@ -977,6 +978,9 @@ namespace detail
 	void platform_spec::timer_proc(thread_t tid)
 	{
 		{
+			// Same lock order as set_timer() and kill_timer(), which are called by the timer driver
+			// with the internal mutex locked: first the internal mutex, then the timer mutex.
+			::nana::internal_scope_guard internal_lock;
 			std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
 			if(timer_.runner)
 			{
