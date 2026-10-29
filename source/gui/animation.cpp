@@ -607,6 +607,9 @@ namespace nana
 
 						// Move to next frame
 						{
+							//acquire the isg lock first, as above: the outputs read the current frame while drawing.
+							nana::internal_scope_guard isglock;
+
 							std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
 							for (auto & cb : thr->animations)
 							{
