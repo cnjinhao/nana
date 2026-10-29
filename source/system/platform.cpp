@@ -36,7 +36,8 @@ static void posix_open_url(const char *url_utf8)
 
     extern char **environ;
     struct stat exists;
-    const split_string_type path = getenv("PATH");
+    const char* const env_path = getenv("PATH");
+    const split_string_type path = (env_path ? env_path : "");
 
     //see https://stackoverflow.com/questions/5116473/linux-command-to-open-url-in-default-browser
 
