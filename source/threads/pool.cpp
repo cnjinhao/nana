@@ -60,7 +60,7 @@ namespace nana::threads
 				task * task_ptr;
 				thread_t	handle;
 				std::atomic<state>	thr_state;
-				time_t	timestamp;
+				std::atomic<time_t>	timestamp;	//written by its thread, read by the others with mutex_
 #if defined(NANA_POSIX)
 				std::mutex wait_mutex;
 				std::condition_variable wait_cond;
