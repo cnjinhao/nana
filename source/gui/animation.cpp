@@ -599,7 +599,9 @@ namespace nana
 						}
 
 						thr->performance_parameter = tmpiece.calc();
-						if (thr->performance_parameter < lowest_duration)
+						// lowest_duration stays at its maximum when no animation is active (all paused): do not wait,
+						// converting it to int would overflow.
+						if ((lowest_duration != std::numeric_limits<std::size_t>::max()) && (thr->performance_parameter < lowest_duration))
 							std::this_thread::sleep_for(std::chrono::milliseconds{static_cast<int>(lowest_duration - thr->performance_parameter)});
 
 						//Restart timing this frame
