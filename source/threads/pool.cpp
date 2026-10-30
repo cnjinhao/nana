@@ -149,18 +149,22 @@ namespace nana::threads
 					throw std::runtime_error("Nana.Pool: Do not accept task now");
 				}
 
-				pool_throbj * pto = _m_pick_up_an_idle();
-
-				if(pto)
+				pool_throbj * pto = nullptr;
 				{
-					pto->task_ptr = taskptr;
-					_m_resume(pto);
-				}
-				else
-				{
+					// pick an idle thread or queue the task with the same lock that _m_read() uses to
+					// find the queue empty and mark the thread idle: otherwise the task could stay queued
+					// while every thread sleeps.
 					std::lock_guard<decltype(mutex_)> lock(mutex_);
-					container_.tasks.emplace_back(taskptr);
+					pto = _m_pick_up_an_idle();
+					if(nullptr == pto)
+					{
+						container_.tasks.emplace_back(taskptr);
+						return;
+					}
 				}
+
+				pto->task_ptr = taskptr;
+				_m_resume(pto);
 			}
 
 			void wait_for_signal()
@@ -212,7 +216,8 @@ namespace nana::threads
 
 			void _m_suspend(pool_throbj* pto)
 			{
-				pto->thr_state = state::idle;
+				// thr_state is already idle (_m_read()); setting it here again could overwrite the run state
+				// given by push() to this thread in the meantime.
 #if defined(NANA_WINDOWS)
 				::SuspendThread(pto->handle);
 #elif defined(NANA_POSIX)
@@ -246,6 +251,7 @@ namespace nana::threads
 			bool _m_read(pool_throbj* pto)
 			{
 				pto->task_ptr = nullptr;
+				bool queue_empty = false;
 				if(runflag_)
 				{
 					std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -254,11 +260,17 @@ namespace nana::threads
 						pto->task_ptr = container_.tasks.front();
 						container_.tasks.pop_front();
 					}
+					else
+					{
+						pto->thr_state = state::idle;	// with the lock: see push()
+						queue_empty = true;
+					}
 				}
 				else
 					return false;
 
-				if(nullptr == pto->task_ptr)
+				// Do not read task_ptr here: once the thread is idle, push() may write it.
+				if(queue_empty)
 				{
 					//The task queue is empty, so that
 					//suspend and wait for a task.
