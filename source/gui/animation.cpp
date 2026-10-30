@@ -390,6 +390,7 @@ namespace nana
 			{
 				impl* ani;
 				std::size_t duration_left{ 0 };
+				bool counted{ false };	///< not paused when the lowest duration of this pass was computed
 			};
 
 			struct thread_variable
@@ -567,6 +568,7 @@ namespace nana
 					while (true)
 					{
 						std::size_t lowest_duration = std::numeric_limits<std::size_t>::max();
+						bool running = false;	// whether an animation is not paused in this pass
 
 						{
 							//acquire the isg lock first to avoid deadlock that occured by an event hander which operates the animation object.
@@ -577,8 +579,12 @@ namespace nana
 
 							for (auto& cb : thr->animations)
 							{
-								if (cb.ani->paused)
+								// read paused once per pass: play() and pause() change it without thr->mutex
+								cb.counted = !cb.ani->paused;
+								if (!cb.counted)
 									continue;
+
+								running = true;
 
 								if(0 == cb.duration_left)
 								{
@@ -591,18 +597,24 @@ namespace nana
 									lowest_duration = cb.duration_left;
 							}
 
+							// only the animations counted above: one resumed in between could have a duration_left
+							// lower than lowest_duration, and the subtraction would wrap around
 							for(auto & cb : thr->animations)
 							{
-								if(!cb.ani->paused)
+								if(cb.counted)
 									cb.duration_left -= lowest_duration;
 							}
 						}
 
 						thr->performance_parameter = tmpiece.calc();
-						// lowest_duration stays at its maximum when no animation is active (all paused): do not wait,
-						// converting it to int would overflow.
-						if ((lowest_duration != std::numeric_limits<std::size_t>::max()) && (thr->performance_parameter < lowest_duration))
-							std::this_thread::sleep_for(std::chrono::milliseconds{static_cast<int>(lowest_duration - thr->performance_parameter)});
+						// Do not wait when no animation is running (all paused). A frame duration may be any std::size_t:
+						// wait without converting to int, bounded so that sleep_for() cannot overflow adding it to the clock
+						// (1e12 ms, about 31 years).
+						if (running && (thr->performance_parameter < lowest_duration))
+						{
+							const double wait = (std::min)(double(lowest_duration) - thr->performance_parameter, 1e12);
+							std::this_thread::sleep_for(std::chrono::milliseconds{static_cast<std::chrono::milliseconds::rep>(wait)});
+						}
 
 						//Restart timing this frame
 						tmpiece.start();
