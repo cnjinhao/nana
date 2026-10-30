@@ -65,6 +65,7 @@ namespace nana::threads
 				std::mutex wait_mutex;
 				std::condition_variable wait_cond;
 				std::atomic<bool> suspended;
+				bool resume_requested{ false };	///< set by _m_resume(), with wait_mutex
 #endif
 			};
 		public:
@@ -148,24 +149,29 @@ namespace nana::threads
 					throw std::runtime_error("Nana.Pool: Do not accept task now");
 				}
 
-				pool_throbj * pto = _m_pick_up_an_idle();
-
-				if(pto)
+				pool_throbj * pto = nullptr;
 				{
-					pto->task_ptr = taskptr;
-					_m_resume(pto);
-				}
-				else
-				{
+					// pick an idle thread or queue the task with the same lock that _m_read() uses to
+					// find the queue empty and mark the thread idle: otherwise the task could stay queued
+					// while every thread sleeps.
 					std::lock_guard<decltype(mutex_)> lock(mutex_);
-					container_.tasks.emplace_back(taskptr);
+					pto = _m_pick_up_an_idle();
+					if(nullptr == pto)
+					{
+						container_.tasks.emplace_back(taskptr);
+						return;
+					}
 				}
+
+				pto->task_ptr = taskptr;
+				_m_resume(pto);
 			}
 
 			void wait_for_signal()
 			{
 				std::unique_lock<std::mutex> lock(signal_.mutex);
-				signal_.cond.wait(lock);
+				signal_.cond.wait(lock, [this]{ return signal_.triggered > 0; });
+				--signal_.triggered;
 			}
 
 			void wait_for_finished()
@@ -210,13 +216,16 @@ namespace nana::threads
 
 			void _m_suspend(pool_throbj* pto)
 			{
-				pto->thr_state = state::idle;
+				// thr_state is already idle (_m_read()); setting it here again could overwrite the run state
+				// given by push() to this thread in the meantime.
 #if defined(NANA_WINDOWS)
 				::SuspendThread(pto->handle);
 #elif defined(NANA_POSIX)
 				std::unique_lock<std::mutex> lock(pto->wait_mutex);
 				pto->suspended = true;
-				pto->wait_cond.wait(lock);
+				// with a predicate: a spurious wakeup must not return without a task (the thread would finish)
+				pto->wait_cond.wait(lock, [pto]{ return pto->resume_requested; });
+				pto->resume_requested = false;
 				pto->suspended = false;
 #endif
 			}
@@ -234,6 +243,7 @@ namespace nana::threads
 				while(false == pto->suspended)
 					;
 				std::unique_lock<std::mutex> lock(pto->wait_mutex);
+				pto->resume_requested = true;
 				pto->wait_cond.notify_one();
 #endif
 			}
@@ -241,6 +251,7 @@ namespace nana::threads
 			bool _m_read(pool_throbj* pto)
 			{
 				pto->task_ptr = nullptr;
+				bool queue_empty = false;
 				if(runflag_)
 				{
 					std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -249,11 +260,17 @@ namespace nana::threads
 						pto->task_ptr = container_.tasks.front();
 						container_.tasks.pop_front();
 					}
+					else
+					{
+						pto->thr_state = state::idle;	// with the lock: see push()
+						queue_empty = true;
+					}
 				}
 				else
 					return false;
 
-				if(nullptr == pto->task_ptr)
+				// Do not read task_ptr here: once the thread is idle, push() may write it.
+				if(queue_empty)
 				{
 					//The task queue is empty, so that
 					//suspend and wait for a task.
@@ -297,7 +314,11 @@ namespace nana::threads
 							std::this_thread::sleep_for(std::chrono::milliseconds{100});
 						}
 
-						//wait till the cond is waiting.
+						// Count the signal, so that it is not lost if wait_for_signal() is not waiting yet.
+						{
+							std::lock_guard<std::mutex> lock(signal_.mutex);
+							++signal_.triggered;
+						}
 						signal_.cond.notify_one();
 						break;
 					}
@@ -332,6 +353,7 @@ namespace nana::threads
 			{
 				std::mutex mutex;
 				std::condition_variable cond;
+				std::size_t triggered{ 0 };	///< signals processed and not yet waited for
 			}signal_;
 
 			struct container
