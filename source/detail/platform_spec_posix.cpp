@@ -836,11 +836,12 @@ namespace detail
 	{
 		platform_scope_guard psg;
 		auto i = caret_holder_.carets.find(wd);
-		if(i != caret_holder_.carets.end())
-		{
-			i->second->reinstate();
-			i->second->pos = pos;
-		}
+		if(i == caret_holder_.carets.end())
+			return;
+
+		i->second->reinstate();
+		i->second->pos = pos;
+
 		auto addr = i->second;
 		if(addr && addr->input_context) {
 			XPoint spot;
