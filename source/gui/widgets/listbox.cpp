@@ -1684,20 +1684,17 @@ namespace nana
 				return changed;
 			}
 
-			index_pairs pick_items() const
+			/// absolute positions of all the items, not relative to display: a snapshot, valid until the items change
+			index_pairs generate_all_index_pairs() const
 			{
 				index_pairs results;
 				index_pair id;
 
 				for (auto& cat : categories_)
 				{
-					id.item = 0;
-					for (auto& m : cat.items)
-					{
-						results.push_back(id);  // absolute positions, no relative to display
+					for (id.item = 0; id.item < cat.items.size(); ++id.item)
+						results.push_back(id);
 
-						++id.item;
-					}
 					++id.cat;
 				}
 				return results;
@@ -6118,10 +6115,10 @@ namespace nana
 			return !_m_ess().lister.active_sort(!freeze);
 		}
 
-		auto listbox::items() const -> index_pairs
+		auto listbox::enumerate_all_index_pairs() const -> index_pairs
 		{
 			internal_scope_guard lock;
-			return _m_ess().lister.pick_items();   // absolute positions, no relative to display
+			return _m_ess().lister.generate_all_index_pairs();
 		}
 
 		auto listbox::selected() const -> index_pairs

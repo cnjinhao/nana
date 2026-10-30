@@ -1591,7 +1591,10 @@ the nana::detail::basic_window member pointer scheme
 		///< Prevent sorting until `freeze` is set to false.
 		bool freeze_sort(bool freeze);
 
-		index_pairs items() const;		    ///<Get the absolute indexes of all items
+		/// Returns the absolute indexes of all the items, category by category.
+		/// The result is a snapshot: it is valid only until the items change (inserted, erased, sorted...).
+		/// Use it at once, do not keep it.
+		index_pairs enumerate_all_index_pairs() const;
 		index_pairs selected() const;		///<Get the absolute indexes of all the selected items
 
 		void show_header(bool);
