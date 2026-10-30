@@ -10,6 +10,7 @@
  */
 
 #include <nana/gui/widgets/progress.hpp>
+#include <limits>
 
 namespace nana
 {
@@ -94,11 +95,19 @@ namespace nana
 			{
 				if (widget_)
 				{
-					unsigned value_px = (widget_->size().width - border_px * 2);
+					// the widget may be narrower than its borders: the unsigned subtraction would wrap around
+					auto const width = widget_->size().width;
+					unsigned value_px = (width > border_px * 2 ? width - border_px * 2 : 0);
 
 					//avoid overflow
 					if (unknown_ || (value_ < max_))
-						value_px = unsigned(double(value_px) * (double(value_) / double(max_)));
+					{
+						// in unknown mode value_ may exceed max_ (value_px then only tells whether to refresh):
+						// converting a double beyond the range of unsigned is undefined
+						auto const px = double(value_px) * (double(value_) / double(max_));
+						constexpr auto max_px = (std::numeric_limits<unsigned>::max)();
+						value_px = (px < double(max_px) ? unsigned(px) : max_px);
+					}
 
 					if (value_px != value_px_)
 					{
