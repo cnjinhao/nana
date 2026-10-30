@@ -71,11 +71,15 @@ namespace nana
 			brock_(brock),
 			root_wd_(root_wd)
 		{
+			// Under X11 the events are handled without the internal mutex, while other threads
+			// read lazy_update and update_requesters with it (window_manager::update).
+			internal_scope_guard lock;
 			root_wd_->other.attribute.root->lazy_update = true;
 		}
 
 		bedrock::root_guard::~root_guard()
 		{
+			internal_scope_guard lock;
 			if (!brock_.wd_manager().available(root_wd_))
 				return;
 

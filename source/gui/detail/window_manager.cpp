@@ -1307,6 +1307,8 @@ namespace detail
 
 		root_misc* window_manager::root_runtime(native_window native_wd) const
 		{
+			// find() updates a cache, and X11 calls it while handling an event without the internal mutex
+			internal_scope_guard lock;
 			return impl_->misc_register.find(native_wd);
 		}
 
