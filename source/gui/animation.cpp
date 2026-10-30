@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <list>
+#include <iterator>
 #include <map>
 #include <algorithm>
 #include <atomic>
@@ -504,7 +505,17 @@ namespace nana
 				if(state.this_frameset != framesets.end())
 				{
 					state.this_frameset->impl_->next_frame();
-					return (!state.this_frameset->impl_->eof());
+					if (!state.this_frameset->impl_->eof())
+						return true;
+
+					// this frameset is finished: go on with the next one, if any (issue #542)
+					auto next = std::next(state.this_frameset);
+					if (next != framesets.end())
+					{
+						state.this_frameset = next;
+						state.this_frameset->impl_->reset();
+						return true;
+					}
 				}
 				return false;
 			}
