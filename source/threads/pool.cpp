@@ -65,6 +65,7 @@ namespace nana::threads
 				std::mutex wait_mutex;
 				std::condition_variable wait_cond;
 				std::atomic<bool> suspended;
+				bool resume_requested{ false };	///< set by _m_resume(), with wait_mutex
 #endif
 			};
 		public:
@@ -217,7 +218,9 @@ namespace nana::threads
 #elif defined(NANA_POSIX)
 				std::unique_lock<std::mutex> lock(pto->wait_mutex);
 				pto->suspended = true;
-				pto->wait_cond.wait(lock);
+				// with a predicate: a spurious wakeup must not return without a task (the thread would finish)
+				pto->wait_cond.wait(lock, [pto]{ return pto->resume_requested; });
+				pto->resume_requested = false;
 				pto->suspended = false;
 #endif
 			}
@@ -235,6 +238,7 @@ namespace nana::threads
 				while(false == pto->suspended)
 					;
 				std::unique_lock<std::mutex> lock(pto->wait_mutex);
+				pto->resume_requested = true;
 				pto->wait_cond.notify_one();
 #endif
 			}
