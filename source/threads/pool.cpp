@@ -165,7 +165,8 @@ namespace nana::threads
 			void wait_for_signal()
 			{
 				std::unique_lock<std::mutex> lock(signal_.mutex);
-				signal_.cond.wait(lock);
+				signal_.cond.wait(lock, [this]{ return signal_.triggered > 0; });
+				--signal_.triggered;
 			}
 
 			void wait_for_finished()
@@ -297,7 +298,11 @@ namespace nana::threads
 							std::this_thread::sleep_for(std::chrono::milliseconds{100});
 						}
 
-						//wait till the cond is waiting.
+						// Count the signal, so that it is not lost if wait_for_signal() is not waiting yet.
+						{
+							std::lock_guard<std::mutex> lock(signal_.mutex);
+							++signal_.triggered;
+						}
 						signal_.cond.notify_one();
 						break;
 					}
@@ -332,6 +337,7 @@ namespace nana::threads
 			{
 				std::mutex mutex;
 				std::condition_variable cond;
+				std::size_t triggered{ 0 };	///< signals processed and not yet waited for
 			}signal_;
 
 			struct container
