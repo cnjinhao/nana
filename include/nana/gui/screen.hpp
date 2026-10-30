@@ -1,4 +1,4 @@
-/*
+/**
 *	Screen Informations
 *	Nana C++ Library(https://nana.acemind.cn)
 *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -7,18 +7,20 @@
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/screen.hpp
+*	@file nana/gui/screen.hpp
 */
 
 #ifndef NANA_GUI_SCREEN_HPP
 #define NANA_GUI_SCREEN_HPP
-#include "basis.hpp"
+
 #include <functional>
 #include <memory>
 
+#include "basis.hpp"
+
 namespace nana
 {
-	/// The monitor display metrics
+	/// The monitor display metrics 
 	class display
 	{
 	public:
@@ -30,11 +32,17 @@ namespace nana
 		virtual bool is_primary_monitor() const = 0;
 
 		/// Returns the positional coordinates and size of the display device in reference to the desktop area
-		virtual const ::nana::rectangle& area() const = 0;
-		virtual const ::nana::rectangle& workarea() const = 0;
+		virtual ::nana::rectangle area() const = 0;
+		virtual ::nana::rectangle workarea() const = 0;
+		virtual int dpi() const = 0;
+		virtual double scaling() const = 0;
 	};
 
-    /// Provides some functions to get the metrics of the monitors \include screen.cpp
+    /// the Whole-System-Screen (WSS): a virtual screen that included all monitors placed in the relative positions specified by the user. 
+	///
+	/// Some parts of this WSS are not occupied by any monitor. May use User-side (WSS_US) or System-side (WSS_SS) scaling. 
+	/// The O is in the left/top point of the main monitor. 
+	/// Provides some functions to get the metrics of the monitors \include screen.cpp 
 	class screen
 	{
 		struct implement;

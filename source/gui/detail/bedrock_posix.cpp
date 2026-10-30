@@ -12,6 +12,7 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_POSIX) && defined(NANA_X11)
+#include "../../detail/platform_abstraction.hpp"
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
@@ -122,6 +123,9 @@ namespace detail
 		: pi_data_(new pi_data), impl_(new private_impl)
 	{
 		nana::detail::platform_spec::instance().msg_set(timer_proc, window_proc_dispatcher);
+
+		// platform_spec is constructed now: system_dpi() can use its display
+		platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
 	}
 
 	bedrock::~bedrock()
@@ -613,9 +617,8 @@ namespace detail
 				{
 					if(native_interface::is_window(msgwnd->root))
 					{
-						nana::point pos = native_interface::cursor_position();
-						auto recv = native_interface::find_window(pos.x, pos.y);
-
+						nana::point pos;
+						auto recv = native_interface::find_cursor_window(pos);
 						brock.event_focus_changed(msgwnd, recv, false);
 					}
 				}
@@ -686,10 +689,7 @@ namespace detail
 						//If a root window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
 						if (msgwnd->root != native_interface::get_focus_window())
 						{
-							auto pos = native_interface::cursor_position();
-							auto rootwd = native_interface::find_window(pos.x, pos.y);
-							native_interface::calc_window_point(rootwd, pos);
-							if(msgwnd != wd_manager.find_window(rootwd, pos))
+							if(msgwnd != api::find_window_cursor())
 							{
 								//call the drawer mouse up event for restoring the surface graphics
 								msgwnd->set_action(mouse_action::normal);
@@ -1327,13 +1327,7 @@ namespace detail
 		wd->root_widget->other.attribute.root->state_cursor = nana::cursor::arrow;
 		wd->root_widget->other.attribute.root->state_cursor_window = nullptr;
 
-		auto pos = native_interface::cursor_position();
-		auto native_handle = native_interface::find_window(pos.x, pos.y);
-		if (!native_handle)
-			return;
-
-		native_interface::calc_window_point(native_handle, pos);
-		auto rev_wd = wd_manager().find_window(native_handle, pos);
+		auto rev_wd = api::find_window_cursor();
 		if (rev_wd)
 			set_cursor(rev_wd, rev_wd->predef_cursor, thrd);
 	}

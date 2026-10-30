@@ -9,15 +9,18 @@
  *
  *	@file: nana/gui/widgets/textbox.hpp
  */
+
 #ifndef NANA_GUI_WIDGET_TEXTBOX_HPP
 #define NANA_GUI_WIDGET_TEXTBOX_HPP
+
+#include <optional>
+
 #include <nana/push_ignore_diagnostic>
 
 #include <nana/gui/widgets/widget.hpp>
 #include "skeletons/textbase_export_interface.hpp"
 #include "skeletons/text_editor_part.hpp"
 
-#include <optional>
 
 namespace nana
 {

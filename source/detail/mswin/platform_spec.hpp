@@ -32,10 +32,9 @@ namespace nana
 
 namespace detail
 {
-	//struct messages
-	//@brief:	This defines some messages that are used for remote thread invocation.
-	//			Some Windows APIs are window-thread-dependent, the operation in other thread
-	//			must be posted to its own thread.
+	///@brief:	This defines some messages that are used for remote thread invocation.
+	///			Some Windows APIs are window-thread-dependent, the operation in other thread
+	///			must be posted to its own thread.
 	struct messages
 	{
 		struct caret
@@ -78,12 +77,12 @@ namespace detail
 		};
 	};
 
-	struct drawable_impl_type
+	struct drawable_impl_type  ///\todo: keep a dpi ? move to native_paint_interface.hpp ?
 	{
 		using font_type = ::std::shared_ptr<font_interface>;
 
-		HDC		context;
-		HBITMAP	pixmap;
+		HDC		        context;
+		HBITMAP	        pixmap;
 		pixel_argb_t*	pixbuf_ptr{nullptr};
 		std::size_t		bytes_per_line{0};
 
@@ -91,23 +90,23 @@ namespace detail
 
 		struct string_spec
 		{
-			unsigned tab_length;
-			unsigned tab_pixels;
-			unsigned whitespace_pixels;
+			unsigned tab_length;         ///< an application-defined tab length in whitespace characters
+			unsigned tab_pixels;         ///< the width of a tab character, defined by the font
+			unsigned whitespace_pixels;  ///< the width of a whitespace character, defined by the font
 		}string;
 
-		unsigned fgcolor_rgb{ 0xFFFFFFFF };
-		unsigned bgcolor_rgb{ 0xFFFFFFFF };
+		unsigned fgcolor_rgb   { 0xFFFFFFFF };
+		unsigned bgcolor_rgb   { 0xFFFFFFFF };
 		unsigned fgcolor_native{ 0xFFFFFFFF };	//Windows RGB format: 0xBBGGRR
 		unsigned bgcolor_native{ 0xFFFFFFFF };	//Windows RGB format
 
-		drawable_impl_type(const drawable_impl_type&) = delete;
+		drawable_impl_type           (const drawable_impl_type&) = delete;
 		drawable_impl_type& operator=(const drawable_impl_type&) = delete;
 
 		drawable_impl_type();
 		~drawable_impl_type();
 
-		void set_color(const ::nana::color&);
+		void set_color     (const ::nana::color&);
 		void set_text_color(const ::nana::color&);
 	};
 

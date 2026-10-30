@@ -14,6 +14,7 @@
 
 #ifndef NANA_GUI_DETAIL_BEDROCK_HPP
 #define NANA_GUI_DETAIL_BEDROCK_HPP
+
 #include "general_events.hpp"
 #include "color_schemes.hpp"
 #include "virtual_keyboard.hpp"
@@ -28,7 +29,7 @@ namespace nana::detail
 
 	struct window_platform_assoc;
 	
-	/// @brief	fundamental core component, it provides an abstraction to the OS platform and some basic functions.
+	/// fundamental core component, it provides an abstraction to the OS platform and some basic functions.
 	class bedrock
 	{
 		bedrock();
@@ -67,7 +68,7 @@ namespace nana::detail
 
 		void set_menubar_taken(basic_window*);
 
-		//Delay Restores focus when a menu which attached to menubar is closed
+		/// Delay Restores focus when a menu which attached to menubar is closed
 		void delay_restore(int);
 		bool close_menu_if_focus_other_window(native_window_type focus);
 		void set_menu(native_window_type menu_window, bool is_keyboard_condition);
@@ -111,7 +112,7 @@ namespace nana::detail
 
 		void manage_form_loader(basic_window*, bool insert_or_remove);
 	public:
-		// if 'bForce__EmitInternal', then ONLY internal (widget's) events are processed (even through explicit filtering)
+		/// if 'bForce__EmitInternal', then ONLY internal (widget's) events are processed (even through explicit filtering)
 		bool emit(event_code, basic_window*, const event_arg&, bool ask_update, thread_context*, const bool bForce__EmitInternal = false);
 	private:
 		void _m_emit_core(event_code, basic_window*, bool draw_only, const event_arg&, const bool bForce__EmitInternal);

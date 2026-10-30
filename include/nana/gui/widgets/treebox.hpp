@@ -110,17 +110,14 @@ namespace nana
 			public:
 				struct treebox_node_type
 				{
-					treebox_node_type(std::string = {});
-					treebox_node_type& operator=(const treebox_node_type&);
-
-					::std::string text;
-					std::any value;
-					bool expanded{ false };
-					bool hidden{ false };
-					bool selected{ false };
-					checkstate checked{ checkstate::unchecked };
-					::std::string img_idstr;
-				};
+					std::string	text;
+					std::any	value;
+					bool		expanded {false};
+					bool		hidden   {false};
+					bool		selected {false};
+					checkstate	checked  {checkstate::unchecked};
+					std::string img_idstr;
+				};  
 
 				using tree_cont_type = widgets::detail::tree_cont<treebox_node_type>;
 				using node_type = tree_cont_type::node_type;

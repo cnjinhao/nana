@@ -1,4 +1,4 @@
-/*
+/**
 *	A text editor implementation
 *	Nana C++ Library(https://nana.acemind.cn)
 *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
@@ -7,8 +7,8 @@
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/widgets/skeletons/text_editor.cpp
-*	@contributors: Ariel Vina-Rodriguez, Oleg Smolsky
+*	@file  nana/gui/widgets/skeletons/text_editor.cpp
+*	@contributors  Ariel Vina-Rodriguez, Oleg Smolsky
 */
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
@@ -2015,7 +2015,7 @@ namespace nana::widgets::skeletons
 		//Draw background
 		auto area = editor_area();
 
-		paint::graphics canvas{graph_.size()};
+		paint::graphics canvas{graph_.size(), graph_.get_dpi()};
 
 		if (!api::dev::copy_transparent_background(window_, canvas))
 		{
@@ -3617,7 +3617,7 @@ namespace nana::widgets::skeletons
 
 
 			//Draw as selected, and copy the selected part to the graph.
-			paint::graphics graph({ glyph_selected, line_px_ });
+			paint::graphics graph(size( glyph_selected, line_px_ ), this->graph_.get_dpi());
 			graph.typeface(this->graph_.typeface());
 			graph.rectangle(true, selection_color(false, has_focused));
 

@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *  @file: nana/gui/widgets/button.hpp
+ *  @file nana/gui/widgets/button.hpp
  *	@contributor
  *		besh81(pr#361)
  */
