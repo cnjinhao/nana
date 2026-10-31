@@ -28,15 +28,23 @@
 	#include <errno.h>
 	#include <cstring>
 	#include <memory>
+	#ifdef __APPLE__
+		#include <crt_externs.h>
+	#endif
 
 static void posix_open_url(const char *url_utf8)
 {
     using nana::system::split_string_type;
     using nana::system::split_string;
 
+#ifdef __APPLE__
+    char **environ = *_NSGetEnviron();
+#else
     extern char **environ;
+#endif
     struct stat exists;
-    const split_string_type path = getenv("PATH");
+    const char* const env_path = getenv("PATH");
+    const split_string_type path = (env_path ? env_path : "");
 
     //see https://stackoverflow.com/questions/5116473/linux-command-to-open-url-in-default-browser
 
@@ -104,6 +112,7 @@ namespace system
 	bool get_async_mouse_state(int button)
 	{
 #if defined(NANA_WINDOWS)
+		/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 		bool swap = (::GetSystemMetrics(SM_SWAPBUTTON) != 0);
 		switch(button)
 		{

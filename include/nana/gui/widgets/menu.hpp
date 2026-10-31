@@ -1,7 +1,7 @@
 /**
  *	A Menu implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2009-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -60,8 +60,8 @@ namespace nana
 					std::size_t const	pos_;
 					::nana::menu* const	menu_;
 				};
-				    
-				/// A callback functor type.  
+
+				/// A callback functor type.
 				typedef std::function<void(item_proxy&)> event_fn_t;
 
 				//Default constructor initializes the item as a splitter

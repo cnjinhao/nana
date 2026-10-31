@@ -119,6 +119,7 @@ endforeach()
 option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
 option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF) # deprecate?
 option(NANA_CMAKE_ENABLE_CONF "enable config.hpp" OFF)
+option(NANA_CMAKE_NATIVE_ARCH "Optimize for the CPU of this computer (-march=native): the binaries may not run on incompatible CPUs" OFF)
 
 ######## Nana options
 
@@ -135,6 +136,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/install_nana.cmake)   # includes a
 include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/OS.cmake)             # windows, unix, linux, apple, ...
 include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/shared_libs.cmake)    # static vs shared
 include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/compilers.cmake)      # VC, gcc, clang
+include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/native_arch.cmake)    # optimize for this CPU (NANA_CMAKE_NATIVE_ARCH)
 
 ############# Optional libraries    #####################
 include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/enable_png.cmake)

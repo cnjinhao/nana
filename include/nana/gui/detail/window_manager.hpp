@@ -1,6 +1,6 @@
 /**
  *	Window Manager Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -129,7 +129,7 @@ namespace nana::detail
 		void set_safe_place(basic_window* wd, std::function<void()>&& fn);
 		void call_safe_place(thread_t thread_id);
 
-		//updates the window elements when DPI is changed.
+		/// \todo: generalize dpi to v2 awareness - updates the window elements when DPI is changed.
 		void update_dpi(basic_window*);
 	private:
 		void _m_disengage(basic_window*, basic_window* for_new);

@@ -1,6 +1,6 @@
 /*
  *	Platform Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -9,6 +9,9 @@
  *
  *	@file: nana/gui/detail/native_window_interface.cpp
  */
+
+
+#include <iostream>  // for print_monitor_dpi() for debugging
 
 #include "../../detail/platform_spec_selector.hpp"
 #include "../../detail/platform_abstraction.hpp"
@@ -28,69 +31,199 @@
 #include "../../paint/image_accessor.hpp"
 
 
-namespace nana{
-	namespace detail{
 
-#if defined(NANA_WINDOWS)
-		// Dynamically load Windows DPI functions to check these APIs are supported by the SDK and OS.
-		struct dpi_function
-		{
-			enum PROCESS_DPI_AWARENESS {
-				PROCESS_DPI_UNAWARE,
-				PROCESS_SYSTEM_DPI_AWARE,
-				PROCESS_PER_MONITOR_DPI_AWARE
-			};
+namespace nana
+{
+namespace detail{
 
-			enum MONITOR_DPI_TYPE {
-				MDT_EFFECTIVE_DPI,
-				MDT_ANGULAR_DPI,
-				MDT_RAW_DPI,
-				MDT_DEFAULT
-			};
+  #if defined(NANA_WINDOWS)
+		
+	struct DPI_AWARENESS_CONTEXT___ { int unused; }; ///< introduce named dummy type, avoid including windows.h
+	typedef struct DPI_AWARENESS_CONTEXT___* DPI_AWARENESS_CONTEXT_; ///< introduce named dummy pointer type
 
-			HRESULT(__stdcall* SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS) {nullptr};
-			UINT(__stdcall* GetDpiForWindow)(HWND) { nullptr };
-			UINT(__stdcall* GetDpiForSystem)() { nullptr };
-			HRESULT(__stdcall* GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*) { nullptr };
-			UINT(__stdcall* GetDpiFromDpiAwarenessContext)(void*) { nullptr };
-			void* (__stdcall* GetThreadDpiAwarenessContext)() { nullptr };
+	/// force conversion of numbers '-1', '-2'... into a value of type pointer to some named structure
+	/// this is useful only for comparitions/identification, but, please, don't dereference that pointer!
+	/// why not use just an enum class? see windef.h
+	#define DPI_AWARENESS_CONTEXT_UNAWARE_               ((DPI_AWARENESS_CONTEXT_)-1)
+	#define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE_          ((DPI_AWARENESS_CONTEXT_)-2)
+	#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_     ((DPI_AWARENESS_CONTEXT_)-3)
+	#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2_  ((DPI_AWARENESS_CONTEXT_)-4)
+	#define DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED_     ((DPI_AWARENESS_CONTEXT_)-5)
 
-			dpi_function()
-			{
-				auto user32 = ::GetModuleHandleW(L"User32.DLL");
-				this->GetDpiForWindow = reinterpret_cast<UINT(__stdcall*)(HWND)>(::GetProcAddress(user32, "GetDpiForWindow"));
-				this->GetDpiForSystem = reinterpret_cast<UINT(__stdcall*)()>(::GetProcAddress(user32, "GetDpiForSystem"));
-
-				this->GetDpiFromDpiAwarenessContext = reinterpret_cast<UINT(__stdcall*)(void*)>(::GetProcAddress(user32, "GetDpiFromDpiAwarenessContext"));
-				this->GetThreadDpiAwarenessContext = reinterpret_cast<void* (__stdcall*)()>(::GetProcAddress(user32, "GetThreadDpiAwarenessContext"));
-
-				auto shcore = ::GetModuleHandleW(L"Shcore.DLL");
-				if (nullptr == shcore)
-					shcore = ::LoadLibraryW(L"Shcore.DLL");
-
-				if (shcore)
-				{
-					this->SetProcessDpiAwareness = reinterpret_cast<HRESULT(__stdcall*)(PROCESS_DPI_AWARENESS)>(
-						::GetProcAddress(shcore, "SetProcessDpiAwareness")
-						);
-					this->GetDpiForMonitor = reinterpret_cast<HRESULT(__stdcall*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*)>(
-						::GetProcAddress(shcore, "GetDpiForMonitor"));
-				}
-			}
-
-			bool good() const
-			{
-				return this->SetProcessDpiAwareness && this->GetDpiForWindow && this->GetDpiForMonitor && this->GetDpiForSystem && this->GetThreadDpiAwarenessContext;
-			}
+	/// Dynamically load Windows DPI functions to check these APIs are supported by the SDK and OS.
+	struct dpi_function
+	{
+		enum PROCESS_DPI_AWARENESS {
+			PROCESS_DPI_UNAWARE,
+			PROCESS_SYSTEM_DPI_AWARE,
+			PROCESS_PER_MONITOR_DPI_AWARE
 		};
 
-		static dpi_function& windows_dpi_function()
-		{
-			static dpi_function df;
-			return df;
+		enum MONITOR_DPI_TYPE {
+			MDT_EFFECTIVE_DPI,
+			MDT_ANGULAR_DPI,
+			MDT_RAW_DPI,
+			MDT_DEFAULT
 		};
 
-		//This function is defined in bedrock_windows.cpp
+		/// define function pointers types for each API
+		using SetProcessDPIAware_ftype            = HRESULT(__stdcall*)(                      );
+		using SetProcessDpiAwareness_ftype        = HRESULT(__stdcall*)(PROCESS_DPI_AWARENESS );
+		using SetProcessDpiAwarenessContext_ftype = HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_);
+		using GetDpiForWindow_ftype               = UINT   (__stdcall*)(HWND                  );
+		using GetDpiForSystem_ftype               = UINT   (__stdcall*)(                      );
+		using GetDpiForMonitor_ftype              = HRESULT(__stdcall*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
+		using GetDpiFromDpiAwarenessContext_ftype = UINT   (__stdcall*)(void*                 );
+		using GetThreadDpiAwarenessContext_ftype  = void*  (__stdcall*)(                      );
+		using SetThreadDpiAwarenessContext_ftype  = HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_);
+		using GetSystemMetrics_ftype              = int    (__stdcall*)(int                   );
+		using GetSystemMetricsForDpi_ftype        = int    (__stdcall*)(int, UINT             );
+
+		/// define function pointers members for each API
+		SetProcessDPIAware_ftype            SetProcessDPIAware            { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiaware
+		SetProcessDpiAwareness_ftype        SetProcessDpiAwareness        { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-setprocessdpiawareness
+		SetProcessDpiAwarenessContext_ftype SetProcessDpiAwarenessContext { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiawarenesscontext
+		GetDpiForWindow_ftype               GetDpiForWindow               { nullptr };
+		GetDpiForSystem_ftype               GetDpiForSystem               { nullptr };
+		GetDpiForMonitor_ftype              GetDpiForMonitor              { nullptr };
+		GetDpiFromDpiAwarenessContext_ftype GetDpiFromDpiAwarenessContext { nullptr };
+		GetThreadDpiAwarenessContext_ftype  GetThreadDpiAwarenessContext  { nullptr };
+		SetThreadDpiAwarenessContext_ftype  SetThreadDpiAwarenessContext  { nullptr };
+		GetSystemMetrics_ftype              GetSystemMetrics              { nullptr };
+		GetSystemMetricsForDpi_ftype        GetSystemMetricsForDpi        { nullptr };
+
+		dpi_function()
+		{
+			/// Dynamically load User32.DLL to check these APIs are supported by the SDK and OS.
+			/// here we can find SetProcessDPIAware, (GetDpiForWindow, GetDpiForSystem, 
+			///      GetDpiFromDpiAwarenessContext, GetThreadDpiAwarenessContext, SetThreadDpiAwarenessContext, SetProcessDpiAwarenessContext,
+			/// EnableChildWindowDpiMessage, GetDpiMetrics, GetDpiForMonitorInternal, GetProcessDpiAwarenessInternal, GetWindowDPI, IsChildWindowDpiMessageEnabled
+			/// IsProcessDPIAware, IsWindowBroadcastingDpiToChildren, LogicalToPhysicalPointForPerMonitorDPI, PhysicalToLogicalPointForPerMonitorDPI, SetProcessDpiAwarenessInternal
+			auto user32 = ::GetModuleHandleW(L"User32.DLL");
+			if (nullptr == user32)  // ??
+			{
+				// std::cerr << "User32.DLL not loaded for GetModuleHandleW" << std::endl;   // for debugging
+				user32 = ::LoadLibraryW(L"User32.DLL");
+				// if (nullptr == user32) std::cerr << "User32.DLL not loaded :  ERROR !!!!" << std::endl;    
+				// led to a crash in the program? just all pointers to DPI functions will be nullptr
+			}  
+			if (user32)
+			{
+				this->SetProcessDPIAware = reinterpret_cast<SetProcessDPIAware_ftype>
+								(::GetProcAddress(user32, "SetProcessDPIAware"));
+
+				this->GetDpiForWindow = reinterpret_cast<GetDpiForWindow_ftype>
+								(::GetProcAddress(user32, "GetDpiForWindow"));
+ 
+				this->GetDpiForSystem = reinterpret_cast<GetDpiForSystem_ftype>
+								(::GetProcAddress(user32, "GetDpiForSystem"));
+ 
+				this->GetDpiFromDpiAwarenessContext = reinterpret_cast<GetDpiFromDpiAwarenessContext_ftype>
+								(::GetProcAddress(user32, "GetDpiFromDpiAwarenessContext"));
+ 
+				this->GetThreadDpiAwarenessContext = reinterpret_cast<GetThreadDpiAwarenessContext_ftype>
+								(::GetProcAddress(user32, "GetThreadDpiAwarenessContext"));
+ 
+				this->SetThreadDpiAwarenessContext = reinterpret_cast<SetThreadDpiAwarenessContext_ftype>
+								(::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
+ 
+				this->SetProcessDpiAwarenessContext = reinterpret_cast<SetProcessDpiAwarenessContext_ftype>
+								(::GetProcAddress(user32, "SetProcessDpiAwarenessContext"));
+
+				this->GetSystemMetrics = reinterpret_cast<GetSystemMetrics_ftype>
+                                (::GetProcAddress(user32, "GetSystemMetrics"));
+
+				this->GetSystemMetricsForDpi = reinterpret_cast<GetSystemMetricsForDpi_ftype>
+                                (::GetProcAddress(user32, "GetSystemMetricsForDpi"));
+			}
+ 
+			/// Dynamically load Shcore.DLL to check these APIs are supported by the SDK and OS.
+			/// here we can finf GetDpiForMonitor and SetProcessDpiAwareness; 
+			///   and   GetDpiForShellUIComponent, GetProcessDpiAwareness
+			auto shcore = ::GetModuleHandleW(L"Shcore.DLL");
+			if (nullptr == shcore)
+			{
+				// std::cerr << "Shcore.DLL not loaded for GetModuleHandleW" << std::endl;   // for debugging
+				shcore = ::LoadLibraryW(L"Shcore.DLL");
+                // if (nullptr == shcore) std::cerr << "Shcore.DLL not loaded :  ERROR !!!!" << std::endl;   // for debugging
+ 			}  
+
+			if (shcore)
+			{
+				this->SetProcessDpiAwareness = reinterpret_cast<SetProcessDpiAwareness_ftype>(
+					::GetProcAddress(shcore, "SetProcessDpiAwareness"));
+ 
+				this->GetDpiForMonitor = reinterpret_cast<GetDpiForMonitor_ftype>(
+					::GetProcAddress(shcore, "GetDpiForMonitor"));
+ 			}
+		}
+	};
+
+	static dpi_function& wdpi_fns() ///< Windows specific DPI functions
+	{
+		static dpi_function df;  ///< static object, so it is created only once
+		return df;
+	};
+
+	// debuging function to print all monitor DPIs
+	void print_monitor_dpi()
+    {
+		// compile only if dpi_debugging is enabled
+		if constexpr (dpi_debugging) {
+        ::EnumDisplayMonitors(
+			nullptr,
+		nullptr,
+		[](HMONITOR	Arg1,
+					HDC		Arg2,
+					LPRECT		Arg3,
+					LPARAM		Arg4)
+		{
+			MONITORINFOEXA mif;
+			mif.cbSize = sizeof(MONITORINFOEXA);
+			if (::GetMonitorInfoA(Arg1, &mif) != 0)
+			{
+				std::cout << mif.szDevice << '\n';
+				std::cout
+					<< "monitor rect:    "
+					<< '(' << mif.rcMonitor.left << ',' << mif.rcMonitor.top << ")-"
+					<< '(' << mif.rcMonitor.right << ',' << mif.rcMonitor.bottom << ")\n";
+				std::cout
+					<< "work rect:       "
+					<< '(' << mif.rcWork.left << ',' << mif.rcWork.top << ")-"
+					<< '(' << mif.rcWork.right << ',' << mif.rcWork.bottom << ")\n";
+			}
+			UINT xdpi, ydpi;
+			LRESULT success = wdpi_fns().GetDpiForMonitor(Arg1, dpi_function::MDT_EFFECTIVE_DPI, &xdpi, &ydpi);
+			if (success == S_OK)
+			{
+				std::cout << "DPI (effective): " << xdpi << ',' << ydpi << '\n';
+			}
+			success = wdpi_fns().GetDpiForMonitor(Arg1, dpi_function::MDT_ANGULAR_DPI, &xdpi, &ydpi);
+			if (success == S_OK)
+			{
+				std::cout << "DPI (angular):   " << xdpi << ',' << ydpi << '\n';
+			}
+			success = wdpi_fns().GetDpiForMonitor(Arg1, dpi_function::MDT_RAW_DPI, &xdpi, &ydpi);
+			if (success == S_OK)
+			{
+				std::cout << "DPI (raw):       " << xdpi << ',' << ydpi << '\n';
+			}
+			DEVMODEA dm;
+			dm.dmSize = sizeof(DEVMODEA);
+			if (::EnumDisplaySettingsA(mif.szDevice, ENUM_CURRENT_SETTINGS, &dm) != 0)
+			{
+				std::cout << "BPP:             " << dm.dmBitsPerPel << '\n';
+				std::cout << "resolution:      " << dm.dmPelsWidth << ',' << dm.dmPelsHeight << '\n';
+				std::cout << "frequency:       " << dm.dmDisplayFrequency << '\n';
+			}
+			std::cout << '\n';
+			return TRUE;
+		},  0);
+		} // end of dpi_debugging
+    }
+	 
+
+	//This function is defined in bedrock_windows.cpp
 	HINSTANCE windows_module_handle();
 
 	class tray_manager
@@ -148,8 +281,7 @@ namespace nana{
 	};
 
 
-	//This function is a proxy for ShowWindow/ShowWindowAsync
-	//It determines which API should be called.
+	/// This proxy for ShowWindow/ShowWindowAsync determines which API should be called.
 	void msw_show_window(HWND wd, int cmd)
 	{
 		bool async = true;
@@ -184,7 +316,7 @@ namespace nana{
 		internal_revert_guard revert;
 		::ShowWindow(wd, cmd);
 	}
-#elif defined(NANA_X11)
+  #elif defined(NANA_X11)
 	namespace restrict
 	{
 		nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
@@ -342,90 +474,138 @@ namespace nana{
 			XEvent dummy;
 			::XPeekIfEvent(restrict::spec.open_display(), &dummy, pred_fn, reinterpret_cast<XPointer>(&p));
 		}
-#endif
+  #endif
 
-	//struct native_interface
-		void native_interface::affinity_execute(native_window_type native_handle, bool post, std::function<void()>&& fn)
+	void native_interface::affinity_execute(native_window_type native_handle, bool post, std::function<void()>&& fn)
+	{
+		if (!fn)
+			return;
+
+  #if defined(NANA_WINDOWS)
+		auto mswin = reinterpret_cast<HWND>(native_handle);
+		if (::IsWindow(mswin))
 		{
-			if (!fn)
-				return;
-
-#if defined(NANA_WINDOWS)
-			auto mswin = reinterpret_cast<HWND>(native_handle);
-			if (::IsWindow(mswin))
+			if (::GetCurrentThreadId() != ::GetWindowThreadProcessId(mswin, nullptr))
 			{
-				if (::GetCurrentThreadId() != ::GetWindowThreadProcessId(mswin, nullptr))
+				auto arg = new detail::messages::arg_affinity_execute;
+
+				arg->function = std::move(fn);
+
+				if(post)
 				{
-					auto arg = new detail::messages::arg_affinity_execute;
-
-					arg->function = std::move(fn);
-
-					if(post)
-					{
-						::PostMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(arg), 0);
-					}
-					else
-					{
-						internal_revert_guard rev;
-						::SendMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(arg), 0);
-					}
-					return;
+					::PostMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(arg), 0);
 				}
-			}
-
-			fn();
-#else
-			auto & platform_spec = nana::detail::platform_spec::instance();
-			if(post)
-			{
-				platform_spec.affinity_execute(native_handle, std::move(fn));
+				else
+				{
+					internal_revert_guard rev;
+					::SendMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(arg), 0);
+				}
 				return;
 			}
-
-			auto wd = bedrock::instance().wd_manager().root(native_handle);
-
-			if(!wd)
-				return;
-
-			if(nana::system::this_thread_id() == wd->thread_id)
-			{
-				fn();
-			}
-			else
-			{
-				internal_revert_guard rev;
-
-				std::mutex mutex;
-				std::condition_variable condvar;
-
-				std::unique_lock<std::mutex> lock{mutex};
-
-				platform_spec.affinity_execute(native_handle, [fn, &mutex, &condvar] {
-					fn();
-
-					std::lock_guard<std::mutex> lock{mutex};
-					condvar.notify_one();
-				});
-
-				condvar.wait(lock);
-			}
-#endif	
 		}
 
-		nana::size native_interface::primary_monitor_size()
+		fn();
+  #else
+		auto & platform_spec = nana::detail::platform_spec::instance();
+		if(post)
 		{
-#if defined(NANA_WINDOWS)
-			return nana::size(::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN));
-#elif defined(NANA_X11)
-			nana::detail::platform_scope_guard psg;
-			Screen* s = ::XScreenOfDisplay(restrict::spec.open_display(), ::XDefaultScreen(restrict::spec.open_display()));
-			return nana::size(::XWidthOfScreen(s), ::XHeightOfScreen(s));
-#endif
+			platform_spec.affinity_execute(native_handle, std::move(fn));
+			return;
 		}
 
+		auto wd = bedrock::instance().wd_manager().root(native_handle);
+
+		if(!wd)
+			return;
+
+		if(nana::system::this_thread_id() == wd->thread_id)
+		{
+			fn();
+		}
+		else
+		{
+			internal_revert_guard rev;
+
+			std::mutex mutex;
+			std::condition_variable condvar;
+
+			std::unique_lock<std::mutex> lock{mutex};
+
+			platform_spec.affinity_execute(native_handle, [fn, &mutex, &condvar] {
+				fn();
+
+				std::lock_guard<std::mutex> lock{mutex};
+				condvar.notify_one();
+			});
+
+			condvar.wait(lock);
+		}
+  #endif	
+	}
+
+	/// generalized to Windows dpi awareness v2 to return already 'DPI' scaled size
+	/// this result is used to calculate the area available to draw with may be smaller than the monitor size
+	nana::size native_interface::primary_monitor_size()
+	{
+  #if defined(NANA_WINDOWS)
+
+		if (wdpi_fns().GetDpiForMonitor && !wdpi_fns().GetDpiForWindow) // priorize possible x_dpi != y_dpi. Really?? 
+		{
+            // get the main monitor HWND
+            HWND primary_monitor = ::GetDesktopWindow();
+            HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
+            UINT x_dpi, y_dpi;
+            if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
+			{
+				if constexpr (dpi_debugging) 
+					std::cout << "primary_monitor_size(): DPI= " << x_dpi << " x " << y_dpi << std::endl;
+
+				if (false) //wdpi_fns().GetSystemMetricsForDpi) // do not scale ?
+					return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, x_dpi),
+									  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, y_dpi));  //  x_dpi != y_dpi ?? 
+
+				else // fallback to GetSystemMetrics
+					return nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), 96, x_dpi),
+									  MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, y_dpi));
+			}
+        }
+
+		std::size_t dpi = native_interface::system_dpi();  // originaly got from UINT or int: safe to get back to that
+		if constexpr (dpi_debugging) std::cout << "primary_monitor_size(): DPI= " << dpi << std::endl;
+
+		if (false) //wdpi_fns().GetSystemMetricsForDpi) // do not scale ?
+        {
+		    nana::size sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), 96, int(dpi)),
+						               MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, int(dpi)));
+			if constexpr (dpi_debugging) 
+				std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
+						
+			sz = nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, UINT(dpi)), 
+						    wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, UINT(dpi)));
+			if constexpr (dpi_debugging) 
+				std::cout << "primary_monitor_size() with GetSystemMetricsForDpi: size= " << sz.width << " x " << sz.height << std::endl;
+			
+			return sz;
+        }
+
+		nana::size sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), 96, int(dpi)),
+						           MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, int(dpi)));
+		if constexpr (dpi_debugging) 
+			std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
+			
+		return sz;
+
+  #elif defined(NANA_X11)
+		nana::detail::platform_scope_guard psg;
+		Screen* s = ::XScreenOfDisplay(restrict::spec.open_display(), ::XDefaultScreen(restrict::spec.open_display()));
+		return nana::size(::XWidthOfScreen(s), ::XHeightOfScreen(s));
+  #endif
+	}
+    	/// \todo: generalize dpi to v2 awareness 
 		rectangle native_interface::screen_area_from_point(const point& pos)
 		{
 #if defined(NANA_WINDOWS)
+			/// \todo: make DPI AWARE
 			typedef HMONITOR (__stdcall * MonitorFromPointT)(POINT,DWORD);
 
 			MonitorFromPointT mfp = reinterpret_cast<MonitorFromPointT>(::GetProcAddress(::GetModuleHandleA("User32.DLL"), "MonitorFromPoint"));
@@ -436,6 +616,8 @@ namespace nana{
 
 				MONITORINFO mi;
 				mi.cbSize = sizeof mi;
+
+				/// \todo: make DPI AWARE
 				if(::GetMonitorInfo(monitor, &mi))
 				{
 					return rectangle(mi.rcWork.left, mi.rcWork.top,
@@ -473,6 +655,7 @@ namespace nana{
 			if(owner && (nested == false))
 				::ClientToScreen(reinterpret_cast<HWND>(owner), &pt);
 
+			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
 			HWND native_wd = ::CreateWindowEx(style_ex, L"NanaWindowInternal", L"Nana Window",
 											style,
 											pt.x, pt.y, 100, 100,
@@ -483,6 +666,16 @@ namespace nana{
 			::GetClientRect(native_wd, &client);	//The right and bottom of client by GetClientRect indicate the width and height of the area
 			::RECT wd_area;
 			::GetWindowRect(native_wd, &wd_area);
+
+			if constexpr (dpi_debugging) {
+			// print for debuging the position of creation of the window pt
+			std::cout << "create_window(): pt= " << pt.x << ", " << pt.y << " with size= " << 100 << ", " << 100 << std::endl;
+			// with a client area of:
+			std::cout << "create_window(): client= " << client.right << ", " << client.top << " with size= " << client.right - client.left << ", "<< client.bottom - client.top << ", " << std::endl;
+			// and a window area of:
+			std::cout << "create_window(): wd_area= " << wd_area.right << ", " << wd_area.top << " with size= " << wd_area.right - wd_area.left << ", "<< wd_area.bottom - wd_area.top << ", " << std::endl;
+			}
+
 
 			//a dimension with borders and caption title
 			wd_area.right -= wd_area.left;	//wd_area.right = width
@@ -497,9 +690,19 @@ namespace nana{
 			int delta_h = static_cast<int>(r.height) - client.bottom;
 
 			::MoveWindow(native_wd, wd_area.left, wd_area.top, wd_area.right + delta_w, wd_area.bottom + delta_h, true);
+			// the window was moved to:
+			if constexpr (dpi_debugging) 
+				std::cout << "create_window(): moved to= " << wd_area.left << ", " << wd_area.top << " with size= " << wd_area.right + delta_w << ", "<< wd_area.bottom + delta_h << ", " << std::endl;
 
 			::GetClientRect(native_wd, &client);
 			::GetWindowRect(native_wd, &wd_area);
+						
+			if constexpr (dpi_debugging) {
+				// with a client area of:
+			std::cout << "create_window(): moved client= " << client.right << ", " << client.top << " with size= " << client.right - client.left << ", "<< client.bottom - client.top << ", " << std::endl;
+			// and a window area of:
+			std::cout << "create_window(): moved wd_area= " << wd_area.right << ", " << wd_area.top << " with size= " << wd_area.right - wd_area.left << ", "<< wd_area.bottom - wd_area.top << ", " << std::endl;
+			}
 
 			wd_area.right -= wd_area.left;
 			wd_area.bottom -= wd_area.top;
@@ -659,6 +862,7 @@ namespace nana{
 		{
 			if(nullptr == parent) return nullptr;
 #if defined(NANA_WINDOWS)
+			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
 			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilities for variation
 										L"NanaWindowInternal",
 										L"Nana Child Window",	// Title Text
@@ -666,6 +870,10 @@ namespace nana{
 										r.x, r.y, r.width, r.height,
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop
 										0, windows_module_handle(), 0);
+
+			if constexpr (dpi_debugging) // print for debuging the position of creation of the window pt
+				std::cout << "create_child_window(): in " << r.x << ", " << r.y << " with size= " << r.width << ", " << r.height << std::endl;
+
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 
@@ -1847,6 +2055,7 @@ namespace nana{
 			int y;
 			if(true_for_max)
 			{
+				/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 				x = ::GetSystemMetrics(SM_CXMAXTRACK);
 				y = ::GetSystemMetrics(SM_CYMAXTRACK);
 				if(static_cast<unsigned>(x) < sz.width + ext_width)
@@ -1856,6 +2065,7 @@ namespace nana{
 			}
 			else
 			{
+				/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 				x = ::GetSystemMetrics(SM_CXMINTRACK);
 				y = ::GetSystemMetrics(SM_CYMINTRACK);
 				if(static_cast<unsigned>(x) > sz.width + ext_width)
@@ -1872,26 +2082,59 @@ namespace nana{
 			return sz;
 		}
 
-		void native_interface::start_dpi_awareness()
+		void native_interface::start_dpi_awareness(bool aware)  //bool aware = false
 		{
-#ifdef NANA_WINDOWS
-			auto& dpi_fn = windows_dpi_function();
-			if (dpi_fn.good())
+			if (!aware) return;
+         #ifdef NANA_WINDOWS
+			auto& dpi_fn = wdpi_fns();
+			// set SetProcessDpiAwarenessContext, or SetProcessDpiAwareness, or SetProcessDPIAware
+			if (dpi_fn.SetProcessDpiAwarenessContext)
 			{
-				dpi_fn.SetProcessDpiAwareness(dpi_function::PROCESS_PER_MONITOR_DPI_AWARE);
+				dpi_fn.SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2_);
 			}
-#endif
+			else if (dpi_fn.SetProcessDpiAwareness)
+            {
+			    dpi_fn.SetProcessDpiAwareness(dpi_function::PROCESS_PER_MONITOR_DPI_AWARE);
+			}
+            else if (dpi_fn.SetProcessDPIAware)
+            {
+			    dpi_fn.SetProcessDPIAware();
+			}
+			if constexpr (dpi_debugging) {
+				std::cout << "start_dpi_awareness(): system_dpi = " << system_dpi() << '\n';
+				print_monitor_dpi();
+			}
+         #endif
 		}
 
-		std::size_t native_interface::window_dpi(native_window_type wd)
+		std::size_t native_interface::window_dpi(native_window_type wd)  /// \todo: add bool x_requested = true)
 		{
 #ifdef NANA_WINDOWS
-			if (!::IsWindow(reinterpret_cast<HWND>(wd)))
-				return 0;
+			
+			HWND hwnd = reinterpret_cast<HWND>(wd);
 
-			auto& dpi_fn = windows_dpi_function();
-			if (dpi_fn.good())
-					return dpi_fn.GetDpiForWindow(reinterpret_cast<HWND>(wd));
+			if (!::IsWindow(hwnd))
+				return system_dpi();
+
+			if (wdpi_fns().GetDpiForWindow)  // how to get x_dpi or y_dpi?
+				return wdpi_fns().GetDpiForWindow(hwnd);
+						
+			if (wdpi_fns().GetDpiForMonitor)
+			{
+				HMONITOR pmonitor = ::MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
+				UINT x_dpi, y_dpi;
+				if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
+					return  x_dpi;  // x_requested ? x_dpi, y_dpi
+			}
+
+			HDC hdc = ::GetDC(hwnd);  // the old way. Works in any Windows version
+			if (hdc)
+			{
+				auto dpi = static_cast<std::size_t>(::GetDeviceCaps(hdc, LOGPIXELSX)); // x_requested ? LOGPIXELSX : LOGPIXELSY
+				::ReleaseDC(nullptr, hdc);
+				return dpi;
+			}
+
 #endif
 			static_cast<void>(wd);	//eliminate the unused warning
 			return system_dpi();
@@ -1899,17 +2142,32 @@ namespace nana{
 
 		std::size_t native_interface::system_dpi()
 		{
-#ifdef NANA_WINDOWS
-			auto& dpi_fn = windows_dpi_function();
-			if (dpi_fn.good())
-				return dpi_fn.GetDpiForSystem();
+  #ifdef NANA_WINDOWS
 
-			//When DPI-aware APIs are not supported by the running Windows, it returns
-			//the system DPI
+			if (wdpi_fns().GetDpiForMonitor)
+			{
+				if constexpr (dpi_debugging) std::cout << "GetDpiForMonitor" << std::endl;
+				// get the main monitor HWND
+				HWND primary_monitor = ::GetDesktopWindow();
+				HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
+				UINT x_dpi, y_dpi;
+				if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
+					return  x_dpi;  //  x_dpi != y_dpi ??
+			}
+			if (wdpi_fns().GetDpiForSystem)  
+			{
+				if constexpr (dpi_debugging) std::cout << "GetDpiForSystem" << std::endl;
+				return wdpi_fns().GetDpiForSystem();
+			}
+
+			if constexpr (dpi_debugging) std::cout << "GetDeviceCaps" << std::endl;
+
+			//When DPI-aware APIs are not supported by the running Windows, it returns the system DPI
 			auto hdc = ::GetDC(nullptr);
-			auto dots = static_cast<unsigned>(::GetDeviceCaps(hdc, LOGPIXELSX));
+			auto dpi = static_cast<std::size_t>(::GetDeviceCaps(hdc, LOGPIXELSX));
 			::ReleaseDC(nullptr, hdc);
-			return dots;
+			return dpi;
+
 #endif
 			return 96;
 		}

@@ -1,6 +1,6 @@
 /*
  *	A Bedrock Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -935,7 +935,7 @@ namespace detail
 
 					if(msgwnd)
 					{
-						arg_keyboard modifiers_status;
+						arg_keyboard modifiers_status{};		// copied below: get_key_state() sets only alt, ctrl, shift
 						brock.get_key_state(modifiers_status);
 
 						KeySym keysym;

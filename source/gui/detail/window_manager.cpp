@@ -1,6 +1,6 @@
 /*
  *	Window Manager Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -28,6 +28,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iterator>
+#include <vector>
 
 namespace nana
 {
@@ -1293,6 +1294,8 @@ namespace detail
 
 		root_misc* window_manager::root_runtime(native_window native_wd) const
 		{
+			// find() updates a cache, and X11 calls it while handling an event without the internal mutex
+			internal_scope_guard lock;
 			return impl_->misc_register.find(native_wd);
 		}
 
@@ -1352,23 +1355,28 @@ namespace detail
 		{
 			internal_scope_guard lock;
 
+			// Take the functions out first and call them after the loop: a function may add new ones (tooltip:
+			// close() -> destroy -> at_safe_place) or destroy windows, which invalidates the iterator of safe_place.
+			// Functions added meanwhile are called by the next call_safe_place.
+			std::vector<std::function<void()>> functions;
 			auto& safe_place = impl_->safe_place.table();
 			for (auto i = safe_place.begin(); i != safe_place.end();)
 			{
 				if (i->first->thread_id == thread_id)
 				{
-					auto functions = std::move(i->second);
+					for (auto& fn : i->second)
+						functions.emplace_back(std::move(fn));
 					i = safe_place.erase(i);
-
-					for (auto& fn : functions)
-						fn();
 				}
 				else
 					++i;
 			}
+
+			for (auto& fn : functions)
+				fn();
 		}
 
-		//updates the window elements when DPI is changed.
+		/// \todo: generalize dpi to v2 awareness - updates the window elements when DPI is changed.
 		void window_manager::update_dpi(basic_window* wd)
 		{
 			internal_scope_guard lock;

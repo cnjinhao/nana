@@ -1,14 +1,14 @@
 /**
- *  \file basis.hpp
- *  \brief This file provides basis class and data structures required by the GUI
- *
  *	Basis Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *  @file nana\gui\basis.hpp
+ *  @brief This file provides basis class and data structures required by the GUI
  *
  */
 
@@ -29,7 +29,10 @@ namespace nana
 		struct native_window_handle_impl;
 		struct native_drawable_impl;
 		struct event_handle_impl;
+		struct drawing_handle_impl;
 	}
+
+	using drawing_handle = detail::drawing_handle_impl*;
 
 #ifdef NANA_X11
 	namespace x11

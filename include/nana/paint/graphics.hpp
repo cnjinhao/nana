@@ -1,6 +1,6 @@
 /*
  *	Paint Graphics Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -39,6 +39,8 @@ namespace nana
 			font();
 			font(drawable_type);
 			font(const font&);
+
+			/// \todo: generalize dpi to v2 awareness
 
 			/// creates a font object.
 			/// @param info Specifies the font family, size and styles.

@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -10,6 +10,10 @@
  *	@file: nana/gui/programming_interface.cpp
  *	@author: Jinhao
  */
+
+#include <iostream> // for debugging in make_center
+
+#include <nana/config.hpp>
 
 #include "detail/basic_window.hpp"
 #include <nana/gui/programming_interface.hpp>
@@ -456,9 +460,19 @@ namespace api
 		{
 			internal_scope_guard lock;
 			if (is_window(wd) && wd->annex.text_editor)
-
 				return wd->annex.text_editor->im_input(insert_pos, str, candidate);
 			return {};
+		}
+
+		/// Cancels the candiate mode
+		/**
+		* Cancels the candidate mode when the virtual keyboard window is closed.
+		*/
+		void im_cancel(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd) && wd->annex.text_editor)
+				wd->annex.text_editor->im_cancel();
 		}
 
 
@@ -615,20 +629,22 @@ namespace api
 	{
 		return interface_type::cursor_position();
 	}
-
+	/// generalized to dpi awareness v2
 	::nana::rectangle make_center(unsigned width, unsigned height) noexcept
 	{
 		auto screen = interface_type::primary_monitor_size();
+	    if constexpr (dpi_debugging)
+			std::cout << "API::make_center() on screen: (" << screen.width << ", " << screen.height << ") " << std::endl;
 		return{
-			static_cast<int>(width > screen.width ? 0 : (screen.width - width) >> 1),
+			static_cast<int>(width  > screen.width  ? 0 : (screen.width  - width ) >> 1),
 			static_cast<int>(height > screen.height ? 0 : (screen.height - height) >> 1),
 			width, height
 		};
 	}
-
+	/// \todo: generalize dpi to v2 awareness 
 	::nana::rectangle make_center(window wd, unsigned width, unsigned height) noexcept
 	{
-		nana::rectangle r = make_center(width, height);
+		nana::rectangle r = make_center(width, height); /// \todo: generalize dpi to v2 awareness 
 
 		auto pos = r.position();
 		calc_window_point(wd, pos);
@@ -1073,8 +1089,7 @@ namespace api
 		return (is_window(wd) ? wd->flags.enabled : false);
 	}
 
-	//refresh_window
-	//@brief: Refresh the window and display it immediately.
+	/// Refresh the window and display it immediately.
 	void refresh_window(window wd)
 	{
 		restrict::wd_manager().update(wd, true, false);
@@ -1085,8 +1100,7 @@ namespace api
 		restrict::wd_manager().refresh_tree(wd);
 	}
 
-	//update_window
-	//@brief: it displays a window immediately without refreshing.
+	/// displays a window immediately without refreshing.
 	void update_window(window wd, bool now)
 	{
 		if (now)
@@ -1499,6 +1513,7 @@ namespace api
 		return false;
 	}
 
+	/// \todo: generalize dpi to v2 awareness
 	void typeface(window wd, const nana::paint::font_info& fi)
 	{
 		internal_scope_guard lock;
@@ -1678,7 +1693,7 @@ namespace api
 		
 		return{};
 	}
-
+	/// \todo: generalize dpi to v2 awareness
 	unsigned screen_dpi(bool x_requested)
 	{
 		return ::nana::platform_abstraction::screen_dpi(x_requested);
@@ -1702,6 +1717,16 @@ namespace api
 		return dragdrop_status::not_ready;
 	}
 
+	void keyboard_default_language(const std::string& lang)
+	{
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		internal_scope_guard lock;
+		restrict::bedrock.vkeyboard().default_im_value() = lang;
+#else
+		(void)lang;
+#endif
+	}
+
 	/// Configures the qwerty keyboard for a text editor
 	bool keyboard_qwerty(window wd, std::vector<std::string> langs, keyboard_behaves behave, keyboard_modes mode)
 	{
@@ -1718,15 +1743,32 @@ namespace api
 	}
 
 	/// Configures the numeric keyboard.
-	bool keyboard_numeric(window wd)
+	bool keyboard_numeric(window wd, bool padding)
 	{
 		internal_scope_guard lock;
 #ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
-		return restrict::bedrock.vkeyboard().numeric(wd);
+		return restrict::bedrock.vkeyboard().numeric(wd, padding);
 #else
 		(void)wd;
+		(void)padding;
 		return false;
 #endif	
+	}
+
+	drawing_handle drawing(window wd, std::function<void(paint::graphics&)> fn) noexcept
+	{
+		internal_scope_guard lock;
+		if (!is_window(wd))
+			return nullptr;
+
+		return wd->drawer.drawing(std::move(fn), false);
+	}
+
+	void remove_drawing(window wd, drawing_handle dw) noexcept
+	{
+		internal_scope_guard lock;
+		if (is_window(wd))
+			wd->drawer.erase(dw);
 	}
 }//end namespace api
 }//end namespace nana

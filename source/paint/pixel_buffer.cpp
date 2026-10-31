@@ -1,15 +1,22 @@
-/*
+/**
  *	Pixel Buffer Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/pixel_buffer.cpp
- *	@note: The format of Xorg 16bits depth is 565
+ *	@file nana/paint/pixel_buffer.cpp
+ *	@note The format of Xorg 16bits depth is 565
  */
+
+#include <algorithm>  //std::clamp
+#include <stdexcept>
+#include <cstring>
+#include <cmath>
+#include <fstream>
+
 
 #include "../detail/platform_spec_selector.hpp"
 #include "detail/image_format_defs.hpp"
@@ -17,11 +24,6 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
 #include <nana/paint/detail/image_process_provider.hpp>
-
-#include <stdexcept>
-#include <cstring>
-#include <cmath>
-#include <fstream>
 
 namespace nana{	namespace paint
 {
@@ -982,7 +984,10 @@ namespace nana{	namespace paint
 	void pixel_buffer::rectangle(const nana::rectangle &r, const ::nana::color& clr, double fade_rate, bool solid)
 	{
 		auto sp = storage_.get();
-		if((nullptr == sp) || (fade_rate == 1.0)) return;
+		if((nullptr == sp) || (fade_rate == 1.0) || r.empty()) return;
+
+		if (r.right() < 0 || r.x >= static_cast<int>(sp->pixel_size.width) || r.bottom() < 0 || r.y >= static_cast<int>(sp->pixel_size.height))
+			return;
 
 		bool fade = (fade_rate != 0.0);
 		unsigned char * fade_table = nullptr;
@@ -1061,7 +1066,7 @@ namespace nana{	namespace paint
 		{
 			if(ybeg == r.y)
 			{
-				auto i = p_rgb;
+				auto i = p_rgb + xbeg;
 				auto end = p_rgb + xend;
 				if(fade)
 				{
@@ -1078,7 +1083,7 @@ namespace nana{	namespace paint
 			if(r.y + static_cast<int>(r.height) == yend)
 			{
 				auto p_rgb = sp->raw_pixel_buffer + (yend - 1) * sp->pixel_size.width;
-				auto i = p_rgb;
+				auto i = p_rgb + xbeg;
 				auto end = p_rgb + xend;
 
 				if(fade)

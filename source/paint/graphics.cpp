@@ -1,6 +1,6 @@
 /*
  *	Paint Graphics Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -124,12 +124,13 @@ namespace paint
 				impl_->real_font = rhs.impl_->real_font;
 		}
 
+		/// \todo: generalize dpi to v2 awareness
 		font::font(const font_info& fi, std::size_t dpi):
 			impl_(new impl_type)
 		{
 			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), {});
 		}
-
+		/// \todo: generalize dpi to v2 awareness
 		font::font(const std::string& font_family, double size_pt, const font_style& fs, std::size_t dpi):
 			impl_(new impl_type)
 		{
@@ -140,7 +141,7 @@ namespace paint
 			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), {});
 		}
 
-
+		/// \todo: generalize dpi to v2 awareness
 		font::font(double size_pt, const path_type& ttf, const font_style& fs, std::size_t dpi) :
 			impl_(new impl_type)
 		{

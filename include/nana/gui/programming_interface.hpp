@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -133,7 +133,10 @@ namespace api
 
 		std::optional<upoint> caret_position(window);
 
-		upoint im_input(window, const upoint& insert_pos, const std::wstring&, bool candidate);
+		upoint	im_input(window, const upoint& insert_pos, const std::wstring&, bool candidate);
+
+		/// Cancel the candidate mode
+		void	im_cancel(window);
 	}//end namespace dev
 
 
@@ -509,10 +512,13 @@ namespace api
 	 */
 	::std::optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 
+	/// \todo: generalize dpi to v2 awareness
 	unsigned screen_dpi(bool x_requested);
 
 	std::size_t window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
+
+	void keyboard_default_language(const std::string& lang);
 
 	/// Configures the qwerty keyboard for a text editor
 	/**
@@ -526,7 +532,10 @@ namespace api
 
 	/// Configures the numeric keyboard. It returns true if virtual keyboard is enabled and
 	/// the specified window is a text editor window, false otherwise.
-	bool keyboard_numeric(window);
+	bool keyboard_numeric(window, bool padding);
+
+	drawing_handle drawing(window, std::function<void(paint::graphics&)>) noexcept;
+	void remove_drawing(window, drawing_handle) noexcept;
 }//end namespace api
 
 namespace API = api;

@@ -1,6 +1,6 @@
 /*
  *	Basic Types definition
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -620,7 +620,7 @@ namespace nana
 		{
 			x += pixels;
 			y += pixels;
-			auto const px_twice = (pixels << 1);
+			auto const px_twice = pixels * 2;		// '<< 1' is undefined for negative pixels before C++20
 			if (px_twice > static_cast<int>(width))
 				width = 0;
 			else

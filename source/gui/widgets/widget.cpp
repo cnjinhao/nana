@@ -116,6 +116,7 @@ namespace nana
 			_m_cursor(cur);
 		}
 
+		/// \todo: generalize dpi to v2 awareness
 		void widget::typeface(const paint::font_info& fi)
 		{
 			api::typeface(handle(), fi);
@@ -290,6 +291,11 @@ namespace nana
 		widget::operator window() const
 		{
 			return handle();
+		}
+
+		drawing_handle widget::drawing(std::function<void(paint::graphics&)> draw_fn)
+		{
+			return api::drawing(handle(), std::move(draw_fn));
 		}
 
 		std::unique_ptr<::nana::detail::widget_notifier_interface> widget::_m_wdg_notifier()

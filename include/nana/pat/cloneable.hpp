@@ -1,6 +1,6 @@
 /**
  *	A Generic Cloneable Pattern Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -98,7 +98,7 @@ namespace nana{ namespace pat{
 		typedef int inner_bool::* operator_bool_t;
 
 		template<typename U>
-		using member_enabled = std::enable_if<(   !std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value) 
+		using member_enabled = std::enable_if<(   !std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value)
 			                                    && std::is_base_of<base_t, typename std::remove_reference<U>::type>::value, int>;
 	public:
 		cloneable() noexcept = default;

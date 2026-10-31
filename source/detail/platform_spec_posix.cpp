@@ -1,6 +1,6 @@
 /*
  *	Platform Specification Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
@@ -28,6 +28,7 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/window_manager.hpp>
+#include <nana/gui/detail/internal_scope_guard.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #include <errno.h>
 #include <sstream>
@@ -836,11 +837,12 @@ namespace detail
 	{
 		platform_scope_guard psg;
 		auto i = caret_holder_.carets.find(wd);
-		if(i != caret_holder_.carets.end())
-		{
-			i->second->reinstate();
-			i->second->pos = pos;
-		}
+		if(i == caret_holder_.carets.end())
+			return;
+
+		i->second->reinstate();
+		i->second->pos = pos;
+
 		auto addr = i->second;
 		if(addr && addr->input_context) {
 			XPoint spot;
@@ -977,6 +979,9 @@ namespace detail
 	void platform_spec::timer_proc(thread_t tid)
 	{
 		{
+			// Same lock order as set_timer() and kill_timer(), which are called by the timer driver
+			// with the internal mutex locked: first the internal mutex, then the timer mutex.
+			::nana::internal_scope_guard internal_lock;
 			std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
 			if(timer_.runner)
 			{

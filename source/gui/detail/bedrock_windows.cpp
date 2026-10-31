@@ -1,7 +1,7 @@
 ﻿/**
  *	A Bedrock Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,6 +16,9 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
+
+#include <iostream>	//use std::cerr
+
 #include "bedrock_types.hpp"
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
@@ -30,8 +33,6 @@
 #include "inner_fwd_implement.hpp"
 #include "../../detail/platform_abstraction.hpp"
 
-#include <iostream>	//use std::cerr
-
 #ifndef WM_MOUSEWHEEL
 #	define WM_MOUSEWHEEL	0x020A
 #endif
@@ -40,6 +41,7 @@
 #	define WM_MOUSEHWHEEL	0x020E
 #endif
 
+/// \todo: generalize dpi to v2 awareness
 #ifndef WM_DPICHANGED
 #	define WM_DPICHANGED 0x02E0
 #endif
@@ -190,7 +192,7 @@ namespace detail
 		:	pi_data_(new pi_data),
 			impl_(new private_impl)
 	{
-		detail::native_interface::start_dpi_awareness();
+		detail::native_interface::start_dpi_awareness(config_dpi_aware);
 
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
@@ -210,7 +212,8 @@ namespace detail
 
 		::RegisterClassEx(&wincl);
 
-		restrict::track_mouse_event = (restrict::track_mouse_event_type)::GetProcAddress(::GetModuleHandleA("User32.DLL"), "TrackMouseEvent");
+		restrict::track_mouse_event = (restrict::track_mouse_event_type)
+			    ::GetProcAddress(::GetModuleHandleA("User32.DLL"), "TrackMouseEvent");
 
 		if(!restrict::track_mouse_event)
 			restrict::track_mouse_event = restrict::dummy_track_mouse_event;
@@ -230,13 +233,17 @@ namespace detail
 
 		restrict::imm_get_composition_string = reinterpret_cast<restrict::imm_get_composition_string_type>(
 				::GetProcAddress(imm32, "ImmGetCompositionStringW"));
+
+		/// \todo: generalize dpi to v2 awareness
+		platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
 	}
 
 	bedrock::~bedrock()
 	{
 		if(wd_manager().window_count())
 		{
-			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " + std::to_string(wd_manager().window_count()) + " window(s) are not uninstalled.";
+			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " 
+				+ std::to_string(wd_manager().window_count()) + " window(s) are not uninstalled.";
 			std::cerr << msg;  /// \todo add list of cations of opening windows and if auto testing GUI do auto OK after 2 seconds.
 			::MessageBoxA(0, msg.c_str(), ("Nana C++ Library"), MB_OK);
 		}
@@ -806,7 +813,7 @@ namespace detail
 						i->second();
 				}
 				break;
-			case WM_DPICHANGED:
+			case WM_DPICHANGED:  /// \todo: generalize dpi to v2 awareness
 				wd_manager.update_dpi(msgwnd);
 				{
 				

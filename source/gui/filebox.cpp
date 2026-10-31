@@ -1,6 +1,6 @@
 /*
 *	Filebox
-*	Nana C++ Library(http://www.nanapro.org)
+*	Nana C++ Library(https://nana.acemind.cn)
 *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
@@ -37,8 +37,6 @@
 #	include <algorithm>
 #	include "../detail/posix/theme.hpp"
 #endif
-
-#include <iostream> //debug
 
 namespace fs = std::filesystem;
 namespace fs_ext = nana::filesystem_ext;
@@ -384,6 +382,18 @@ namespace nana
 				api::close_window(handle());
 			});
 
+			// As the native file dialogs (Windows, GTK, Qt): Escape cancels, whichever child has the focus,
+			// and the file name box gets the keyboard focus when the dialog is shown.
+			accel_key escape;
+			escape.key = static_cast<char>(keyboard::escape);
+			this->keyboard_accelerator(escape, [this]{ api::close_window(handle()); });
+
+			this->events().expose.connect_unignorable([this](const arg_expose& arg)
+			{
+				if (arg.exposed)
+					tb_file_.focus();
+			});
+
 			selection_.type = kind::none;
 			_m_layout();
 			_m_init_tree();
@@ -713,15 +723,14 @@ namespace nana
 			{
 				file_container_.clear();
 
-				drawing dw{ls_file_};
-				dw.clear();
-				dw.draw([](paint::graphics& graph){
-					std::string text = "Permission denied to access the directory";
-					auto txt_sz = graph.text_extent_size(text);
-					auto sz = graph.size();
+				if (!denied_msg_)		// drawn once, on the list (it was drawn on the form, and never removed)
+					denied_msg_ = ls_file_.drawing([](paint::graphics& graph){
+						std::string text = "Permission denied to access the directory";
+						auto txt_sz = graph.text_extent_size(text);
+						auto sz = graph.size();
 
-					graph.string({static_cast<int>(sz.width - txt_sz.width) / 2, static_cast<int>(sz.height - txt_sz.height) / 2}, text, colors::dark_gray);
-				});
+						graph.string({static_cast<int>(sz.width - txt_sz.width) / 2, static_cast<int>(sz.height - txt_sz.height) / 2}, text, colors::dark_gray);
+					});
 
 				ls_file_.clear();
 			}
@@ -748,7 +757,11 @@ namespace nana
 
 		void _m_list_fs()
 		{
-			drawing{ls_file_}.clear();
+			if (denied_msg_)			// a listed directory removes the "Permission denied" message
+			{
+				api::remove_drawing(ls_file_, denied_msg_);
+				denied_msg_ = nullptr;
+			}
 
 			auto filter = filter_.caption();
 			ls_file_.auto_draw(false);
@@ -1288,6 +1301,7 @@ namespace nana
 		button	btn_folder_;
 		treebox tree_;
 		listbox	ls_file_;
+		drawing_handle denied_msg_{ nullptr };	///< "Permission denied" message drawn on ls_file_; removed by _m_list_fs()
 
 		label lb_file_;
 		textbox	tb_file_;

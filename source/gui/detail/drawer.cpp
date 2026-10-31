@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -416,11 +416,43 @@ namespace nana
 			return nullptr;
 		}
 
+
+		drawing_handle drawer::drawing(std::function<void(paint::graphics&)>&& fn, bool diehard) noexcept
+		{
+			if (!fn)		// an empty function would throw bad_function_call at the next refresh
+				return nullptr;	// but this will hide a programming error. todo: how to handle this?
+
+			std::pair<std::function<void(paint::graphics&)>, bool>* pdw = nullptr;
+			try {
+				pdw = new std::pair<std::function<void(paint::graphics&)>, bool>(std::move(fn), diehard);
+				data_impl_->draws.emplace_back(pdw);
+				return reinterpret_cast<drawing_handle>(pdw);
+			}
+			catch (...)
+			{
+				delete pdw;
+				return nullptr;
+			}
+		}
+
+		void drawer::erase(drawing_handle dw) noexcept
+		{
+			for (auto i = data_impl_->draws.cbegin(); i != data_impl_->draws.cend(); ++i)
+			{
+				if (reinterpret_cast<drawing_handle>(*i) == dw)
+				{
+					delete (*i);
+					data_impl_->draws.erase(i);
+					return;
+				}
+			}
+		}
+
 		void drawer::clear()
 		{
-			for(auto i = data_impl_->draws.cbegin(); i != data_impl_->draws.cend();)
+			for (auto i = data_impl_->draws.cbegin(); i != data_impl_->draws.cend();)
 			{
-				if((*i)->second)
+				if (!(*i)->second)
 				{
 					delete (*i);
 					i = data_impl_->draws.erase(i);
@@ -430,37 +462,12 @@ namespace nana
 			}
 		}
 
-		void* drawer::draw(std::function<void(paint::graphics&)> && f, bool diehard)
-		{
-			if(f)
-			{
-				auto p = new std::pair<std::function<void(paint::graphics&)>, bool>(std::move(f), !diehard);
-				data_impl_->draws.emplace_back(p);
-				return p;
-			}
-			return nullptr;
-		}
-
-		void drawer::erase(void * p)
-		{
-			for (auto i = data_impl_->draws.begin(); i != data_impl_->draws.end(); ++i)
-			{
-				if (*i == p)
-				{
-					delete (*i);
-					data_impl_->draws.erase(i);
-					return;
-				}
-			}
-		}
-
 		void drawer::_m_effect_bground_subsequent()
 		{
-			auto & effect = data_impl_->window_handle->effect;
-
 			for (auto * dw : data_impl_->draws)
 				dw->first(graphics);
 
+			auto& effect = data_impl_->window_handle->effect;
 			if (effect.bground)
 			{
 				if (effect.bground_fade_rate >= 0.01)

@@ -1,6 +1,6 @@
 /*
  *	An Animation Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <list>
+#include <iterator>
 #include <map>
 #include <algorithm>
 #include <atomic>
@@ -390,6 +391,7 @@ namespace nana
 			{
 				impl* ani;
 				std::size_t duration_left{ 0 };
+				bool counted{ false };	///< not paused when the lowest duration of this pass was computed
 			};
 
 			struct thread_variable
@@ -421,7 +423,7 @@ namespace nana
 		{
 			bool	looped{false};
 			std::atomic<bool>	paused{true};
-			std::size_t fps;
+			std::atomic<std::size_t> fps;
 
 			std::list<frameset> framesets;
 			std::map<std::string, branch_t> branches;
@@ -503,7 +505,17 @@ namespace nana
 				if(state.this_frameset != framesets.end())
 				{
 					state.this_frameset->impl_->next_frame();
-					return (!state.this_frameset->impl_->eof());
+					if (!state.this_frameset->impl_->eof())
+						return true;
+
+					// this frameset is finished: go on with the next one, if any (issue #542)
+					auto next = std::next(state.this_frameset);
+					if (next != framesets.end())
+					{
+						state.this_frameset = next;
+						state.this_frameset->impl_->reset();
+						return true;
+					}
 				}
 				return false;
 			}
@@ -567,6 +579,7 @@ namespace nana
 					while (true)
 					{
 						std::size_t lowest_duration = std::numeric_limits<std::size_t>::max();
+						bool running = false;	// whether an animation is not paused in this pass
 
 						{
 							//acquire the isg lock first to avoid deadlock that occured by an event hander which operates the animation object.
@@ -577,8 +590,12 @@ namespace nana
 
 							for (auto& cb : thr->animations)
 							{
-								if (cb.ani->paused)
+								// read paused once per pass: play() and pause() change it without thr->mutex
+								cb.counted = !cb.ani->paused;
+								if (!cb.counted)
 									continue;
+
+								running = true;
 
 								if(0 == cb.duration_left)
 								{
@@ -591,22 +608,33 @@ namespace nana
 									lowest_duration = cb.duration_left;
 							}
 
+							// only the animations counted above: one resumed in between could have a duration_left
+							// lower than lowest_duration, and the subtraction would wrap around
 							for(auto & cb : thr->animations)
 							{
-								if(!cb.ani->paused)
+								if(cb.counted)
 									cb.duration_left -= lowest_duration;
 							}
 						}
 
 						thr->performance_parameter = tmpiece.calc();
-						if (thr->performance_parameter < lowest_duration)
-							std::this_thread::sleep_for(std::chrono::milliseconds{static_cast<int>(lowest_duration - thr->performance_parameter)});
+						// Do not wait when no animation is running (all paused). A frame duration may be any std::size_t:
+						// wait without converting to int, bounded so that sleep_for() cannot overflow adding it to the clock
+						// (1e12 ms, about 31 years).
+						if (running && (thr->performance_parameter < lowest_duration))
+						{
+							const double wait = (std::min)(double(lowest_duration) - thr->performance_parameter, 1e12);
+							std::this_thread::sleep_for(std::chrono::milliseconds{static_cast<std::chrono::milliseconds::rep>(wait)});
+						}
 
 						//Restart timing this frame
 						tmpiece.start();
 
 						// Move to next frame
 						{
+							//acquire the isg lock first, as above: the outputs read the current frame while drawing.
+							nana::internal_scope_guard isglock;
+
 							std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
 							for (auto & cb : thr->animations)
 							{
@@ -669,6 +697,8 @@ namespace nana
 				//Simply modify the fps parameter if the thread just has one animation.
 				if (thr->animations.size() == 1)
 				{
+					// the performance thread reads them with the mutex of thread variable
+					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
 					thr->fps = new_fps;
 					thr->interval = 1000.0 / double(new_fps);
 					return;
@@ -770,20 +800,6 @@ namespace nana
 				push_back(std::move(fs));
 			}
 		}
-
-		/*
-		void branch(const std::string& name, const frameset& frms)
-		{
-			impl_->branches[name].frames = frms;
-		}
-
-		void branch(const std::string& name, const frameset& frms, std::function<std::size_t(const std::string&, std::size_t, std::size_t&)> condition)
-		{
-			auto & br = impl_->branches[name];
-			br.frames = frms;
-			br.condition = condition;
-		}
-		*/
 
 		void animation::looped(bool enable)
 		{

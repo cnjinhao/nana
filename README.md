@@ -1,10 +1,8 @@
 # Nana C++ Library 
-[Linux (gcc 8.3.0 and 9.2)![TravisCI build status](https://travis-ci.org/cnjinhao/nana.svg)](https://travis-ci.org/cnjinhao/nana)  including [(nana-demos)](https://github.com/qPCR4vir/nana-demo)
 
-[Windows (Microsoft (R) Build Engine version 15.9.21) ![AppVeyor build status](https://ci.appveyor.com/api/projects/status/5j79p9fi887usv7h?svg=true)](https://ci.appveyor.com/project/qPCR4vir/nana) 
+[![Ubuntu](https://github.com/cnjinhao/nana/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/cnjinhao/nana/actions?query=workflow%3AUbuntu)
 
 [![Licence](https://img.shields.io/badge/license-BSL-blue.svg?style=flat)](LICENSE)
-
 
 Nana is a C++ standard-like GUI library designed to allow developers to easily create cross-platform GUI applications with modern C++ style. Currently it is regularly tested on Linux(X11) and Windows, and experimentally on macOS and FreeBSD. The [nana repository](https://github.com/cnjinhao/nana) contains the entire source of the library. You can browse the source code and submit your pull request for contributing.
 
@@ -20,7 +18,7 @@ Jinhao, [Ariel Viña Rodríguez].
 
 ## Support
 
-The best way to get help with Nana library is by visiting http://nanapro.org/help.htm
+The best way to get help with Nana library is by visiting https://nana.acemind.cn/documentation
 
 ## Sending a Pull Request ?
 

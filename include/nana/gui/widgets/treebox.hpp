@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE or copy at 
@@ -33,6 +33,8 @@ namespace nana
 
 	namespace drawerbase::treebox
 	{
+			using size_type = std::size_t;
+
 			enum class component
 			{
 				begin, expander = begin, crook, icon, text, bground, end
@@ -101,26 +103,24 @@ namespace nana
 			class item_proxy;
 
 			class trigger
-				:public drawer_trigger
+				: public drawer_trigger
 			{
 				class implementation;
 				class item_locator;
 			public:
 				struct treebox_node_type
 				{
-					treebox_node_type();
-					treebox_node_type(std::string);
+					treebox_node_type(std::string = {});
 					treebox_node_type& operator=(const treebox_node_type&);
 
 					::std::string text;
 					std::any value;
-					bool expanded;
-					bool hidden;
-					checkstate checked;
+					bool expanded{ false };
+					bool hidden{ false };
+					bool selected{ false };
+					checkstate checked{ checkstate::unchecked };
 					::std::string img_idstr;
 				};
-
-				struct pseudo_node_type{};
 
 				using tree_cont_type = widgets::detail::tree_cont<treebox_node_type>;
 				using node_type = tree_cont_type::node_type;
@@ -387,7 +387,7 @@ namespace nana
 	}//end namespace drawerbase
 
     /// \brief  Displays a hierarchical list of items, such as the files and directories on a disk.
-    /// See also in [documentation](http://nanapro.org/en-us/documentation/widgets/treebox.htm)
+    /// See also in [documentation](https://nana.acemind.cn/documentation)
     class treebox
 		:public widget_object <category::widget_tag,
 		                        drawerbase::treebox::trigger,
@@ -526,6 +526,9 @@ namespace nana
 #endif
 
 		item_proxy selected() const; ///< returns the selected node
+		void selected(std::vector<treebox::item_proxy>&) const; ///< returns the selected nodes
+
+		void deselect_all();
 
 		/// Scrolls a specified item into view.
 		/**
@@ -549,6 +552,9 @@ namespace nana
 		 * @param enable bool  whether to enable.
 		 */
 		void use_entire_line(bool enable);
+
+		void enable_multiselection(bool enable);
+		void use_select_contracted_parent_node(bool enable);
 
 		/// Return the first node of treebox
 		item_proxy first() const;
