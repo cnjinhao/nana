@@ -278,7 +278,10 @@ namespace nana
 					if (table_.empty())
 					{
 						window_.reset();
-						instance(true);
+						// as close(): while the tip window waits for its function at the safe place, that function deletes the
+						// controller (it uses this)
+						if (!wait_for_destroy_)
+							instance(true);
 					}
 				}
 			private:
