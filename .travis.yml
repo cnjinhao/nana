@@ -46,8 +46,8 @@ before_install:
   # donwload nana-demo first
   # we are in:  'user'/nana/
   - cd ..
-  # we are in:   'user'/
-  - git clone --depth=1 --branch=master https://github.com/qPCR4vir/nana-demo.git nana-demo
+  # we are in:   'user'/   ------->>  todo: set branch back to develop or master
+  - git clone --depth=1 --branch=command https://github.com/qPCR4vir/nana-demo.git nana-demo
   # now we have 'user'/nana-demo, 'user'/nana/  and we are in: 'user'/
   - export PATH="$HOME/bin:$PATH"
   - wget --no-check-certificate --no-clobber -O /tmp/tools/cmake https://cmake.org/files/v3.12/cmake-3.12.0-rc3-Linux-x86_64.sh || true
