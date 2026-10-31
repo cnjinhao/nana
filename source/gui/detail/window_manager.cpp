@@ -1355,25 +1355,23 @@ namespace detail
 		{
 			internal_scope_guard lock;
 
-			// Take the functions out first and call them after the loop: a function may add new ones (tooltip:
-			// close() -> destroy -> at_safe_place) or destroy windows, which invalidates the iterator of safe_place.
-			// Functions added meanwhile are called by the next call_safe_place.
-			std::vector<std::function<void()>> functions;
+			// Indexes, not iterators: a function may add new ones (tooltip: close() -> destroy -> at_safe_place), which
+			// may reallocate the table. They are appended, so this loop calls them too, in this same pass: before
+			// remove_trash_handle() deletes the destroyed windows, whose thread_id is read here.
 			auto& safe_place = impl_->safe_place.table();
-			for (auto i = safe_place.begin(); i != safe_place.end();)
+			for (std::size_t i = 0; i < safe_place.size();)
 			{
-				if (i->first->thread_id == thread_id)
+				if (safe_place[i].first->thread_id == thread_id)
 				{
-					for (auto& fn : i->second)
-						functions.emplace_back(std::move(fn));
-					i = safe_place.erase(i);
+					auto functions = std::move(safe_place[i].second);
+					safe_place.erase(safe_place.begin() + i);
+
+					for (auto& fn : functions)
+						fn();
 				}
 				else
 					++i;
 			}
-
-			for (auto& fn : functions)
-				fn();
 		}
 
 		/// \todo: generalize dpi to v2 awareness - updates the window elements when DPI is changed.
