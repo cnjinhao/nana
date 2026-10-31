@@ -216,6 +216,15 @@ namespace nana
 
 namespace detail
 {
+	// The table of window_manager::set_safe_place() and call_safe_place(): a vector of (key, value) pairs in the order
+	// the keys were first used, with a linear search (only a few windows wait for their safe place at a time).
+	// call_safe_place() depends on two properties of it:
+	// - a new key is always appended at the end. The functions called by call_safe_place() may register new ones (the
+	//   tooltip: closing the tip window registers a function for it), and the loop reaches them in the same pass. A
+	//   std::map, sorted by the pointer, could insert the new key before the position of the loop, and that function
+	//   would wait for the next pass, after remove_trash_handle() has deleted its window.
+	// - operator[] may reallocate the vector, which invalidates the iterators and references to its elements: loop with
+	//   indexes, and move the functions out of the table before calling them.
 	template<typename Key, typename Value>
 	class lite_map
 	{
@@ -1339,6 +1348,9 @@ namespace detail
 			return nullptr;
 		}
 
+		// The "safe place" of a thread is the point of its event loop (pump_event) after an event has been processed and
+		// before remove_trash_handle() deletes the windows destroyed meanwhile: no event handler is running, and the
+		// destroyed windows still exist. fn is called there once, by the thread of wd (api::at_safe_place).
 		void window_manager::set_safe_place(basic_window* wd, std::function<void()>&& fn)
 		{
 			if (fn)
@@ -1358,6 +1370,9 @@ namespace detail
 			// Indexes, not iterators: a function may add new ones (tooltip: close() -> destroy -> at_safe_place), which
 			// may reallocate the table. They are appended, so this loop calls them too, in this same pass: before
 			// remove_trash_handle() deletes the destroyed windows, whose thread_id is read here.
+			// Every function of this thread must be called in this pass, also the new ones: in 2026-10 they were left for
+			// the next call, and remove_trash_handle() deleted their window before (heap-use-after-free here, found by
+			// the tooltip interaction test with AddressSanitizer). See lite_map.
 			auto& safe_place = impl_->safe_place.table();
 			for (std::size_t i = 0; i < safe_place.size();)
 			{

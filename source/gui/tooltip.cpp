@@ -161,6 +161,15 @@ namespace nana
 				std::size_t	duration_;
 			};//end class tip_form
 
+			// One controller for all the tooltips: instance() creates it when first needed (a tooltip set or shown); instance(true)
+			// deletes it when no widget has a tooltip and no tip window is alive. table_ keeps the text and the event
+			// handlers of each widget; window_ is the tip window currently shown, if any.
+			// Lifetime of the tip window: show() creates it and sets wait_for_destroy_. When it is destroyed (window_.reset(),
+			// or closed by itself), its destroy handler registers a function at the safe place of the window manager,
+			// which clears wait_for_destroy_ and calls close(); close() may delete the controller. That function uses
+			// this, so the controller must not be deleted while wait_for_destroy_ is set: close() and _m_untip() check it,
+			// and the function deletes the controller later. Deleting it in _m_untip() without the check was a
+			// heap-use-after-free (found in 2026-10 with AddressSanitizer).
 			class controller
 			{
 				struct tip_value
@@ -318,7 +327,7 @@ namespace nana
 					return value;
 				}
 			private:
-				bool wait_for_destroy_{ false };
+				bool wait_for_destroy_{ false };	///< a tip window exists or waits for its function at the safe place
 				std::unique_ptr<tooltip_interface, deleter_type> window_;
 				std::map<window, tip_value> table_;
 			};
