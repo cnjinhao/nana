@@ -1684,6 +1684,22 @@ namespace nana
 				return changed;
 			}
 
+			/// absolute positions of all the items, not relative to display: a snapshot, valid until the items change
+			index_pairs generate_all_index_pairs() const
+			{
+				index_pairs results;
+				index_pair id;
+
+				for (auto& cat : categories_)
+				{
+					for (id.item = 0; id.item < cat.items.size(); ++id.item)
+						results.push_back(id);
+
+					++id.cat;
+				}
+				return results;
+			}
+
 			/// return absolute positions, no relative to display
 			/**
 			 * @param for_selection Indicates whether the selected items or checked items to be returned.
@@ -6097,6 +6113,12 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			return !_m_ess().lister.active_sort(!freeze);
+		}
+
+		auto listbox::enumerate_all_index_pairs() const -> index_pairs
+		{
+			internal_scope_guard lock;
+			return _m_ess().lister.generate_all_index_pairs();
 		}
 
 		auto listbox::selected() const -> index_pairs

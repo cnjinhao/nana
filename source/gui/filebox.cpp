@@ -22,7 +22,7 @@
 #	ifndef NANA_MINGW	//<Shobjidl.h> isn't supported well on MinGW
 #		include <Shobjidl.h>
 #	else
-#		include <Shlobj.h>
+#		include <shlobj.h>
 #	endif
 #elif defined(NANA_POSIX)
 #	include <nana/gui/widgets/label.hpp>
@@ -380,6 +380,18 @@ namespace nana
 			btn_cancel_.events().click.connect_unignorable([this](const arg_click&)
 			{
 				api::close_window(handle());
+			});
+
+			// As the native file dialogs (Windows, GTK, Qt): Escape cancels, whichever child has the focus,
+			// and the file name box gets the keyboard focus when the dialog is shown.
+			accel_key escape;
+			escape.key = static_cast<char>(keyboard::escape);
+			this->keyboard_accelerator(escape, [this]{ api::close_window(handle()); });
+
+			this->events().expose.connect_unignorable([this](const arg_expose& arg)
+			{
+				if (arg.exposed)
+					tb_file_.focus();
 			});
 
 			selection_.type = kind::none;
