@@ -25,7 +25,7 @@
 #	include <windows.h>
 #	include <oleidl.h>
 #	include <comdef.h>
-#	include <Shlobj.h>
+#	include <shlobj.h>
 #elif defined(NANA_X11)
 #	include "../detail/posix/xdnd_protocol.hpp"
 #	include <nana/gui/detail/native_window_interface.hpp>

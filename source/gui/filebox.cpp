@@ -22,7 +22,7 @@
 #	ifndef NANA_MINGW	//<Shobjidl.h> isn't supported well on MinGW
 #		include <Shobjidl.h>
 #	else
-#		include <Shlobj.h>
+#		include <shlobj.h>
 #	endif
 #elif defined(NANA_POSIX)
 #	include <nana/gui/widgets/label.hpp>
