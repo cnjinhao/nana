@@ -456,6 +456,7 @@
     <ClInclude Include="..\..\include\nana\paint\font_info.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_format_defs.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_gif.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\command.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\include\nana\pop_ignore_diagnostic">
