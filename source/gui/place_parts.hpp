@@ -1,7 +1,7 @@
 /**
  *	Parts of Class Place
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -45,45 +45,45 @@ namespace nana
 
 			void refresh(graph_reference graph) override
 			{
-				API::dev::copy_transparent_background(window_handle_, graph);
+				api::dev::copy_transparent_background(window_handle_, graph);
 				if (renderer_)
-					renderer_(window_handle_, graph, API::mouse_action(window_handle_));
+					renderer_(window_handle_, graph, api::mouse_action(window_handle_));
 			}
 
 			void mouse_enter(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_move(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
-			
+
 			void mouse_leave(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_down(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_up(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 		private:
 			window window_handle_{nullptr};
 			std::function<void(window, paint::graphics&, mouse_action)> renderer_;
 		};
-		
+
 		class splitter
 			: public widget_object<category::widget_tag, drawer_splitter>,
 			public splitter_interface
@@ -99,7 +99,7 @@ namespace nana
 				this->caption("place-splitter");
 				widget_object<category::widget_tag, drawer_splitter>::_m_complete_creation();
 
-				API::effects_bground(*this, effects::bground_transparent(0), 0);
+				api::effects_bground(*this, effects::bground_transparent(0), 0);
 			}
 		};
 
@@ -145,9 +145,9 @@ namespace nana
 				graph.rectangle(true, static_cast<color_rgb>(0x83EB));
 
 				//draw caption
-				auto text = to_wstring(API::window_caption(window_handle_));
+				auto text = to_wstring(api::window_caption(window_handle_));
 				if((graph.size().width > 20) && (graph.size().width - 20 > 10))
-					text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
+					text_rd_->render({ 3, 1 }, { text.data(), text.size() }, graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
 
 				//draw x button
 				auto r = _m_button_area();
@@ -172,14 +172,14 @@ namespace nana
 				x_pointed_ = _m_button_area().is_hit(arg.pos);
 
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_leave(graph_reference graph, const arg_mouse&) override
 			{
 				x_pointed_ = false;
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_down(graph_reference graph, const arg_mouse&) override
@@ -190,7 +190,7 @@ namespace nana
 				x_state_ = ::nana::mouse_action::pressed;
 
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_up(graph_reference graph, const arg_mouse&) override
@@ -200,14 +200,14 @@ namespace nana
 
 				x_state_ = ::nana::mouse_action::hovered;
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 
 				close_fn_();
 			}
 		private:
 			::nana::rectangle _m_button_area() const
 			{
-				auto sz = API::window_size(window_handle_);
+				auto sz = api::window_size(window_handle_);
 				return{static_cast<int>(sz.width) - 20, 0, 20, sz.height};
 			}
 		public:
@@ -298,7 +298,7 @@ namespace nana
 						if (::nana::mouse::left_button == arg.button)
 						{
 							moves_.started = true;
-							moves_.start_pos = API::cursor_position();
+							moves_.start_pos = api::cursor_position();
 							moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
 							caption_.set_capture(true);
 						}
@@ -307,7 +307,7 @@ namespace nana
 					{
 						if (arg.left_button && moves_.started)
 						{
-							auto move_pos = API::cursor_position() - moves_.start_pos;
+							auto move_pos = api::cursor_position() - moves_.start_pos;
 							if (!floating())
 							{
 								if (std::abs(move_pos.x) > 4 || std::abs(move_pos.y) > 4)
@@ -316,7 +316,7 @@ namespace nana
 							else
 							{
 								move_pos += moves_.start_container_pos;
-								API::move_window(container_->handle(), move_pos);
+								api::move_window(container_->handle(), move_pos);
 
 								if(!caption_.get_drawer_trigger().hit_close())
 									notifier_->notify_move();
@@ -344,7 +344,8 @@ namespace nana
 			{
 				auto fn_ptr = &fn;
                 widget * w = nullptr;
-				API::dev::affinity_execute(*this, [this, fn_ptr, &w]
+
+				api::affinity_execute(*this, false, [this, fn_ptr, &w]
 				{
 					w=_m_add_pane(*fn_ptr);
 				});
@@ -360,13 +361,13 @@ namespace nana
 
 				rectangle r{ pos() + move_pos, size() };
 				container_.reset(new form(host_window_, r.pare_off(-1), form::appear::bald<form::appear::sizable>()));
-				drawing dw(container_->handle());
-				dw.draw([](paint::graphics& graph)
+				
+				drawing([](paint::graphics& graph)
 				{
 					graph.rectangle(false, colors::coral);
 				});
 
-				API::set_parent_window(handle(), container_->handle());
+				api::set_parent_window(handle(), container_->handle());
 				this->move({ 1, 1 });
 
 				container_->events().resized.connect_unignorable([this](const arg_resized& arg)
@@ -384,7 +385,7 @@ namespace nana
 			{
 				caption_.release_capture();
 
-				API::set_parent_window(handle(), host_window_);
+				api::set_parent_window(handle(), host_window_);
 				container_.reset();
 				notifier_->notify_dock();
 			}
@@ -414,7 +415,7 @@ namespace nana
 							auto handle = tabbar_->attach(tabbar_->selected());
 							//Set caption through a caption of window specified by handle
 							//Empty if handle is null
-							caption_.caption(API::window_caption(handle));
+							caption_.caption(api::window_caption(handle));
 						});
 
 						r.height -= 20;
@@ -446,12 +447,9 @@ namespace nana
 					}
 
 					auto wdg_ptr = wdg.get();
-#ifdef _nana_std_has_emplace_return_type
+
 					panels_.emplace_back().widget_ptr = std::move(wdg);
-#else
-					panels_.emplace_back();
-					panels_.back().widget_ptr.swap(wdg);
-#endif
+
 					for (auto & pn : panels_)
 					{
 						if (pn.widget_ptr)
@@ -477,6 +475,20 @@ namespace nana
 			}moves_;
 		};//class dockarea
 
+		/// \todo: generalize dpi to v2 awareness
+		struct display_metrics
+		{
+			std::size_t dpi;
+			double font_px{ 0 };
+
+			display_metrics(window wd) :
+				dpi(api::window_dpi(wd))
+			{
+				auto font_info = api::typeface(wd).info();
+				if (font_info)
+					font_px = font_info->size_pt * dpi / 72;
+			}
+		};
 
 		//number_t is used for storing a number type variable
 		//such as integer, real and percent. Essentially, percent is a typo of real.
@@ -484,9 +496,9 @@ namespace nana
 		{
 		public:
 			enum class kind{ none, integer, real, percent };
+			enum class units{medium, px, em};
 
 			number_t()
-				: kind_(kind::none)
 			{
 				value_.integer = 0;
 			}
@@ -494,6 +506,7 @@ namespace nana
 			void reset() noexcept
 			{
 				kind_ = kind::none;
+				unit_ = units::medium;
 				value_.integer = 0;
 			}
 
@@ -513,20 +526,65 @@ namespace nana
 				return kind_;
 			}
 
-			double get_value(int ref_percent) const noexcept
+			double get_value(int ref_percent, const display_metrics& dm, bool to_system_px = true) const noexcept
 			{
+				double val = 0;
 				switch (kind_)
 				{
 				case kind::integer:
-					return value_.integer;
+					val = value_.integer;
+					break;
 				case kind::real:
-					return value_.real;
+					val = value_.real;
+					break;
 				case kind::percent:
 					return value_.real * ref_percent;
 				default:
-					break;
+					return 0;
+				}
+				
+				if (to_system_px)
+				{
+					switch (unit_)
+					{
+					case units::medium:
+						return val * dm.dpi / 96;
+					case units::px:
+						return val;
+					case units::em:
+						return val * dm.font_px;
+					}
+				}
+				else
+				{
+					switch (unit_)
+					{
+					case units::medium:
+						return val;
+					case units::px:
+						return val * 96 / dm.dpi;
+					case units::em:
+						return val * dm.font_px * 96 / dm.dpi;
+					}
 				}
 				return 0;
+			}
+
+			double get_value(unsigned area_px, double adjustable_px, double& precise_px, const display_metrics& dm, bool to_system_px) const noexcept
+			{
+				if (number_t::kind::percent == kind_ || number_t::kind::none == kind_)
+				{
+					if (number_t::kind::percent == kind_)
+						adjustable_px = area_px * value_.real + precise_px;
+					else
+						adjustable_px += precise_px;
+
+					auto const px = static_cast<unsigned>(adjustable_px);
+					precise_px = adjustable_px - px;
+					return px;
+				}
+
+				return get_value(0, dm, to_system_px);
 			}
 
 			int integer() const noexcept
@@ -559,9 +617,24 @@ namespace nana
 			{
 				kind_ = kind::percent;
 				value_.real = d / 100;
+				unit_ = units::medium;
+			}
+
+			void unit(units u)
+			{
+				if (kind::percent == kind_)
+					throw std::invalid_argument{"a persentage value can't be assigned with the unit"};
+				unit_ = u;
+			}
+
+			units unit() const noexcept
+			{
+				return unit_;
 			}
 		private:
-			kind kind_;
+			kind	kind_{ kind::none };
+			units	unit_{ units::medium };
+
 			union valueset
 			{
 				int integer;
@@ -591,7 +664,7 @@ namespace nana
 				all_edges_ = true;
 				margins_.clear();
 			}
-			
+
 			void push(const number_t& v, bool reset = false)
 			{
 				if (reset)
@@ -649,7 +722,7 @@ namespace nana
 				return (-1 == pos ? number_t{} : margins_[pos]);
 			}
 
-			nana::rectangle area(const ::nana::rectangle& field_area) const
+			nana::rectangle area(const ::nana::rectangle& field_area, const display_metrics& dm) const
 			{
 				if (margins_.empty())
 					return field_area;
@@ -657,7 +730,7 @@ namespace nana
 				auto r = field_area;
 				if (all_edges_)
 				{
-					auto px = static_cast<int>(margins_.back().get_value(static_cast<int>(r.width)));
+					auto px = static_cast<int>(margins_.back().get_value(static_cast<int>(r.width), dm, true));
 					r.x += px;
 					r.width = differ(r.width, (static_cast<unsigned>(px) << 1));
 
@@ -693,27 +766,27 @@ namespace nana
 
 					if (0 == it)	//top
 					{
-						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height)));
+						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height), dm, true));
 						r.y += px;
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != ib)	//bottom
 					{
-						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height)));
+						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height), dm, true));
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != il)	//left
 					{
-						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width)));
+						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width), dm, true));
 						r.x += px;
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 
 					if (-1 != ir)	//right
 					{
-						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width)));
+						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width), dm, true));
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 				}

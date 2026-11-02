@@ -1,17 +1,18 @@
 /**
  *	A Message Box Class
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file nana/gui/msgbox.hpp
- *	@Contributors
+ *	@contributors
  *		James Bremner
  *		Ariel Vina-Rodriguez
  */
+
 #define NOMINMAX
 #include <algorithm>  // max
 #include <functional>
@@ -19,7 +20,6 @@
 
 #include <nana/gui/compact.hpp>
 #include <nana/gui/msgbox.hpp>
-#include <nana/gui/drawing.hpp>
 #include <nana/gui/widgets/form.hpp>
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/widgets/button.hpp>
@@ -52,8 +52,8 @@ namespace nana
 					owner_(wd), pick_(msgbox::pick_yes)
 			{
 				this->caption(title);
-				drawing dw(*this);
-				dw.draw([this](paint::graphics& graph)
+
+				this->drawing([this](paint::graphics& graph)
 				{
 					graph.rectangle(rectangle{0, 0, graph.width(), graph.height() - 50}, true, colors::white);
 					if(ico_.empty() == false)
@@ -139,11 +139,11 @@ namespace nana
 					if(sz.width < 48 + ts.width + ico_pixels)
 						sz.width = 48 + ts.width + ico_pixels;
 
-					nana::rectangle r = API::make_center(owner_, sz.width, sz.height + ts.height);
+					nana::rectangle r = api::make_center(owner_, sz.width, sz.height + ts.height);
 					this->move(r);
 				}
 
-				API::modal_window(*this);
+				api::modal_window(*this);
 			}
 
 			msgbox::pick_t pick() const
@@ -373,6 +373,16 @@ namespace nana
 		review_utf8(title_);
 	}
 
+#ifdef __cpp_char8_t
+	msgbox::msgbox(std::u8string_view title) :
+		msgbox(to_string(title))
+	{}
+
+	msgbox::msgbox(window wd, std::u8string_view title, button_t btn) :
+		msgbox(wd, to_string(title), btn)
+	{}
+#endif
+
 	msgbox& msgbox::icon(icon_t ic)
 	{
 		icon_ = ic;
@@ -383,41 +393,6 @@ namespace nana
 	{
 		sstream_.str("");
 		sstream_.clear();
-	}
-
-	msgbox & msgbox::operator<<(const std::wstring& str)
-	{
-		sstream_ << to_utf8(str);
-		return *this;
-	}
-
-	msgbox & msgbox::operator<<(const wchar_t* str)
-	{
-		sstream_ << to_utf8(str);
-		return *this;
-	}
-
-
-	/// Writes a UTF-8 string to the buffer.
-	msgbox & msgbox::operator<<(const std::string& u8str)
-	{
-		review_utf8(u8str);
-		sstream_ << u8str;
-
-		return *this;
-	}
-
-	/// Writes a UTF-8 string to the buffer.
-	msgbox & msgbox::operator<<(const char* u8str)
-	{
-		return operator<<(std::string{ u8str });
-	}
-
-	msgbox & msgbox::operator<<(const nana::charset& cs)
-	{
-		std::string str = cs.to_bytes(nana::unicode::utf8);
-		sstream_ << str;
-		return *this;
 	}
 
 	msgbox & msgbox::operator<<(std::ostream& (*manipulator)(std::ostream&))
@@ -462,7 +437,7 @@ namespace nana
 
 		//Disables the owner window to prevent the owner window processing mouse wheel event
 		//when the message box is showing and scroll the wheel on the owner window.
-		auto native = reinterpret_cast<HWND>(API::root(wd_));
+		auto native = reinterpret_cast<HWND>(api::root(wd_));
 		BOOL enabled = FALSE;
 		if (native)
 		{
@@ -498,22 +473,21 @@ namespace nana
 	//end class msgbox
 
 
-	//class inputbox todo: add schema
-
+	/// class inputbox todo: add schema
 	class inputbox_window
 		: public ::nana::form
 	{
 	public:
 		inputbox_window(window owner,
-		                paint::image (&imgs)[4],             ///< 4 ref to images
-		                ::nana::rectangle (&valid_areas)[4],
+		                paint::image (&imgs)[4],              ///< 4 ref to images
+		                ::nana::rectangle (&valid_areas)[4],  ///< 4 ref to valid areas
 		                const ::std::string & description,
 		                const ::std::string& title,
 		                std::size_t contents,
 		                unsigned fixed_pixels,
 		                const std::vector<unsigned>& each_height)
 
-			: form(owner, API::make_center(owner, 500, 300), appear::decorate<>())
+			: form(owner, api::make_center(owner, 500, 300), appear::decorate<>())
 		{
 			throw_not_utf8(description);
 			throw_not_utf8(title);
@@ -655,7 +629,7 @@ namespace nana
 				place.field_display(img_fields[i], imgs[i]);
 			}
 
-			move(API::make_center(this->owner(), description_size.width, height));
+			move(api::make_center(this->owner(), description_size.width, height));
 			caption(title);
 		}
 
@@ -1256,7 +1230,7 @@ namespace nana
 		impl->label.format(true);
 
 		impl->path_edit.create(impl->dock, rectangle{static_cast<int>(label_px + 10), 0, 0, 0});
-		impl->path_edit.caption(impl->fbox.path());
+		impl->path_edit.caption(impl->fbox.path().u8string());
 		impl->path_edit.multi_lines(false);
 
 		impl->browse.create(impl->dock);
@@ -1331,11 +1305,6 @@ namespace nana
         min_width_entry_field_pixels_ = pixels;
 	}
 
-#ifndef __cpp_fold_expressions
-	void inputbox::_m_fetch_args(std::vector<abstract_content*>&)
-	{}
-#endif
-
 	bool inputbox::_m_open(std::vector<abstract_content*>& contents, bool modal)
 	{
 		std::vector<unsigned> each_pixels;
@@ -1372,7 +1341,7 @@ namespace nana
 		if (modal)
 			input_wd.modality();
 		else
-			API::wait_for(input_wd);
+			api::wait_for(input_wd);
 
 		return input_wd.valid_input();
 	}

@@ -16,8 +16,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
 
     target_compile_options(nana PRIVATE  -Wall)
 
-        # todo: set in target property of nana
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native -DNDEBUG")
+    # Release keeps the default flags of CMake (-O3 -DNDEBUG). Optimizing for this CPU: NANA_CMAKE_NATIVE_ARCH (native_arch.cmake)
 
     set(THREADS_PREFER_PTHREAD_FLAG ON)               #  todo - test this
     find_package(Threads REQUIRED)

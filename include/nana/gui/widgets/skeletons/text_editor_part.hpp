@@ -31,6 +31,11 @@ namespace nana
 				color_proxy selection_text{colors::white};
 
 				parameters::mouse_wheel mouse_wheel;	///< The number of lines/characters to scroll when the vertical/horizontal mouse wheel is moved.
+
+				color_proxy tip_string_color{ static_cast<color_rgb>(0x787878) };	///< The color of tip string
+				std::size_t tip_string_floating_distance_px{ 6 };					///< THe distance between tip string and text when the tip string is floating to top on focus.
+				double tip_string_floating_font_min_pt{ 5 };						///< The tip string is hidden when the font size of the floating tip string is less than the specified size, in points. 
+				double tip_string_floating_font_factor{ 0.8 };						///< The font size factor of tip string to the font size of text.
 			};
 
 			class text_editor_event_interface

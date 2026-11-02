@@ -1,6 +1,6 @@
 /*
  *	A textbase class implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -18,7 +18,7 @@
 #include <nana/charset.hpp>
 #include <nana/basic_types.hpp>
 #include <nana/traits.hpp>
-#include <nana/filesystem/filesystem.hpp>
+#include <filesystem>
 
 #include "textbase_export_interface.hpp"
 

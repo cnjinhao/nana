@@ -1,6 +1,6 @@
 /*
  *	A platform API implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -43,7 +43,8 @@ static void posix_open_url(const char *url_utf8)
     extern char **environ;
 #endif
     struct stat exists;
-    const split_string_type path = getenv("PATH");
+    const char* const env_path = getenv("PATH");
+    const split_string_type path = (env_path ? env_path : "");
 
     //see https://stackoverflow.com/questions/5116473/linux-command-to-open-url-in-default-browser
 
@@ -81,26 +82,6 @@ namespace nana
 {
 namespace system
 {
-	//sleep
-	//@brief:	Suspend current thread for a specified milliseconds.
-	//			its precision is depended on hardware.
-	void sleep(unsigned milliseconds)
-	{
-#if defined(NANA_WINDOWS)
-		::Sleep(milliseconds);
-#elif defined(NANA_POSIX)
-		struct timespec timeOut, remains;
-		timeOut.tv_sec = milliseconds / 1000;
-		timeOut.tv_nsec = (milliseconds % 1000) * 1000000;
-		while(-1 == ::nanosleep(&timeOut, &remains))
-		{
-			if(errno == EINTR)
-				timeOut = remains;
-			else
-				break;
-		}
-#endif
-	}
 
 	//this_thread_id
 	//@brief: get the identifier of calling thread.
@@ -131,6 +112,7 @@ namespace system
 	bool get_async_mouse_state(int button)
 	{
 #if defined(NANA_WINDOWS)
+		/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 		bool swap = (::GetSystemMetrics(SM_SWAPBUTTON) != 0);
 		switch(button)
 		{

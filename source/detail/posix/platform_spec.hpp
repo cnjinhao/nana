@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -185,8 +185,6 @@ namespace detail
 	public:
 		typedef void (*timer_proc_type)(thread_t tid);
 		typedef void (*event_proc_type)(Display*, msg_packet_tag&);
-		typedef ::nana::event_code		event_code;
-		typedef ::nana::native_window_type	native_window_type;
 
 		platform_spec(const platform_spec&) = delete;
 		platform_spec& operator=(const platform_spec&) = delete;
@@ -196,6 +194,11 @@ namespace detail
 
 		Display* open_display();
 		void close_display();
+
+		static Window xevent_window(const XEvent&);
+
+		bool install_xevent_handler(native_window_type, std::function<void(nana::x11::xevent*)> handler);
+		void erase_xevent_handler(native_window_type);
 
 		void lock_xlib();
 		void unlock_xlib();
@@ -236,6 +239,7 @@ namespace detail
 		void set_timer(const timer_core*, std::size_t interval, void (*timer_proc)(const timer_core* tm));
 		void kill_timer(const timer_core*);
 		void timer_proc(thread_t tid);
+		void affinity_execute(native_window_type, std::function<void()>);
 
 		//Message dispatcher
 		void msg_insert(native_window_type);
@@ -255,6 +259,9 @@ namespace detail
 		bool register_dragdrop(native_window_type, x11_dragdrop_interface*);
 		std::size_t dragdrop_target(native_window_type, bool insert, std::size_t count);
 		x11_dragdrop_interface* remove_dragdrop(native_window_type);
+
+		void add_ignore_once(native_window_type, int event_type);
+		bool ignore_once(native_window_type, int event_type);
 	private:
 		static int _m_msg_filter(XEvent&, msg_packet_tag&);
 		void _m_caret_routine();
@@ -284,6 +291,11 @@ namespace detail
 			bool delete_declared;
 			timer_runner_tag();
 		}timer_;
+
+		struct affinity_runner
+		{
+			std::map<thread_t, std::vector<std::function<void()>>> functions;
+		}affinity_;
 
 		struct selection_tag
 		{
@@ -315,6 +327,8 @@ namespace detail
 			std::map<native_window_type, x11_dragdrop_interface*> dragdrop;
 			std::map<native_window_type, std::size_t> targets;
 		}xdnd_;
+
+		std::map<native_window_type, std::vector<int>> ignore_once_;
 
 		msg_dispatcher * msg_dispatcher_;
 	};//end class platform_X11

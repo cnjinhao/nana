@@ -1,7 +1,7 @@
 /**
  *	A Scroll Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -31,10 +31,14 @@ namespace nana
 		{}
 	};
 
-	namespace drawerbase
+	namespace drawerbase::scroll
 	{
-		namespace scroll
+		struct scheme
+			: public widget_geometrics
 		{
+			std::size_t button_size{ 16 };	///< Button's width or height, depends on whether the scroll is vertical
+		};
+
 			struct scroll_events
 				: public general_events
 			{
@@ -50,18 +54,18 @@ namespace nana
 			{
 				using size_type = std::size_t;
 
-				size_type peak;   ///< the whole total
-				size_type range;  ///< how many is shown on a page, that is, How many to scroll after click on first or second
-				size_type step;   ///< how many to scroll by click in forward  or backward
-				size_type value;  ///< current offset calculated from the very beginning
+				size_type peak{ 1 };   ///< the whole total
+				size_type range{ 1 };  ///< how many is shown on a page, that is, How many to scroll after click on first or second
+				size_type step{ 1 };   ///< how many to scroll by click in forward  or backward
+				size_type value{ 0 };  ///< current offset calculated from the very beginning
 
-				buttons what;
-				bool pressed;
-				size_type	scroll_length;       ///< the length in pixels of the central button show how many of the total (peak) is shown (range)
-				int			scroll_pos;          ///< in pixels, and correspond to the offset from the very beginning (value)
-				int			scroll_mouse_offset;
+				buttons what{ buttons::none };
+				bool pressed{ false };
+				size_type	scroll_length{ 0 };       ///< the length in pixels of the central button show how many of the total (peak) is shown (range)
+				int			scroll_pos{ 0 };          ///< in pixels, and correspond to the offset from the very beginning (value)
+				int			scroll_mouse_offset{ 0 };
 
-				metrics_type();
+				scheme* scheme_ptr{ nullptr };
 			};
 
 			class drawer
@@ -73,7 +77,9 @@ namespace nana
 				};
 
 				using graph_reference = paint::graphics&;
-				const static unsigned fixedsize = 16; // make it part of a new "metric" in the widget_scheme
+				
+				//deprecated
+				//const static unsigned fixedsize = 16; // make it part of a new "metric" in the widget_scheme
 
 				drawer(bool vert);
 				buttons what(graph_reference, const point&);
@@ -115,7 +121,7 @@ namespace nana
 					if (graph_ && (drawer_.metrics.peak != s))
 					{
 						drawer_.metrics.peak = s;
-						API::refresh_window(widget_->handle());
+						api::refresh_window(widget_->handle());
 					}
 				}
 
@@ -131,7 +137,7 @@ namespace nana
 						drawer_.metrics.value = s;
 						_m_emit_value_changed();
 
-						API::refresh_window(*widget_);
+						api::refresh_window(*widget_);
 					}
 				}
 
@@ -140,7 +146,7 @@ namespace nana
 					if (graph_ && (drawer_.metrics.range != s))
 					{
 						drawer_.metrics.range = s;
-						API::refresh_window(widget_->handle());
+						api::refresh_window(widget_->handle());
 					}
 				}
 
@@ -190,8 +196,10 @@ namespace nana
 					widget_ = static_cast< ::nana::scroll<Vertical>*>(&widget);
 					widget.caption("nana scroll");
 
+					drawer_.metrics.scheme_ptr = static_cast<drawerbase::scroll::scheme*>(api::dev::get_scheme(widget));
+
 					//scroll doesn't want the keyboard focus.
-					API::take_active(widget, false, widget.parent());
+					api::take_active(widget, false, widget.parent());
 
 					timer_.stop();
 					timer_.elapse(std::bind(&trigger::_m_tick, this));
@@ -210,14 +218,14 @@ namespace nana
 				void resized(graph_reference graph, const ::nana::arg_resized&) override
 				{
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void mouse_enter(graph_reference graph, const ::nana::arg_mouse& arg) override
 				{
 					drawer_.metrics.what = drawer_.what(graph, arg.pos);
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void mouse_move(graph_reference graph, const ::nana::arg_mouse& arg) override
@@ -239,7 +247,7 @@ namespace nana
 					}
 
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void dbl_click(graph_reference graph, const arg_mouse& arg) override
@@ -278,7 +286,7 @@ namespace nana
 							break;
 						}
 						drawer_.draw(graph);
-						API::dev::lazy_refresh();
+						api::dev::lazy_refresh();
 					}
 				}
 
@@ -291,7 +299,7 @@ namespace nana
 					drawer_.metrics.pressed = false;
 					drawer_.metrics.what = drawer_.what(graph, arg.pos);
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void mouse_leave(graph_reference graph, const arg_mouse&) override
@@ -300,7 +308,7 @@ namespace nana
 
 					drawer_.metrics.what = buttons::none;
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void mouse_wheel(graph_reference graph, const arg_wheel& arg) override
@@ -308,7 +316,7 @@ namespace nana
 					if (make_step(arg.upwards == false, 3))
 					{
 						drawer_.draw(graph);
-						API::dev::lazy_refresh();
+						api::dev::lazy_refresh();
 					}
 				}
 			private:
@@ -320,7 +328,7 @@ namespace nana
 				void _m_tick()
 				{
 					make_step(drawer_.metrics.what == buttons::second, 1);
-					API::refresh_window(widget_->handle());
+					api::refresh_window(widget_->handle());
 					timer_.interval(std::chrono::milliseconds{ 100 });
 				}
 			private:
@@ -329,8 +337,7 @@ namespace nana
 				drawer	drawer_;
 				timer timer_;
 			};
-		}//end namespace scroll
-	}//end namespace drawerbase
+	}//end namespace drawerbase::scroll
 
 	class scroll_interface
 	{
@@ -382,22 +389,14 @@ namespace nana
 	/// Provides a way to display an object which is larger than the window's client area.
 	template<bool Vertical>
 	class scroll    // add a widget scheme?
-		:	public widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical>, drawerbase::scroll::scroll_events>,
+		:	public widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical>, drawerbase::scroll::scroll_events, drawerbase::scroll::scheme>,
 			public scroll_interface
 	{
 		typedef widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical> > base_type;
 	public:
 
 		///  \brief The default constructor without creating the widget.
-		scroll(){}
-
-		/// \brief The construct that creates a widget.
-		/// @param wd  A handle to the parent window of the widget being created.
-		/// @param visible  specify the visibility after creation.
-		scroll(window wd, bool visible = true)
-		{
-			this->create(wd, rectangle(), visible);   // add a widget scheme? and take some colors from these wd?
-		}
+		scroll() = default;
 
 		///  \brief The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
@@ -473,7 +472,7 @@ namespace nana
 		{
 			if (this->get_drawer_trigger().make_step(forward, steps))
 			{
-				API::refresh_window(this->handle());
+				api::refresh_window(this->handle());
 				return true;
 			}
 			return false;

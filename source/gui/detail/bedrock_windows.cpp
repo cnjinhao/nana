@@ -1,7 +1,7 @@
 ﻿/**
  *	A Bedrock Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -9,11 +9,16 @@
  *
  *	@file nana/gui/detail/win32/bedrock.cpp
  *  @brief A Bedrock Implementation
- *	@contributors: Ariel Vina-Rodriguez
+ *	@list of contributions:
+ *		Ariel Vina-Rodriguez,
+ *		Lancelot 'Robin' Chen, fix mouse wheel on nested form(#621)
  */
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
+
+#include <iostream>	//use std::cerr
+
 #include "bedrock_types.hpp"
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
@@ -26,21 +31,23 @@
 #include <nana/gui/detail/element_store.hpp>
 #include <nana/gui/detail/color_schemes.hpp>
 #include "inner_fwd_implement.hpp"
-
-#include <iostream>	//use std::cerr
+#include "../../detail/platform_abstraction.hpp"
 
 #ifndef WM_MOUSEWHEEL
-#define WM_MOUSEWHEEL	0x020A
+#	define WM_MOUSEWHEEL	0x020A
 #endif
 
 #ifndef WM_MOUSEHWHEEL
-#define WM_MOUSEHWHEEL	0x020E
+#	define WM_MOUSEHWHEEL	0x020E
+#endif
+
+/// \todo: generalize dpi to v2 awareness
+#ifndef WM_DPICHANGED
+#	define WM_DPICHANGED 0x02E0
 #endif
 
 #include "bedrock_types.hpp"
 
-
-typedef void (CALLBACK *win_event_proc_t)(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
 
 namespace nana
 {
@@ -185,6 +192,8 @@ namespace detail
 		:	pi_data_(new pi_data),
 			impl_(new private_impl)
 	{
+		detail::native_interface::start_dpi_awareness(config_dpi_aware);
+
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
 		WNDCLASSEX wincl;
@@ -203,7 +212,8 @@ namespace detail
 
 		::RegisterClassEx(&wincl);
 
-		restrict::track_mouse_event = (restrict::track_mouse_event_type)::GetProcAddress(::GetModuleHandleA("User32.DLL"), "TrackMouseEvent");
+		restrict::track_mouse_event = (restrict::track_mouse_event_type)
+			    ::GetProcAddress(::GetModuleHandleA("User32.DLL"), "TrackMouseEvent");
 
 		if(!restrict::track_mouse_event)
 			restrict::track_mouse_event = restrict::dummy_track_mouse_event;
@@ -223,13 +233,17 @@ namespace detail
 
 		restrict::imm_get_composition_string = reinterpret_cast<restrict::imm_get_composition_string_type>(
 				::GetProcAddress(imm32, "ImmGetCompositionStringW"));
+
+		/// \todo: generalize dpi to v2 awareness
+		platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
 	}
 
 	bedrock::~bedrock()
 	{
 		if(wd_manager().window_count())
 		{
-			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " + std::to_string(wd_manager().window_count()) + " window(s) are not uninstalled.";
+			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " 
+				+ std::to_string(wd_manager().window_count()) + " window(s) are not uninstalled.";
 			std::cerr << msg;  /// \todo add list of cations of opening windows and if auto testing GUI do auto OK after 2 seconds.
 			::MessageBoxA(0, msg.c_str(), ("Nana C++ Library"), MB_OK);
 		}
@@ -375,11 +389,10 @@ namespace detail
 
 		++(context->event_pump_ref_count);
 
-		auto & intr_locker = wd_manager().internal_lock();
-		intr_locker.revert();
-
 		try
 		{
+			internal_revert_guard rvlock;
+
 			MSG msg;
 			if (condition_wd)
 			{
@@ -389,7 +402,6 @@ namespace detail
 					HWND owner = ::GetWindow(native_handle, GW_OWNER);
 					if (owner && owner != ::GetDesktopWindow())
 						::EnableWindow(owner, false);
-
 
 					while (::IsWindow(native_handle))
 					{
@@ -439,14 +451,12 @@ namespace detail
         catch(std::exception& e)
         {
 			(msgbox(condition_wd, "An uncaptured std::exception during message pumping: ").icon(msgbox::icon_information)
-								<< "\n   in form: " << API::window_caption(condition_wd)
+								<< "\n   in form: " << api::window_caption(condition_wd)
 								<<"\n   exception : "<< e.what()
 			).show();
 
-			internal_scope_guard lock;
 			this->close_thread_window(nana::system::this_thread_id());
 
-			intr_locker.forward();
 			if (0 == --(context->event_pump_ref_count))
 			{
 				if ((nullptr == condition_wd) || (0 == context->window_count))
@@ -458,12 +468,11 @@ namespace detail
 		{
 			(msgbox(condition_wd, "An exception during message pumping!").icon(msgbox::icon_information)
 				<<"An uncaptured non-std exception during message pumping!"
-				<< "\n   in form: " << API::window_caption(condition_wd)
+				<< "\n   in form: " << api::window_caption(condition_wd)
 				).show();
-			internal_scope_guard lock;
+
 			this->close_thread_window(nana::system::this_thread_id());
 
-			intr_locker.forward();
 			if(0 == --(context->event_pump_ref_count))
 			{
 				if ((nullptr == condition_wd) || (0 == context->window_count))
@@ -472,7 +481,6 @@ namespace detail
 			throw;
 		}
 
-		intr_locker.forward();
 		if(0 == --(context->event_pump_ref_count))
 		{
 			if ((nullptr == condition_wd) || (0 == context->window_count))
@@ -626,8 +634,10 @@ namespace detail
 			if (wParam)
 			{
 				auto arg = reinterpret_cast<detail::messages::arg_affinity_execute*>(wParam);
-				if (arg->function_ptr)
-					(*arg->function_ptr)();
+				if (arg->function)
+					arg->function();
+
+				delete arg;
 			}
 			break;
 		default:
@@ -638,6 +648,7 @@ namespace detail
 		{
 		case WM_COMMAND:
 		case WM_DESTROY:
+		case WM_DPICHANGED:
 		case WM_SHOWWINDOW:
 		case WM_SIZING:
 		case WM_MOVE:
@@ -800,6 +811,23 @@ namespace detail
 					auto i = root_runtime->wpassoc->accel_commands.find(LOWORD(wParam));
 					if (i != root_runtime->wpassoc->accel_commands.end())
 						i->second();
+				}
+				break;
+			case WM_DPICHANGED:  /// \todo: generalize dpi to v2 awareness
+				wd_manager.update_dpi(msgwnd);
+				{
+				
+				auto r = reinterpret_cast<const RECT*>(lParam);
+				auto dpi_x = HIWORD(wParam);
+				auto dpi_y = LOWORD(wParam);
+				
+				::SetWindowPos(root_window,
+					NULL,
+					r->left,
+					r->top,
+					r->right - r->left,
+					r->bottom - r->top,
+					SWP_NOZORDER | SWP_NOACTIVATE);
 				}
 				break;
 			case WM_IME_STARTCOMPOSITION:
@@ -1232,8 +1260,10 @@ namespace detail
 						if(msgwnd)
 						{
 							dropfiles.pos = pos;
-
-							wd_manager.calc_window_point(msgwnd, dropfiles.pos);
+							
+							// ::DragQueryPoint(drop, &mswin_pos); Returns the location of the point dragged into the file window
+							// https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-dragquerypoint
+							dropfiles.pos = pos - msgwnd->pos_root;
 							dropfiles.window_handle = msgwnd;
 
 							msgwnd->annex.events_ptr->mouse_dropfiles.emit(dropfiles, msgwnd);

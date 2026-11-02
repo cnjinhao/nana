@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,13 +17,12 @@
 
 #include "../basic_types.hpp"
 #include "../gui/basis.hpp"
-#include <nana/filesystem/filesystem.hpp>
-
+#include <filesystem>
+#include <string_view>
 #include "detail/ptdefs.hpp"
 
-#ifdef _nana_std_has_string_view
-#include <string_view>
-#endif
+#include <optional>
+
 
 namespace nana
 {
@@ -41,8 +40,26 @@ namespace nana
 			font(drawable_type);
 			font(const font&);
 
-			font(const ::std::string& name, double size_pt, const font_style& fs = {});
-			font(double size_pt, const path_type& truetype, const font_style& fs = {});
+			/// \todo: generalize dpi to v2 awareness
+
+			/// creates a font object.
+			/// @param info Specifies the font family, size and styles.
+			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
+			font(const font_info& info, std::size_t dpi = 0);
+
+			/// creates a font object.
+			/// @param name The font family.
+			/// @param size_pt The font size.
+			/// @param fs The font style.
+			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
+			font(const ::std::string& name, double size_pt, const font_style& fs = {}, std::size_t dpi = 0);
+
+			/// creates a font object with a truetype font file.
+			/// @param size_pt The font size.
+			/// @param truetype The path to a truetype font file
+			/// @param fs The font style.
+			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
+			font(double size_pt, const path_type& truetype, const font_style& fs = {}, std::size_t dpi = 0);
 
 			~font();
 			bool empty() const;
@@ -61,9 +78,13 @@ namespace nana
 			unsigned weight() const;
 			bool italic() const;
 			native_font_type handle() const;
+			
 			void release();
+			
 			bool strikeout() const;
 			bool underline() const;
+
+			std::optional<font_info> info() const;
 
 			font& operator=(const font&);
 			bool operator==(const font&) const;
@@ -113,9 +134,11 @@ namespace nana
 			void typeface(const font&);						///< Selects a specified font type into the graphics object.
 			font typeface() const;
 
-#ifdef _nana_std_has_string_view
 			::nana::size text_extent_size(std::string_view text) const;
 			::nana::size text_extent_size(std::wstring_view text) const;
+#ifdef __cpp_char8_t
+			::nana::size text_extent_size(std::u8string_view text) const;
+#endif
 
 			///Only supports the wide string, because it is very hard to specify the begin and end position in a UTF-8 string.
 			::nana::size glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const;
@@ -129,22 +152,8 @@ namespace nana
 
 			::nana::size	bidi_extent_size(std::string_view utf8_text) const;
 			::nana::size	bidi_extent_size(std::wstring_view text) const;
-#else
-			::nana::size	text_extent_size(const ::std::string&) const;
-			::nana::size	text_extent_size(const char*, std::size_t len) const;
-
-			::nana::size	text_extent_size(const wchar_t*) const;    ///< Computes the width and height of the specified string of text.
-			::nana::size	text_extent_size(const ::std::wstring&) const;    ///< Computes the width and height of the specified string of text.
-			::nana::size	text_extent_size(const wchar_t*, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
-			::nana::size	text_extent_size(const ::std::wstring&, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
-
-			::nana::size	glyph_extent_size(const wchar_t*, std::size_t length, std::size_t begin, std::size_t end) const;
-			::nana::size	glyph_extent_size(const ::std::wstring&, std::size_t length, std::size_t begin, std::size_t end) const;
-
-			bool glyph_pixels(const wchar_t *, std::size_t length, unsigned* pxbuf) const;
-
-			::nana::size	bidi_extent_size(const std::wstring&) const;
-			::nana::size	bidi_extent_size(const std::string&) const;
+#ifdef __cpp_char8_t
+			::nana::size 	bidi_extent_size(std::u8string_view text) const;
 #endif
 
 			bool text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const;
@@ -191,7 +200,6 @@ namespace nana
 			void set_pixel(int x, int y, const ::nana::color&);
 			void set_pixel(int x, int y);
 
-#ifdef _nana_std_has_string_view
 			unsigned bidi_string(const point&, std::string_view utf8str);
 			unsigned bidi_string(const point& pos, std::wstring_view str);
 
@@ -200,17 +208,10 @@ namespace nana
 
 			void string(const point&, std::wstring_view str);
 			void string(const point&, std::wstring_view str, const nana::color&);
-#else
-			unsigned bidi_string(const nana::point&, const wchar_t *, std::size_t len);
-			unsigned bidi_string(const point& pos, const char*, std::size_t len);
 
-			void string(const point&, const std::string& text_utf8);
-			void string(const point&, const std::string& text_utf8, const color&);
-
-			void string(point, const wchar_t*, std::size_t len);
-			void string(const point&, const wchar_t*);
-			void string(const point&, const ::std::wstring&);
-			void string(const point&, const ::std::wstring&, const color&);
+#ifdef __cpp_char8_t
+			void string(const point&, std::u8string_view str);
+			void string(const point&, std::u8string_view str, const nana::color&);
 #endif
 
 			void line(const point&, const point&);

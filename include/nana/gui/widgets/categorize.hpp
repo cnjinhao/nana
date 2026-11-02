@@ -1,7 +1,7 @@
 /**
  *	A Categorize Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -15,8 +15,8 @@
 
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/pat/cloneable.hpp>
-#include <nana/any.hpp>
 #include <nana/push_ignore_diagnostic>
+#include <any>
 
 namespace nana
 {
@@ -34,10 +34,8 @@ namespace nana
 		{}
 	};
 
-	namespace drawerbase
+	namespace drawerbase::categorize
 	{
-		namespace categorize
-		{
 			template<typename T>
 			struct categorize_events
 				: public general_events
@@ -49,7 +47,7 @@ namespace nana
 			{
 			public:
 				virtual ~event_agent_interface(){}
-				virtual void selected(::nana::any&) = 0;
+				virtual void selected(::std::any&) = 0;
 			};
 
 			template<typename T>
@@ -61,9 +59,9 @@ namespace nana
 					: widget_(wdg)
 				{}
 
-				void selected(::nana::any & var)
+				void selected(::std::any & var)
 				{
-					auto vp = any_cast<T>(&var);
+					auto vp = std::any_cast<T>(&var);
 
 					T null_val;
 					arg_categorize<T> arg(widget_, vp ? *vp : null_val);
@@ -76,20 +74,18 @@ namespace nana
 			class renderer
 			{
 			public:
-				typedef nana::paint::graphics & graph_reference;
+				using graph_reference = paint::graphics&;
+
+				enum class elements
+				{
+					none,	//Out of the widget
+					somewhere, item_root, item_name, item_arrow
+				};
 
 				struct ui_element
 				{
-					enum t
-					{
-						none,	//Out of the widget
-						somewhere, item_root, item_name, item_arrow
-					};
-
-					t what;
-					std::size_t index;
-
-					ui_element();
+					elements what{ elements::none };
+					std::size_t index{ 0 };
 				};
 
 				virtual ~renderer() = 0;
@@ -99,28 +95,30 @@ namespace nana
 				virtual void border(graph_reference) = 0;
 			};
 
+			class tree_wrapper;
+
 			class trigger
 				: public drawer_trigger
 			{
 				class scheme;
 			public:
-				typedef renderer::ui_element ui_element;
+				using elements = renderer::elements;
 
 				trigger();
 				~trigger();
 
-				void insert(const ::std::string&, nana::any);
-				bool childset(const ::std::string&, nana::any);
-				bool childset_erase(const ::std::string&);
-				bool clear();
+				void insert(const std::string&, std::any);
+				bool childset(const std::string&, std::any);
+
+				//Erases the child node which specified by name. If name is empty, it clears all nodes.
+				bool erase(const std::string& name);
 
 				//splitstr
 				//@brief: Sets the splitstr. If the parameter will be ignored if it is an empty string.
 				void splitstr(const ::std::string&);
-				const ::std::string& splitstr() const;
-				
-				void path(const ::std::string&);
-				::std::string path() const;
+				const ::std::string& splitstr() const noexcept;
+
+				void set_caption(std::string);
 
 				template<typename T>
 				void create_event_agent(::nana::categorize<T>& wdg)
@@ -129,9 +127,9 @@ namespace nana
 					_m_event_agent_ready();
 				}
 
-				nana::any & value() const;
+				std::any & value() const;
 			private:
-				void _m_event_agent_ready() const;
+				void _m_event_agent_ready();
 			private:
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
@@ -144,8 +142,7 @@ namespace nana
 				std::unique_ptr<event_agent_interface> event_agent_;
 				scheme * scheme_{nullptr};
 			};
-		}//end namespace categorize
-	}//end namespace drawerbase
+	}//end namespace drawerbase::categorize
 
 
 
@@ -176,37 +173,36 @@ namespace nana
 		{
 		}
 
-		categorize(window wd, const std::string& text_utf8, bool visible = true)
+		categorize(window wd, std::string_view title, bool visible = true)
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
-			this->caption(text_utf8);
+			this->caption(title);
 		}
 
-		categorize(window wd, const char* text_utf8, bool visible = true)
+		categorize(window wd, const std::wstring_view title, bool visible = true)
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
-			this->caption(text_utf8);
+			this->caption(title);
 		}
 
-		categorize(window wd, const std::wstring& text, bool visible = true)
+#ifdef __cpp_char8_t
+		categorize(window wd, const std::u8string_view title, bool visible = true)
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
-			this->caption(text);
-		}
-
-		categorize(window wd, const wchar_t* text, bool visible = true)
-			: categorize(wd, ::nana::rectangle(), visible)
-		{
-			this->caption(text);
-		}
+			this->caption(title);
+		}			
+#endif
 
 		/// Insert a new category with a specified name and the object of value type. 
 		/// The new category would be inserted as a child in current category, 
 		/// and after inserting, the new category is replaced of the current category as a new current one.
 		categorize& insert(const std::string& name, const value_type& value)
 		{
+			throw_not_utf8(name);
+
+			internal_scope_guard lock;
 			this->get_drawer_trigger().insert(name, value);
-			API::update_window(*this);
+			api::update_window(*this);
 			return *this;
 		}
 
@@ -214,48 +210,97 @@ namespace nana
 		categorize& childset(const std::string& name, const value_type& value)
 		{
 			throw_not_utf8(name);
+
+			internal_scope_guard lock;
 			if(this->get_drawer_trigger().childset(name, value))
-				API::update_window(*this);
+				api::update_window(*this);
 			return *this;
 		}
 
 		/// Erases a child category with a specified name from current category.
 		categorize& childset_erase(const std::string& name)
 		{
-			if(this->get_drawer_trigger().childset_erase(name))
-				API::update_window(*this);
+			throw_not_utf8(name);
+
+			internal_scope_guard lock;
+			if(this->get_drawer_trigger().erase(name))
+				api::update_window(*this);
 			return *this;
 		}
 
+#ifdef __cpp_char8_t
+		/// Insert a new category with a specified name and the object of value type. 
+		/// The new category would be inserted as a child in current category, 
+		/// and after inserting, the new category is replaced of the current category as a new current one.
+		categorize& insert(std::u8string_view name, const value_type& value)
+		{
+			internal_scope_guard lock;
+			this->get_drawer_trigger().insert(to_string(name), value);
+			api::update_window(*this);
+			return *this;
+		}
+
+		/// Inserts a child category into current category.
+		categorize& childset(std::u8string_view name, const value_type& value)
+		{
+			internal_scope_guard lock;
+			if(this->get_drawer_trigger().childset(to_string(name), value))
+				api::update_window(*this);
+			return *this;
+		}
+
+		/// Erases a child category with a specified name from current category.
+		categorize& childset_erase(std::u8string_view name)
+		{
+			internal_scope_guard lock;
+			if(this->get_drawer_trigger().erase(to_string(name)))
+				api::update_window(*this);
+			return *this;
+		}		
+#endif
+
 		void clear()
 		{
-			if(this->get_drawer_trigger().clear())
-				API::update_window(*this);
+			internal_scope_guard lock;
+			if (this->get_drawer_trigger().erase({}))
+				api::update_window(*this);
 		}
 
 		/// Sets the splitter string
 		categorize& splitstr(const std::string& sstr)
 		{
+			internal_scope_guard lock;
 			this->get_drawer_trigger().splitstr(sstr);
 			return *this;
 		}
 
+#ifdef __cpp_char8_t
+		/// Sets the splitter string
+		categorize& splitstr(std::u8string_view sstr)
+		{
+			internal_scope_guard lock;
+			this->get_drawer_trigger().splitstr(to_string(sstr));
+			return *this;
+		}
+#endif
+
 		std::string splitstr() const
 		{
+			internal_scope_guard lock;
 			return this->get_drawer_trigger().splitstr();
 		}
 
 		/// Retrieves a reference of the current category's value type object. If current category is empty, it throws a exception of std::runtime_error.
 		value_type& value() const
 		{
-			return nana::any_cast<value_type&>(this->get_drawer_trigger().value());
+			internal_scope_guard lock;
+			return std::any_cast<value_type&>(this->get_drawer_trigger().value());
 		}
 	private:
 		//Overrides widget's virtual functions
 		void _m_caption(native_string_type&& str) override
 		{
-			this->get_drawer_trigger().path(to_utf8(str));
-			API::dev::window_caption(*this, to_nstring(this->get_drawer_trigger().path()) );
+			this->get_drawer_trigger().set_caption(to_utf8(str));
 		}
 	};
 }//end namespace nana

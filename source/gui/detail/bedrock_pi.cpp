@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
-*	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+*	Nana C++ Library(https://nana.acemind.cn)
+*	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -27,31 +27,6 @@
 
 namespace nana
 {
-
-	//class internal_scope_guard
-		internal_scope_guard::internal_scope_guard()
-		{
-			detail::bedrock::instance().wd_manager().internal_lock().lock();
-		}
-
-		internal_scope_guard::~internal_scope_guard()
-		{
-			detail::bedrock::instance().wd_manager().internal_lock().unlock();
-		}
-	//end class internal_scope_guard
-
-	//class internal_revert_guard
-		internal_revert_guard::internal_revert_guard()
-		{
-			detail::bedrock::instance().wd_manager().internal_lock().revert();
-		}
-
-		internal_revert_guard::~internal_revert_guard()
-		{
-			detail::bedrock::instance().wd_manager().internal_lock().forward();
-		}
-		//end class internal_revert_guard
-
 	//class event_arg
 	void event_arg::stop_propagation() const
 	{
@@ -95,11 +70,15 @@ namespace nana
 			brock_(brock),
 			root_wd_(root_wd)
 		{
+			// Under X11 the events are handled without the internal mutex, while other threads
+			// read lazy_update and update_requesters with it (window_manager::update).
+			internal_scope_guard lock;
 			root_wd_->other.attribute.root->lazy_update = true;
 		}
 
 		bedrock::root_guard::~root_guard()
 		{
+			internal_scope_guard lock;
 			if (!brock_.wd_manager().available(root_wd_))
 				return;
 
@@ -159,6 +138,13 @@ namespace nana
 			for (auto i : roots)
 				native_interface::close_window(i);
 		}
+
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		virtual_keyboard& bedrock::vkeyboard()
+		{
+			return this->pi_data_->vkeybd;
+		}
+#endif
 
 		void bedrock::event_expose(basic_window * wd, bool exposed)
 		{

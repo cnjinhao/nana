@@ -1,25 +1,29 @@
-/*
+/**
  *	Pixel Buffer Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/pixel_buffer.cpp
- *	@note: The format of Xorg 16bits depth is 565
+ *	@file nana/paint/pixel_buffer.cpp
+ *	@note The format of Xorg 16bits depth is 565
  */
 
+#include <algorithm>  //std::clamp
+#include <stdexcept>
+#include <cstring>
+#include <cmath>
+#include <fstream>
+
+
 #include "../detail/platform_spec_selector.hpp"
+#include "detail/image_format_defs.hpp"
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
 #include <nana/paint/detail/image_process_provider.hpp>
-
-#include <stdexcept>
-#include <cstring>
-#include <cmath>
 
 namespace nana{	namespace paint
 {
@@ -270,9 +274,13 @@ namespace nana{	namespace paint
 			}
 			else if(16 == bits_per_pixel)
 			{
+				unsigned char rgb6_table[64];
 				unsigned char rgb_table[32];
 				for(std::size_t i =0; i < 32; ++i)
 					rgb_table[i] = static_cast<unsigned char>(i * 255 / 31);
+
+				for (std::size_t i = 0; i < 64; ++i)
+					rgb6_table[i] = static_cast<unsigned char>(i * 255 / 63);
 
 				int src_bytes_per_line;
 				if (!is_negative)
@@ -292,23 +300,25 @@ namespace nana{	namespace paint
 					for (; p < end; ++p)
 					{
 						p->element.red = rgb_table[(*s_p >> 11) & 0x1F];
-#if defined(NANA_X11)
-						p->element.green = (*s_p >> 5) & 0x3F;
-						p->element.blue = rgb_table[*s_p & 0x1F];
+
+#if 1
+						//16bit 565 
+						p->element.green = rgb6_table[(*s_p >> 5) & 0x3F];
 #else
-						p->element.green = rgb_table[(*s_p >> 6) & 0x1F];
-						p->element.blue = rgb_table[(*s_p >> 1) & 0x1F];
+						//16bit 555
+						p->element.green = rgb_table[(*s_p >> 5) & 0x1F];
 #endif
+						p->element.blue = rgb_table[(*s_p >> 1) & 0x1F];
 						++s_p;
 					}
 					d += pixel_size.width;
 					rawbits -= src_bytes_per_line;
 				}
 			}
-			else if(8 == bits_per_pixel)
+			else if (8 == bits_per_pixel)
 			{
 				int src_bytes_per_line;
-				if(!is_negative)
+				if (!is_negative)
 				{
 					rawbits += bytes_per_line * (height - 1);
 					src_bytes_per_line = -static_cast<int>(bytes_per_line);
@@ -316,10 +326,10 @@ namespace nana{	namespace paint
 				else
 					src_bytes_per_line = static_cast<int>(bytes_per_line);
 
-				for(std::size_t top = 0; top < height; ++top)
+				for (std::size_t top = 0; top < height; ++top)
 				{
 					auto dst = rawptr;
-					for(auto p = rawbits, end = rawbits + width; p < end; ++p)
+					for (auto p = rawbits, end = rawbits + width; p < end; ++p)
 					{
 						dst->element.red = *p;
 						dst->element.green = *p;
@@ -327,9 +337,87 @@ namespace nana{	namespace paint
 						++dst;
 					}
 
-					rawbits  += src_bytes_per_line;
+					rawbits += src_bytes_per_line;
 					rawptr += this->bytes_per_line;
-				}			
+				}
+			}
+		}
+
+		/// Assigns a 16bits image data,
+		void assign(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bytes_per_line, bool is_negative, unsigned mask_red, unsigned mask_green, unsigned mask_blue, unsigned mask_alpha)
+		{
+			static_cast<void>(mask_alpha);	//eliminate the unused warning
+			if (!raw_pixel_buffer)
+				return;
+
+			if (pixel_size.width < width)
+				width = pixel_size.width;
+
+			if (pixel_size.height < height)
+				height = pixel_size.height;
+
+			int src_bytes_per_line;
+			if (!is_negative)
+			{
+				rawbits += bytes_per_line * (height - 1);
+				src_bytes_per_line = static_cast<int>(bytes_per_line);
+			}
+			else
+				src_bytes_per_line = -static_cast<int>(bytes_per_line);
+
+			unsigned char rgb_table[32];
+
+			for (std::size_t i = 0; i < 32; ++i)
+				rgb_table[i] = static_cast<unsigned char>(i * 255 / 31);
+
+
+			auto rawptr = raw_pixel_buffer;
+
+			if (0x7C00 == mask_red && 0x3E0 == mask_green && 0x1F == mask_blue)
+			{
+				//555
+				auto d = rawptr;
+				for (std::size_t i = 0; i < height; ++i)
+				{
+					auto p = d;
+					const auto end = p + width;
+					auto s_p = reinterpret_cast<const unsigned short*>(rawbits);
+					for (; p < end; ++p)
+					{
+						p->element.red = rgb_table[(*s_p >> 10) & 0x1F];
+						p->element.green = rgb_table[(*s_p >> 5) & 0x1F];
+						p->element.blue = rgb_table[(*s_p) & 0x1F];
+
+						++s_p;
+					}
+					d += pixel_size.width;
+					rawbits -= src_bytes_per_line;
+				}
+			}
+			else if(0xF800 == mask_red && 0x7E0 == mask_green && 0x1F == mask_blue)
+			{
+				//565
+				unsigned char rgb6_table[64];
+				for (std::size_t i = 0; i < 64; ++i)
+					rgb6_table[i] = static_cast<unsigned char>(i * 255 / 63);
+
+				auto d = rawptr;
+				for (std::size_t i = 0; i < height; ++i)
+				{
+					auto p = d;
+					const auto end = p + width;
+					auto s_p = reinterpret_cast<const unsigned short*>(rawbits);
+					for (; p < end; ++p)
+					{
+						p->element.red = rgb_table[(*s_p >> 11) & 0x1F];
+						p->element.green = rgb6_table[(*s_p >> 5) & 0x3F];
+						p->element.blue = rgb_table[*s_p & 0x1F];
+
+						++s_p;
+					}
+					d += pixel_size.width;
+					rawbits -= src_bytes_per_line;
+				}
 			}
 		}
 
@@ -636,12 +724,22 @@ namespace nana{	namespace paint
 		return (storage_ ? storage_->pixel_size : nana::size());
 	}
 
-	pixel_color_t * pixel_buffer::at(const point& pos) const
+	void pixel_buffer::make_transparent(double alpha)
 	{
-		auto sp = storage_.get();
-		if (sp && (pos.y < static_cast<int>(sp->pixel_size.height) + sp->valid_r.y))
-			return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer) + sp->bytes_per_line * (pos.y - sp->valid_r.y)) + (pos.x - sp->valid_r.x);
-		return nullptr;
+		if (!storage_)
+			return;
+
+		storage_->alpha_channel = true;
+		unsigned char alpha_value = static_cast<unsigned char>(255 * std::clamp(alpha, 0.0, 1.0));
+
+		auto row_ptr = storage_->raw_pixel_buffer;
+		for (std::size_t i = 0; i < storage_->pixel_size.height; ++i)
+		{
+			for (auto p = row_ptr, end = row_ptr + storage_->pixel_size.width; p < end; ++p)
+				p->element.alpha_channel = alpha_value;
+
+			row_ptr = reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(row_ptr) + storage_->bytes_per_line);
+		}
 	}
 
 	pixel_color_t * pixel_buffer::raw_ptr(std::size_t row) const
@@ -656,6 +754,12 @@ namespace nana{	namespace paint
 	{
 		auto sp = storage_.get();
 		return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer) + sp->bytes_per_line * row);
+	}
+
+	pixel_color_t* pixel_buffer::operator[](const point& pt) const noexcept
+	{
+		auto sp = storage_.get();
+		return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer) + sp->bytes_per_line * pt.y) + pt.x;
 	}
 
 	void pixel_buffer::fill_row(std::size_t row, const unsigned char* buffer, std::size_t bytes, unsigned bits_per_pixel)
@@ -732,6 +836,12 @@ namespace nana{	namespace paint
 			storage_->assign(rawbits, width, height, bits_per_pixel, bytes_per_line, is_negative);
 	}
 
+	void pixel_buffer::put_16bit(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bytes_per_line, bool is_negative, unsigned mask_red, unsigned mask_green, unsigned mask_blue, unsigned mask_alpha)
+	{
+		if (storage_)
+			storage_->assign(rawbits, width, height, bytes_per_line, is_negative, mask_red, mask_green, mask_blue, mask_alpha);
+	}
+
 	pixel_color_t pixel_buffer::pixel(int x, int y) const
 	{
 		auto sp = storage_.get();
@@ -748,25 +858,30 @@ namespace nana{	namespace paint
 			*reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer + x) + y * sp->bytes_per_line) = px;
 	}
 
+	void pixel_buffer::pixel(const nana::point& pt, pixel_color_t col)
+	{
+		pixel(pt.x, pt.y, col);
+	}
+
 	void pixel_buffer::paste(drawable_type drawable, const point& p_dst) const
 	{
 		if(storage_)
 			paste(nana::rectangle(storage_->pixel_size), drawable, p_dst);
 	}
 
-	void pixel_buffer::paste(const nana::rectangle& src_r, drawable_type drawable, const point& p_dst) const
+	void pixel_buffer::paste(const nana::rectangle& src_r, drawable_type drawable, const point& p_dst, alpha_methods am) const
 	{
 		auto sp = storage_.get();
 		if(drawable && sp)
 		{
-			if(sp->alpha_channel)
+			if(sp->alpha_channel && (alpha_methods::direct_copy != am))
 			{
 				nana::rectangle s_good_r, d_good_r;
 				if(overlap(src_r, sp->pixel_size, nana::rectangle(p_dst.x, p_dst.y, src_r.width, src_r.height), paint::detail::drawable_size(drawable), s_good_r, d_good_r))
 				{
 					pixel_buffer d_pixbuf;
 					d_pixbuf.attach(drawable, d_good_r);
-					(*(sp->img_pro.alpha_blend))->process(*this, s_good_r, d_pixbuf, nana::point(d_good_r.x, d_good_r.y));
+					(*(sp->img_pro.alpha_blend))->process(*this, s_good_r, d_pixbuf, {}, am);
 				}
 				return;
 			}
@@ -784,10 +899,42 @@ namespace nana{	namespace paint
 		}
 	}
 
+	void pixel_buffer::paste(const nana::rectangle& src_r, pixel_buffer& dst, const point& p_dst, alpha_methods am) const
+	{
+		auto sp = storage_.get();
+		if (dst && sp)
+		{
+			nana::rectangle s_good_r, d_good_r;
+			if (overlap(src_r, sp->pixel_size, nana::rectangle(p_dst.x, p_dst.y, src_r.width, src_r.height), dst.size(), s_good_r, d_good_r))
+			{
+				if (sp->alpha_channel && (alpha_methods::direct_copy != am))
+				{
+					(*(sp->img_pro.alpha_blend))->process(*this, s_good_r, dst, nana::point(d_good_r.x, d_good_r.y), am);
+				}
+				else
+				{
+					auto d_rgb = dst[d_good_r.position()];
+					auto s_rgb = this->raw_ptr(s_good_r.y) + s_good_r.x;
+
+					std::size_t d_step_bytes = dst.bytes_per_line();
+					std::size_t s_step_bytes = this->bytes_per_line();
+					for (unsigned line = 0; line < s_good_r.height; ++line)
+					{
+						std::memcpy(d_rgb, s_rgb, s_good_r.width * sizeof(pixel_argb_t));
+	
+						d_rgb = reinterpret_cast<pixel_argb_t*>(reinterpret_cast<char*>(d_rgb) + d_step_bytes);
+						s_rgb = reinterpret_cast<pixel_argb_t*>(reinterpret_cast<char*>(s_rgb) + s_step_bytes);
+					}
+				}
+			}
+		}
+	}
+
 	void pixel_buffer::paste(native_window_type wd, const point& p_dst) const
 	{
 		auto sp = storage_.get();
 		if(nullptr == wd || nullptr == sp)	return;
+
 #if defined(NANA_WINDOWS)
 		HDC	handle = ::GetDC(reinterpret_cast<HWND>(wd));
 		if(handle)
@@ -837,7 +984,10 @@ namespace nana{	namespace paint
 	void pixel_buffer::rectangle(const nana::rectangle &r, const ::nana::color& clr, double fade_rate, bool solid)
 	{
 		auto sp = storage_.get();
-		if((nullptr == sp) || (fade_rate == 1.0)) return;
+		if((nullptr == sp) || (fade_rate == 1.0) || r.empty()) return;
+
+		if (r.right() < 0 || r.x >= static_cast<int>(sp->pixel_size.width) || r.bottom() < 0 || r.y >= static_cast<int>(sp->pixel_size.height))
+			return;
 
 		bool fade = (fade_rate != 0.0);
 		unsigned char * fade_table = nullptr;
@@ -916,7 +1066,7 @@ namespace nana{	namespace paint
 		{
 			if(ybeg == r.y)
 			{
-				auto i = p_rgb;
+				auto i = p_rgb + xbeg;
 				auto end = p_rgb + xend;
 				if(fade)
 				{
@@ -933,7 +1083,7 @@ namespace nana{	namespace paint
 			if(r.y + static_cast<int>(r.height) == yend)
 			{
 				auto p_rgb = sp->raw_pixel_buffer + (yend - 1) * sp->pixel_size.width;
-				auto i = p_rgb;
+				auto i = p_rgb + xbeg;
 				auto end = p_rgb + xend;
 
 				if(fade)
@@ -1112,7 +1262,7 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::stretch(const nana::rectangle& src_r, drawable_type drawable, const nana::rectangle& r) const
+	void pixel_buffer::stretch(const nana::rectangle& src_r, drawable_type drawable, const nana::rectangle& r, alpha_methods am) const
 	{
 		auto sp = storage_.get();
 		if(nullptr == sp) return;
@@ -1122,7 +1272,19 @@ namespace nana{	namespace paint
 		{
 			pixel_buffer dst;
 			dst.attach(drawable, good_dst_r);
-			(*(sp->img_pro.stretch))->process(*this, good_src_r, dst, nana::rectangle(0, 0, good_dst_r.width, good_dst_r.height));
+			(*(sp->img_pro.stretch))->process(*this, good_src_r, dst, nana::rectangle(0, 0, good_dst_r.width, good_dst_r.height), am);
+		}
+	}
+
+	void pixel_buffer::stretch(const nana::rectangle& s_r, pixel_buffer& dst, const nana::rectangle& r, alpha_methods am) const
+	{
+		auto sp = storage_.get();
+		if (nullptr == sp) return;
+
+		nana::rectangle good_src_r, good_dst_r;
+		if (overlap(s_r, sp->pixel_size, r, dst.size(), good_src_r, good_dst_r))
+		{
+			(*(sp->img_pro.stretch))->process(*this, good_src_r, dst, good_dst_r, am);
 		}
 	}
 
@@ -1308,6 +1470,167 @@ namespace nana{	namespace paint
 
 
 		return rotated_pxbuf;
+	}
+
+	bool pixel_buffer::save(std::filesystem::path p) const
+	{
+		std::ofstream ofs{ p, std::ios::binary };
+		if (!ofs)
+			return false;
+
+		auto const image_size = size();
+	
+		detail::bitmap_info_header bihdr = {};
+		bihdr.biSize = sizeof(bihdr);
+		bihdr.biWidth = static_cast<int>(image_size.width);
+		bihdr.biHeight = -static_cast<int>(image_size.height);
+		bihdr.biPlanes = 1;
+		bihdr.biBitCount = 24;
+
+		const std::size_t line_bytes = ((image_size.width * 3) + 3) & (~3);
+		const std::size_t image_bytes = image_size.height * line_bytes;
+
+		std::unique_ptr<unsigned char[]> data{ new unsigned char[image_bytes] };
+
+		auto const aligned_bytes = line_bytes - image_size.width * 3;
+		auto ptr = data.get();
+		auto src = storage_->raw_pixel_buffer;
+
+		for (unsigned y = 0; y < image_size.height; ++y)
+		{
+			for (unsigned x = 0; x < image_size.width; ++x)
+			{
+				ptr[0] = src->element.blue;
+				ptr[1] = src->element.green;
+				ptr[2] = src->element.red;
+				ptr += 3;
+				++src;
+			}
+			ptr += aligned_bytes;
+		}
+
+		detail::bitmap_file_header bfhdr;
+		bfhdr.bfType = 0x4d42;
+		bfhdr.bfOffBits = sizeof(bfhdr) + sizeof(bihdr);
+		bfhdr.bfSize = bfhdr.bfOffBits + static_cast<unsigned>(image_bytes);
+
+		ofs.write(reinterpret_cast<char*>(&bfhdr), sizeof(bfhdr));
+		ofs.write(reinterpret_cast<char*>(&bihdr), sizeof(bihdr));
+		ofs.write(reinterpret_cast<char*>(data.get()), image_bytes);
+
+		return true;
+	}
+
+	void pixel_buffer::to_grayscale()
+	{
+		auto sp = storage_.get();
+		if (!sp)
+			return;
+
+		std::unique_ptr<float[]> table{new float[0x100 * 3]};
+
+		auto const tbl_red = table.get();
+		auto const tbl_green = table.get() + 0x100;
+		auto const tbl_blue = table.get() + 0x200;
+
+		tbl_red[0]		= 0;
+		tbl_green[0]	= 0;
+		tbl_blue[0]		= 0;
+		for(std::size_t i = 1; i < 0x100; ++i)
+		{
+			tbl_red[i]		=  tbl_red[i - 1] + 0.3f;
+			tbl_green[i] 	=  tbl_green[i - 1] + 0.59f;
+			tbl_blue[i]		= tbl_blue[i - 1] + 0.11f;
+		}
+
+		for(std::size_t y = 0; y < sp->pixel_size.height; ++y)
+		{
+			auto p = this->raw_ptr(y);
+
+			auto end = p + sp->pixel_size.width;
+			for(; p != end; ++p)
+			{
+				auto gray = static_cast<unsigned char>(tbl_red[p->element.red] + tbl_green[p->element.green] + tbl_blue[p->element.blue] + 0.5f);
+				p->element.red = gray;
+				p->element.blue = gray;
+				p->element.green = gray;
+			}
+		}
+	}
+
+
+	void pixel_buffer::ellipse(const nana::point& pt, float a, float b, const color& c)
+	{
+		int x = pt.x;
+		int y = pt.y;
+		auto col = c.px_color();
+
+		    int wx, wy;
+		    int asq = static_cast<int>(a * a);
+		    int bsq = static_cast<int>(b * b);
+		    int xa, ya;
+
+		    pixel({x, y + static_cast<int>(b)}, col);
+		    pixel({x, y - static_cast<int>(b)}, col);
+
+		    wx = 0;
+		    wy = static_cast<int>(b);
+		    xa = 0;
+		    ya = static_cast<int>(asq * 2 * b);
+		    auto thresh = asq / 4 - asq * b;
+
+		    for (;;) {
+		        thresh += xa + bsq;
+
+		        if (thresh >= 0) {
+		            ya -= asq * 2;
+		            thresh -= ya;
+		            wy--;
+		        }
+
+		        xa += bsq * 2;
+		        wx++;
+
+		        if (xa >= ya)
+		          break;
+
+
+		        pixel({x+wx, y-wy}, col);
+		        pixel({x-wx, y-wy}, col);
+		        pixel({x+wx, y+wy}, col);
+		        pixel({x-wx, y+wy}, col);
+		    }
+
+		    pixel({x + static_cast<int>(a), y}, col);
+		    pixel({x - static_cast<int>(a), y}, col);
+
+		    wx = static_cast<int>(a);
+		    wy = 0;
+		    xa = static_cast<int>(bsq * 2 * a);
+
+		    ya = 0;
+		    thresh = bsq / 4 - bsq * a;
+
+		    for (;;) {
+		        thresh += ya + asq;
+
+		        if (thresh >= 0) {
+		            xa -= bsq * 2;
+		            thresh = thresh - xa;
+		            wx--;
+		        }
+
+		        ya += asq * 2;
+		        wy++;
+
+		        if (ya > xa)
+		          break;
+
+		        pixel({x+wx, y-wy}, col);
+		        pixel({x-wx, y-wy}, col);
+		        pixel({x+wx, y+wy}, col);
+		        pixel({x-wx, y+wy}, col);
+		    }
 	}
 }//end namespace paint
 }//end namespace nana

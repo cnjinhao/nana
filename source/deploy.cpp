@@ -1,7 +1,7 @@
 /*
  *	The Deploy Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -28,7 +28,6 @@
 
 namespace nana
 {
-#ifdef _nana_std_has_string_view
 	bool is_utf8(std::string_view str)
 	{
 		auto ustr = reinterpret_cast<const unsigned char*>(str.data());
@@ -63,52 +62,6 @@ namespace nana
 		if (!is_utf8(str))
 			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + std::string(str.data(), str.size())).emit();
 	}
-#else
-	bool is_utf8(const char* str, std::size_t len)
-	{
-		auto ustr = reinterpret_cast<const unsigned char*>(str);
-		auto end = ustr + len;
-
-		while (ustr < end)
-		{
-			const auto uv = *ustr;
-			if (uv < 0x80)
-			{
-				++ustr;
-				continue;
-			}
-
-			if (uv < 0xC0)
-				return false;
-
-			if ((uv < 0xE0) && (end - ustr > 1))
-				ustr += 2;
-			else if ((uv < 0xF0) && (end - ustr > 2))
-				ustr += 3;
-			else if ((uv < 0x1F) && (end - ustr > 3))
-				ustr += 4;
-			else
-				return false;
-		}
-		return true;
-	}
-
-	void throw_not_utf8(const std::string& text)
-	{
-		throw_not_utf8(text.c_str(), text.size());
-	}
-
-	void throw_not_utf8(const char* text)
-	{
-		throw_not_utf8(text, std::strlen(text));
-	}
-
-	void throw_not_utf8(const char* text, std::size_t len)
-	{
-		if (!is_utf8(text, len))
-			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + std::string(text, len)).emit();
-	}
-#endif
 
 	//class utf8_Error
 
@@ -140,11 +93,7 @@ namespace nana
 	/// this text needed change, it needed review ??
 	bool review_utf8(const std::string& text)
 	{
-#ifdef _nana_std_has_string_view
 		if (!is_utf8(text))
-#else
-		if (!is_utf8(text.c_str(), text.length()))
-#endif
 		{
 			utf8_Error(std::string("\nThe const text is not encoded in UTF8: ") + text).emit();
 			return true;   /// it needed change, it needed review !!
@@ -156,11 +105,7 @@ namespace nana
 	/// this text needed change, it needed review ??
 	bool review_utf8(std::string& text)
 	{
-#ifdef _nana_std_has_string_view
 		if(!is_utf8(text))
-#else
-		if (!is_utf8(text.c_str(), text.length()))
-#endif
 		{
 			utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
 			text=recode_to_utf8(text);
@@ -175,7 +120,6 @@ namespace nana
 		return str;
 	}
 
-#ifdef _nana_std_has_string_view
 	std::string to_utf8(std::wstring_view text)
 	{
 		return ::nana::charset(std::wstring{text}).to_bytes(::nana::unicode::utf8);
@@ -188,18 +132,6 @@ namespace nana
 
 		return ::nana::charset(std::string{ utf8_str.data(), utf8_str.size() }, unicode::utf8);
 	}
-#else
-	std::string to_utf8(const std::wstring& text)
-	{
-		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
-	}
-
-	std::wstring to_wstring(const std::string& utf8_str)
-	{
-		return ::nana::charset(utf8_str, ::nana::unicode::utf8);
-	}
-#endif
-
 
 	const std::wstring& to_wstring(const std::wstring& wstr)
 	{
@@ -210,6 +142,34 @@ namespace nana
 	{
 		return static_cast<std::wstring&&>(wstr);
 	}
+
+#ifdef __cpp_char8_t
+	std::string to_string(std::u8string_view s)
+	{
+		std::string str{ reinterpret_cast<const char*>(s.data()), reinterpret_cast<const char*>(s.data() + s.size()) };
+		return str;
+	}
+
+	std::wstring to_wstring(std::u8string_view s)
+	{
+		return ::nana::charset(s);
+	}
+
+	std::u8string to_u8str(std::string_view s)
+	{
+		throw_not_utf8(s);
+
+		std::u8string u8str{ reinterpret_cast<const char8_t*>(s.data()), reinterpret_cast<const char8_t*>(s.data() + s.size()) };
+		return u8str;
+	}
+
+	std::u8string to_u8str(std::wstring_view s)
+	{
+		auto u8s = to_utf8(s);
+		std::u8string u8str{ reinterpret_cast<const char8_t*>(u8s.data()), reinterpret_cast<const char8_t*>(u8s.data() + u8s.size()) };
+		return u8str;
+	}
+#endif
 
 #if defined(NANA_WINDOWS)
 	std::string to_osmbstr(const std::string& text_utf8)
@@ -223,80 +183,91 @@ namespace nana
 	}
 #endif
 
+	namespace detail
+	{
 #if defined(NANA_WINDOWS)
-	const detail::native_string_type to_nstring(const std::string& text)
-	{
-		return ::nana::charset(text, ::nana::unicode::utf8);
-	}
+		const detail::native_string_type to_nstring(const std::string& text)
+		{
+			return ::nana::charset(text, ::nana::unicode::utf8);
+		}
 
-	const detail::native_string_type& to_nstring(const std::wstring& text)
-	{
-		return text;
-	}
+		const detail::native_string_type& to_nstring(const std::wstring& text)
+		{
+			return text;
+		}
 
-	detail::native_string_type to_nstring(std::string&& text)
-	{
-		return ::nana::charset(text, ::nana::unicode::utf8);
-	}
+		detail::native_string_type to_nstring(std::string&& text)
+		{
+			return ::nana::charset(text, ::nana::unicode::utf8);
+		}
 
-	detail::native_string_type&& to_nstring(std::wstring&& text)
-	{
-		return std::move(text);
-	}
-
-	detail::native_string_type to_nstring(int n)
-	{
-		return std::to_wstring(n);
-	}
-
-	detail::native_string_type to_nstring(double d)
-	{
-		return std::to_wstring(d);
-	}
-
-	detail::native_string_type to_nstring(std::size_t d)
-	{
-		return std::to_wstring(d);
-	}
+		detail::native_string_type&& to_nstring(std::wstring&& text)
+		{
+			return std::move(text);
+		}
+#	ifdef __cpp_char8_t
+		detail::native_string_type to_nstring(std::u8string_view text)
+		{
+			return to_nstring(std::string{text.cbegin(), text.cend()});
+		}
+#	endif
 #else	//POSIX
-	const detail::native_string_type& to_nstring(const std::string& text)
-	{
-		return text;
-	}
+		const detail::native_string_type& to_nstring(const std::string& text)
+		{
+			return text;
+		}
 
-	const detail::native_string_type to_nstring(const std::wstring& text)
-	{
-		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
-	}
+		const detail::native_string_type to_nstring(const std::wstring& text)
+		{
+			return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+		}
 
-	detail::native_string_type&& to_nstring(std::string&& text)
-	{
-		return std::move(text);
-	}
+		detail::native_string_type&& to_nstring(std::string&& text)
+		{
+			return std::move(text);
+		}
 
-	detail::native_string_type to_nstring(std::wstring&& text)
-	{
-		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
-	}
+		detail::native_string_type to_nstring(std::wstring&& text)
+		{
+			return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+		}
 
-	detail::native_string_type to_nstring(int n)
-	{
-		return std::to_string(n);
-	}
-
-	detail::native_string_type to_nstring(double d)
-	{
-		return std::to_string(d);
-	}
-
-	detail::native_string_type to_nstring(std::size_t d)
-	{
-		return std::to_string(d);
-	}
+#	ifdef __cpp_char8_t
+		detail::native_string_type to_nstring(std::u8string_view text)
+		{
+			return std::string{ text.cbegin(), text.cend() };
+		}
+#	endif
 #endif
 
+		detail::native_string_type to_nstring(int n)
+		{
+#if defined(NANA_WINDOWS)
+			return std::to_wstring(n);
+#else
+			return std::to_string(n);
+#endif
+		}
 
-}
+		detail::native_string_type to_nstring(double d)
+		{
+#if defined(NANA_WINDOWS)
+			return std::to_wstring(d);
+#else
+			return std::to_string(d);
+#endif
+		}
+
+		detail::native_string_type to_nstring(std::size_t d)
+		{
+#if defined(NANA_WINDOWS)
+			return std::to_wstring(d);
+#else
+			return std::to_string(d);
+#endif
+		}		
+	}
+}//end namespace nana
 
 #if defined(VERBOSE_PREPROCESSOR)
 #	include <nana/verbose_preprocessor.hpp>

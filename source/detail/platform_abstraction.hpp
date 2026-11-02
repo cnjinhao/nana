@@ -1,7 +1,7 @@
 /*
  *	Platform Abstraction
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2017-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2017-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,27 +17,67 @@
 
 #include "platform_abstraction_types.hpp"
 #include <memory>
-#include <nana/filesystem/filesystem.hpp>
+#include <filesystem>
+#include <nana/basic_types.hpp>
+#include <nana/gui/basis.hpp>
 
 namespace nana
 {
-
-
 	class platform_abstraction
 	{
 	public:
+		class revertible_mutex
+		{
+			revertible_mutex(const revertible_mutex&) = delete;
+			revertible_mutex& operator=(const revertible_mutex&) = delete;
+			revertible_mutex(revertible_mutex&&) = delete;
+			revertible_mutex& operator=(revertible_mutex&&) = delete;
+		public:
+			revertible_mutex();
+			~revertible_mutex();
+
+			void lock();
+			bool try_lock();
+			void unlock();
+			void revert();
+			void forward();
+		private:
+			struct implementation;
+			implementation* const impl_;
+		};
+	public:
 		using font = font_interface;
+		using font_info = paint::font_info;
 
 		using path_type = ::std::filesystem::path;
 
 		static void initialize();
 		/// Shutdown before destruction of platform_spec 
 		static void shutdown();
+
+		static revertible_mutex& internal_mutex();
+
 		static double font_default_pt();
 		static void font_languages(const std::string&);
 		static ::std::shared_ptr<font> default_font(const ::std::shared_ptr<font>&);
-		static ::std::shared_ptr<font> make_font(const ::std::string& font_family, double size_pt, const font::font_style& fs);
-		static ::std::shared_ptr<font> make_font_from_ttf(const path_type& ttf, double size_pt, const font::font_style& fs);
+
+		/// \todo: generalize dpi to v2 awareness
+
+		/// 'manuallay' set the current system DPI, this is used for DPI scaling.
+		static void set_current_dpi(std::size_t dpi);
+		static std::size_t current_dpi();
+
+		static int dpi_scale(int scalar);
+		static nana::size dpi_scale(nana::size size);
+		static nana::point dpi_scale(nana::point point);
+
+		static int dpi_scale(window wd, int scalar);
+		static unsigned int dpi_scale(window wd, unsigned int scalar);
+		static nana::size dpi_scale(window wd, nana::size size);
+		static nana::point dpi_scale(window wd, nana::point point);
+
+		/// Open the font, if ttf is specified, it ignores the font family name of font_info and creates the font using truetype file.
+		static std::shared_ptr<font> open_font(const font_info&, std::size_t dpi, const path_type& ttf);
 		static void font_resource(bool try_add, const path_type& ttf);
 
 		static unsigned screen_dpi(bool x_requested);

@@ -1,7 +1,7 @@
 /**
  *	Basic Types definition
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -13,8 +13,9 @@
 #ifndef NANA_BASIC_TYPES_HPP
 #define NANA_BASIC_TYPES_HPP
 
-#include <nana/deploy.hpp>
 #include <cctype>
+
+#include <nana/deploy.hpp>
 #include <nana/push_ignore_diagnostic>
 
 namespace nana
@@ -29,17 +30,12 @@ namespace nana
 	{
 		typedef CharT char_type;
 
-		
-		//static constexpr bool eq(char_type c1, char_type c2) noexcept
-		//VC2012 does not support constexpr and noexcept keywords
-		static bool eq(char_type c1, char_type c2)
+		static bool eq(char_type c1, char_type c2) noexcept
 		{
 			return std::toupper(c1) == std::toupper(c2);
 		}
-
-		//static constexpr bool lt(char_type c1, char_type c2) noexcept
-		//VC2012 does not support constexpr and noexcept keywords
-		static bool lt(char_type c1, char_type c2)
+ 
+		static bool lt(char_type c1, char_type c2) noexcept
 		{
 			return std::toupper(c1) < std::toupper(c2);
 		}
@@ -60,7 +56,7 @@ namespace nana
 
 		static const char_type* find(const char_type* s, std::size_t n, const char_type& a)
 		{
-			char_type ua = std::toupper(a);
+			auto ua = std::toupper(a);
 			const char_type * end = s + n;
 			while((s != end) && (std::toupper(*s) != ua))
 				++s;
@@ -275,11 +271,13 @@ namespace nana
 		yellow	= 0xFFFF00,
 		yellow_green = 0x9acd32,
 
+		dark_dark_grey = 0x404040,
+
 		//temporary definitions, these will be replaced by color schema
 		button_face_shadow_start = 0xF5F4F2,
 		button_face_shadow_end = 0xD5D2CA,
 		button_face = 0xD4D0C8 , //,light_cyan
-		dark_border = 0x404040,
+		dark_border = dark_dark_grey,
 		gray_border = 0x808080,
 		highlight = 0x1CC4F7
 	};
@@ -300,17 +298,19 @@ namespace nana
 		color(color_rgba);
 		color(unsigned red, unsigned green, unsigned blue, double alpha = 1.0);
 
-		/// Initializes the color with a CSS-like rgb string.
-		explicit color(std::string css_rgb);
+		
+		explicit color(std::string css_rgb);  ///< Initializes the color with a CSS-like rgb string.
 
-		color& alpha(double);	///< Sets alpha channel
-		color& from_rgb(unsigned red, unsigned green, unsigned blue);		///< immutable alpha channel
+		color& alpha(double alpha);	          ///< Sets alpha channel
 
-		/// Sets color with a HSL value.
-		/// @param hue in range of [0, 360]
-		/// @param saturation in range of [0, 1]
-		/// @param lightness  in range of [0, 1]
-		color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
+		color& from_rgb(unsigned red, 
+						unsigned green, 
+						unsigned blue);		  ///< immutable alpha channel
+
+		color& from_hsl(double hue,           ///< in range of [0, 360]
+						double saturation,    ///< in range of [0,   1]
+						double lightness      ///< in range of [0,   1]
+		               );	                  ///< Sets color with a HSL value, immutable alpha channel
 
 		/// Blends color
 		/**
@@ -413,6 +413,36 @@ namespace nana
 			y += other.y;
 			return *this;
 		}
+
+		basic_point& operator++() noexcept
+		{
+			++x;
+			++y;
+			return *this;
+		}
+
+		basic_point operator++(int) noexcept
+		{
+			auto ret = *this;
+			++x;
+			++y;
+			return ret;
+		}
+
+		basic_point& operator--() noexcept
+		{
+			--x;
+			--y;
+			return *this;
+		}
+
+		basic_point operator--(int) noexcept
+		{
+			auto ret = *this;
+			--x;
+			--y;
+			return ret;
+		}
 	};
 
 	using point = basic_point<int>;
@@ -431,6 +461,12 @@ namespace nana
 		bool operator==(const size& rhs) const;
 		bool operator!=(const size& rhs) const;
 		size operator+(const size&) const;
+		size operator-(const size&) const;
+		size operator+(value_type) const;
+		size operator-(value_type) const;
+		size operator/(value_type) const;
+		size operator*(value_type) const;
+		friend size operator*(value_type, const size&);
 
 		value_type width;
 		value_type height;
@@ -454,18 +490,18 @@ namespace nana
 
 		/// Pares the specified pixels off the rectangle.
 		/**
-		 * It's equal to x += pixels; y + pixels; width -= (pixels << 1); height -= (pixels << 1);
+		 * It's equal to x += pixels; y += pixels; width -= pixels * 2; height -= pixels * 2;
 		 * @param pixels The number of pixels to be pared. If the number that multiples pixels twice is larger than width/height, the width/height will be zero. If the pixels is a negative number, the width/height is add the number that multiple pixels twice.
 		 * @return The reference of *this.
 		 */
-		rectangle& pare_off(int pixels);
+		rectangle& pare_off(int pixels) noexcept;
 
 		int right() const noexcept;
 		int bottom() const noexcept;
-		bool is_hit(int x, int y) const;
-		bool is_hit(const point& pos) const;
-		bool empty() const;		///< true if width * height == 0.
-		rectangle& shift();	///< Swap position x and y, size width and height.
+		bool is_hit(int x, int y) const noexcept;
+		bool is_hit(const point& pos) const noexcept;
+		bool empty() const noexcept;		///< true if width * height == 0.
+		rectangle& shift() noexcept;	///< Swap position x and y, size width and height.
 
 		int x;
 		int y;

@@ -11,9 +11,10 @@ namespace nana
 		namespace helper
 		{
 			template<typename F>
-			void for_each_line(const wchar_t * str, std::size_t len, int top, F & f)
+			void for_each_line(std::wstring_view sv, int top, F & f)
 			{
-				auto const end = str + len;
+				auto str = sv.data();
+				auto const end = str + sv.size();
 				for(auto i = str; i != end; ++i)
 				{
 					if('\n' == *i)
@@ -37,13 +38,7 @@ namespace nana
 					text_align_(ta)
 				{
 					if (use_ellipsis)
-					{
-#ifdef _nana_std_has_string_view
 						ellipsis_px_ = graph.text_extent_size(std::string_view{ "...", 3 }).width;
-#else
-						ellipsis_px_ = graph.text_extent_size("...", 3).width;
-#endif
-					}
 				}
 
 
@@ -98,13 +93,7 @@ namespace nana
 									dummy.typeface(graph_.typeface());
 
 									dummy.bitblt(r, graph_, pos);
-
-#ifdef _nana_std_has_string_view
 									dummy.string({}, { ent.begin, static_cast<unsigned>(ent.end - ent.begin) }, graph_.palette(true));
-#else
-									dummy.palette(true, graph_.palette(true));
-									dummy.string({}, ent.begin, ent.end - ent.begin);
-#endif
 									r.x = pos.x;
 									r.y = top;
 									graph_.bitblt(r, dummy);
@@ -206,12 +195,7 @@ namespace nana
 								if(len > 1)
 								{
 									//Find the char that should be splitted
-#ifdef _nana_std_has_string_view
 									auto pixel_buf = graph.glyph_pixels({ i.begin, len });
-#else
-									std::unique_ptr<unsigned[]> pixel_buf(new unsigned[len]);
-									graph.glyph_pixels(i.begin, len, pixel_buf.get());
-#endif
 
 									std::size_t idx_head = 0, idx_splitted;
 
@@ -427,14 +411,8 @@ namespace nana
 								if(len > 1)
 								{
 									//Find the char that should be splitted
-#ifdef _nana_std_has_string_view
 									auto scope_res = graph.glyph_pixels({ i.begin, len });
 									auto pxbuf = scope_res.get();
-#else
-									std::unique_ptr<unsigned[]> scope_res(new unsigned[len]);
-									auto pxbuf = scope_res.get();
-									graph.glyph_pixels(i.begin, len, pxbuf);
-#endif
 
 									std::size_t idx_head = 0, idx_splitted;
 
@@ -524,41 +502,41 @@ namespace nana
 			text_align_(ta)
 		{}
 
-		nana::size text_renderer::extent_size(int x, int y, const wchar_t* str, std::size_t len, unsigned restricted_pixels) const
+		nana::size text_renderer::extent_size(int x, int y, std::wstring_view sv, unsigned restricted_pixels) const
 		{
 			nana::size extents;
 			if(graph_)
 			{
 				helper::extent_auto_changing_lines eacl(graph_, x, x + static_cast<int>(restricted_pixels));
-				helper::for_each_line(str, len, y, eacl);
+				helper::for_each_line(sv, y, eacl);
 				extents.width = restricted_pixels;
 				extents.height = eacl.extents;
 			}
 			return extents;
 		}
 
-		void text_renderer::render(const point& pos, const wchar_t * str, std::size_t len)
+		void text_renderer::render(const point& pos, std::wstring_view sv)
 		{
 			if (graph_)
 			{
 				helper::string_drawer sd{ graph_, pos.x, pos.x + static_cast<int>(graph_.width()), text_align_, false };
-				helper::for_each_line(str, len, pos.y, sd);
+				helper::for_each_line(sv, pos.y, sd);
 			}
 		}
 
-		void text_renderer::render(const point& pos, const wchar_t* str, std::size_t len, unsigned space_pixels, mode rendering_mode)
+		void text_renderer::render(const point& pos, std::wstring_view sv, unsigned space_pixels, mode rendering_mode)
 		{
-			if (graph_ && str && len && space_pixels)
+			if (graph_ && sv.size() && space_pixels)
 			{
 				if (mode::truncate_letter_with_ellipsis == rendering_mode || mode::truncate_with_ellipsis == rendering_mode)
 				{
 					helper::string_drawer sd{ graph_, pos.x, pos.x + static_cast<int>(space_pixels), text_align_, true };
-					helper::for_each_line(str, len, pos.y, sd);
+					helper::for_each_line(sv, pos.y, sd);
 				}
 				else if (mode::word_wrap == rendering_mode)
 				{
 					helper::draw_string_auto_changing_lines dsacl(graph_, pos.x, pos.x + static_cast<int>(space_pixels), text_align_);
-					helper::for_each_line(str, len, pos.y, dsacl);
+					helper::for_each_line(sv, pos.y, dsacl);
 				}
 			}
 		}
@@ -598,24 +576,12 @@ namespace nana
 				default:
 					break;
 				}
-
-#ifdef _nana_std_has_string_view
 				graph_.bidi_string(pos, text);
-#else
-				graph_.bidi_string(pos, text.c_str(), text.size());
-#endif
 				return;
 			}
 
-#ifdef _nana_std_has_string_view
 			const auto ellipsis = graph_.text_extent_size(std::string_view{ "...", 3 }).width;
 			auto pixels = graph_.glyph_pixels({ text.c_str(), text.size() });
-#else
-			const auto ellipsis = graph_.text_extent_size("...", 3).width;
-
-			std::unique_ptr<unsigned[]> pixels(new unsigned[text.size()]);
-			graph_.glyph_pixels(text.c_str(), text.size(), pixels.get());
-#endif
 
 			std::size_t substr_len = 0;
 			unsigned substr_px = 0;
@@ -636,11 +602,7 @@ namespace nana
 				} while (p != end);
 
 				pos.x += static_cast<int>(width - ellipsis - substr_px) + ellipsis;
-#ifdef _nana_std_has_string_view
 				graph_.bidi_string(pos, { text.c_str() + substr_len, text.size() - substr_len });
-#else
-				graph_.bidi_string(pos, text.c_str() + substr_len, text.size() - substr_len);
-#endif
 				pos.x -= ellipsis;
 			}
 			else
@@ -657,11 +619,8 @@ namespace nana
 
 				if (align::center == text_align_ex_)
 					pos.x += (width - substr_px - ellipsis) / 2;
-#ifdef _nana_std_has_string_view
+
 				graph_.bidi_string(pos, { text.c_str(), substr_len });
-#else
-				graph_.bidi_string(pos, text.c_str(), substr_len);
-#endif
 
 				pos.x += substr_px;
 			}

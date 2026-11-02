@@ -1,7 +1,7 @@
 /*
  *	Basic Types definition
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -119,7 +119,7 @@ namespace nana
 			auto endpos = css_color.find_first_not_of("0123456789abcdefABCDEF", pos + 1);
 			if (endpos == css_color.npos)
 				endpos = static_cast<decltype(endpos)>(css_color.size());
-			
+
 			if ((endpos - pos != 4) && (endpos - pos != 7))
 				throw std::invalid_argument(excpt_what);
 
@@ -184,14 +184,9 @@ namespace nana
 
 			if (i == end)
 				throw std::invalid_argument(excpt_what);
-			
+
 			std::vector<std::string> rgb;
-#ifdef _nana_std_has_emplace_return_type
 			auto const is_real = (rgb.emplace_back(i->str()).back() == '%');
-#else
-			rgb.emplace_back(i->str());
-			const bool is_real = (rgb.back().back() == '%');
-#endif
 			pat.assign(is_real ? "(\\d*\\.)?\\d+\\%" : "\\d+");
 
 			for (++i; i != end; ++i)
@@ -277,13 +272,7 @@ namespace nana
 		{
 			std::vector<std::string> rgb;
 
-#ifdef _nana_std_has_emplace_return_type
 			auto const is_real = (rgb.emplace_back(std::move(str)).back() == '%');
-#else
-			rgb.emplace_back(std::move(str));
-
-			const bool is_real = (rgb.back().back() == '%');
-#endif
 
 			for (int i = 0; i < 2; ++i)
 			{
@@ -544,6 +533,36 @@ namespace nana
 		{
 			return{width + sz.width, height + sz.height};
 		}
+
+		size size::operator-(const size& sz) const
+		{
+			return { width - sz.width, height - sz.height };
+		}
+
+		size size::operator+(value_type x) const
+		{
+			return { width + x, height + x };
+		}
+
+		size size::operator-(value_type x) const
+		{
+			return { width - x, height - x };
+		}
+
+		size size::operator/(value_type x) const
+		{
+			return { width / x, height / x };
+		}
+
+		size size::operator*(value_type x) const
+		{
+			return { width * x, height * x };
+		}
+
+		size operator*(nana::size::value_type x, const size& sz)
+		{
+			return { sz.width * x, sz.height * x };
+		}
 	//end struct size
 
 	//struct rectangle
@@ -597,11 +616,11 @@ namespace nana
 			return *this;
 		}
 
-		rectangle& rectangle::pare_off(int pixels)
+		rectangle& rectangle::pare_off(int pixels) noexcept
 		{
 			x += pixels;
 			y += pixels;
-			auto const px_twice = (pixels << 1);
+			auto const px_twice = pixels * 2;		// '<< 1' is undefined for negative pixels before C++20
 			if (px_twice > static_cast<int>(width))
 				width = 0;
 			else
@@ -625,24 +644,24 @@ namespace nana
 			return y + static_cast<int>(height);
 		}
 
-		bool rectangle::is_hit(int pos_x, int pos_y) const
+		bool rectangle::is_hit(int pos_x, int pos_y) const noexcept
 		{
 			return	(x <= pos_x && pos_x < x + static_cast<int>(width)) &&
 					(y <= pos_y && pos_y < y + static_cast<int>(height));
 		}
 
-		bool rectangle::is_hit(const point& pos) const
+		bool rectangle::is_hit(const point& pos) const noexcept
 		{
 			return	(x <= pos.x && pos.x < x + static_cast<int>(width)) &&
                     (y <= pos.y && pos.y < y + static_cast<int>(height));
 		}
 
-		bool rectangle::empty() const
+		bool rectangle::empty() const noexcept
 		{
 			return (0 == width) || (0 == height);
 		}
 
-		rectangle& rectangle::shift()
+		rectangle& rectangle::shift() noexcept
 		{
 			std::swap(x, y);
 			std::swap(width, height);

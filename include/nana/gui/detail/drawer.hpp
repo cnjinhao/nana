@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -36,7 +36,7 @@ namespace nana
 		event_filter_status(const event_filter_status& rOther);
 		event_filter_status(const unsigned evt_disabled_);
 		const event_filter_status& operator=(const event_filter_status& rOther);
-		const event_filter_status& operator=(const unsigned evt_disabled_);
+		const event_filter_status& operator=(const unsigned evt_disabled);
 
 		bool operator[](const nana::event_code evt_code) const;
 		bool operator==(const event_filter_status& rOther) const;
@@ -153,8 +153,8 @@ namespace nana
 			drawer_trigger* detached();
 		public:
 			void clear();
-			void* draw(std::function<void(paint::graphics&)> &&, bool diehard);
-			void erase(void* diehard);
+			drawing_handle drawing(std::function<void(paint::graphics&)>&&, bool diehard) noexcept;
+			void erase(drawing_handle) noexcept;
 		private:
 			void _m_effect_bground_subsequent();
 			method_state& _m_mth_state(int pos);

@@ -1,7 +1,7 @@
 /**
  *	A group widget implementation
  *	Nana C++ Library(http://www.nanaro.org)
- *	Copyright(C) 2015-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2015-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -20,7 +20,6 @@
 
 #include <nana/gui/widgets/group.hpp>
 #include <nana/gui/widgets/label.hpp>
-#include <nana/gui/drawing.hpp>
 #include <nana/gui/widgets/checkbox.hpp>
 
 #define _THROW_IF_EMPTY()\
@@ -74,14 +73,14 @@ static const char* field_options = "__nana_group_options__";
 
         std::string div = "vert margin=[0," + std::to_string(gap) + "," + std::to_string(gap + 5) + "," + std::to_string(gap) + "]";
 
-        div += "<weight=" + std::to_string(caption_dimension.height) + " ";
+        div += "<weight=" + std::to_string(caption_dimension.height) + "px ";
 
         if (align::left == caption_align)
             div += "<weight=" + std::to_string(padding) + ">";
         else
             div += "<>";	//right or center
 
-        div += "<" + std::string{ field_title } + " weight=" + std::to_string(caption_dimension.width) + ">";
+        div += "<" + std::string{ field_title } + " weight=" + std::to_string(caption_dimension.width) + "px>";
 
         if (align::right == caption_align)
             div += "<weight=" + std::to_string(padding) + ">";
@@ -121,7 +120,7 @@ using groupbase_type = widget_object<category::widget_tag, drawerbase::panel::dr
 group::group(window parent, ::std::string title, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
     : group(parent, r, vsb)
 {
-    this->bgcolor(API::bgcolor(parent));
+    this->bgcolor(api::bgcolor(parent));
 
     impl_.reset(new implement(*this, std::move(title), vsb, gap));
 
@@ -129,21 +128,23 @@ group::group(window parent, ::std::string title, bool formatted, unsigned  gap, 
     _m_init();
 }
 
+#ifdef __cpp_char8_t
+group::group(window parent, ::std::u8string_view title, bool formatted, unsigned  gap, const rectangle& r, bool vsb):
+    group(parent, to_string(title), formatted, gap, r, vsb)
+{
+}
+#endif
+
 group::~group()
 {
     delete impl_->radio_logic;
 }
 
-checkbox& group::add_option(std::string text)
-{
-    _THROW_IF_EMPTY()
+    checkbox& group::add_option(std::string text)
+    {
+		_THROW_IF_EMPTY()
 
-#ifdef _nana_std_has_emplace_return_type
-    auto & opt = impl_->options.emplace_back(new checkbox { handle() });
-#else
-    impl_->options.emplace_back(new checkbox(handle()));
-    auto & opt = impl_->options.back();
-#endif
+		auto & opt = impl_->options.emplace_back(new checkbox { handle() });
 
 		opt->transparent(true);
 		opt->caption(std::move(text));
@@ -164,7 +165,7 @@ checkbox& group::add_option(std::string text)
 			impl_->caption_align = position;
 			impl_->update_div();
 			impl_->place_content.collocate();
-			API::refresh_window(*this);
+			api::refresh_window(*this);
 		}
 		return *this;
 	}
@@ -182,14 +183,14 @@ checkbox& group::add_option(std::string text)
 				break;
 			case background_mode::blending:
 				impl_->caption.transparent(true);
-				impl_->caption.bgcolor(API::bgcolor(this->parent()).blend(colors::black, 0.025));
+				impl_->caption.bgcolor(api::bgcolor(this->parent()).blend(colors::black, 0.025));
 				break;
 			case background_mode::transparent:
 				impl_->caption.transparent(true);
-				impl_->caption.bgcolor(API::bgcolor(this->parent()).blend(colors::black, 0.025));
+				impl_->caption.bgcolor(api::bgcolor(this->parent()).blend(colors::black, 0.025));
 				break;
 			}
-			API::refresh_window(*this);
+			api::refresh_window(*this);
 		}
 		return *this;
 	}
@@ -247,7 +248,7 @@ checkbox& group::add_option(std::string text)
 		{
 			impl_->update_div();
 			impl_->place_content.collocate();
-			API::refresh_window(*this);
+			api::refresh_window(*this);
 		}
 		return *this;
 	}
@@ -304,29 +305,27 @@ checkbox& group::add_option(std::string text)
 		outter.collocate();
 
 		impl_->caption.transparent(true);
-		color pbg = API::bgcolor(this->parent());
+		color pbg = api::bgcolor(this->parent());
 		impl_->caption.bgcolor(pbg.blend(colors::black, 0.025));
 
 		this->bgcolor(pbg.blend(colors::black, 0.05));
-
-		drawing dw(*this);
 
 		//When the group is resized, the drawing is called before moving the caption, but
 		//the drawing of group requires the latest position of caption for gradual rectangle.
 		//For the requirement, a move event handler is required for listening the change of caption's position.
 		impl_->caption.events().move([this](const arg_move&){
 			if (align::left != impl_->caption_align)
-				API::refresh_window(*this);
+				api::refresh_window(*this);
 		});
 
 		// This drawing function is owner by the owner of dw (the outer panel of the group widget), not by dw !!
-		dw.draw([this](paint::graphics& graph)
+		drawing([this](paint::graphics& graph)
 		{
 			auto gap_px = impl_->gap - 1;
 
 			auto const top_round_line = static_cast<int>(impl_->caption_dimension.height) / 2;
 
-			graph.rectangle(true, API::bgcolor(this->parent()));
+			graph.rectangle(true, api::bgcolor(this->parent()));
 			graph.round_rectangle(rectangle(point(gap_px, top_round_line),
 				nana::size(graph.width() - 2 * gap_px, graph.height() - top_round_line - gap_px)
 				),
@@ -334,7 +333,7 @@ checkbox& group::add_option(std::string text)
 
 			if (background_mode::blending == impl_->caption_mode)
 			{
-				auto opt_r = API::window_rectangle(impl_->caption);
+				auto opt_r = api::window_rectangle(impl_->caption);
 				if (opt_r)
 				{
 					rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width + 4, static_cast<unsigned>(top_round_line - opt_r->y) } };
@@ -343,7 +342,7 @@ checkbox& group::add_option(std::string text)
 					grad_r.x -= 2;
 
 					graph.gradual_rectangle(grad_r,
-						API::bgcolor(this->parent()), this->bgcolor(), true
+						api::bgcolor(this->parent()), this->bgcolor(), true
 						);
 				}
 			}

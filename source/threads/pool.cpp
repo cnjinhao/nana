@@ -1,6 +1,6 @@
 /*
  *	A Thread Pool Implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,15 +16,8 @@
 #include <deque>
 #include <vector>
 #include <atomic>
-
-#if defined(STD_THREAD_NOT_SUPPORTED)
-    #include <nana/std_mutex.hpp>
-    #include <nana/std_condition_variable.hpp>
-
-#else
-    #include <condition_variable>
-    #include <mutex>
-#endif
+#include <condition_variable>
+#include <mutex>
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -33,14 +26,11 @@
 	#include <pthread.h>
 #endif
 
-namespace nana
-{
-namespace threads
+namespace nana::threads
 {
 	//class pool
 		//struct task
 			pool::task::task(t k) : kind(k){}
-			pool::task::~task(){}
 		//end struct task
 
 		//struct task_signal
@@ -70,11 +60,12 @@ namespace threads
 				task * task_ptr;
 				thread_t	handle;
 				std::atomic<state>	thr_state;
-				time_t	timestamp;
+				std::atomic<time_t>	timestamp{0};	//written by its thread, read by the others with mutex_
 #if defined(NANA_POSIX)
 				std::mutex wait_mutex;
 				std::condition_variable wait_cond;
 				std::atomic<bool> suspended;
+				bool resume_requested{ false };	///< set by _m_resume(), with wait_mutex
 #endif
 			};
 		public:
@@ -105,14 +96,13 @@ namespace threads
 				while(true)
 				{
 					bool all_finished = true;
+					
+					for(auto thr: container_.threads)
 					{
-						for(auto thr: container_.threads)
+						if(state::finished != thr->thr_state)
 						{
-							if(state::finished != thr->thr_state)
-							{
-								all_finished = false;
-								break;
-							}
+							all_finished = false;
+							break;
 						}
 					}
 
@@ -127,7 +117,8 @@ namespace threads
 						else
 							break;
 					}
-					nana::system::sleep(100);
+
+					std::this_thread::sleep_for(std::chrono::milliseconds{50});
 				}
 
 				std::vector<pool_throbj*> dup(std::move(container_.threads));
@@ -138,8 +129,7 @@ namespace threads
 					::WaitForSingleObject(thr->handle, INFINITE);
 					::CloseHandle(thr->handle);
 #elif defined(NANA_POSIX)
-					::pthread_join(thr->handle, 0);
-					::pthread_detach(thr->handle);
+					::pthread_join(thr->handle, 0);		// joined: detaching it afterwards is undefined
 #endif
 					delete thr;
 				}
@@ -159,24 +149,29 @@ namespace threads
 					throw std::runtime_error("Nana.Pool: Do not accept task now");
 				}
 
-				pool_throbj * pto = _m_pick_up_an_idle();
-
-				if(pto)
+				pool_throbj * pto = nullptr;
 				{
-					pto->task_ptr = taskptr;
-					_m_resume(pto);
-				}
-				else
-				{
+					// pick an idle thread or queue the task with the same lock that _m_read() uses to
+					// find the queue empty and mark the thread idle: otherwise the task could stay queued
+					// while every thread sleeps.
 					std::lock_guard<decltype(mutex_)> lock(mutex_);
-					container_.tasks.emplace_back(taskptr);
+					pto = _m_pick_up_an_idle();
+					if(nullptr == pto)
+					{
+						container_.tasks.emplace_back(taskptr);
+						return;
+					}
 				}
+
+				pto->task_ptr = taskptr;
+				_m_resume(pto);
 			}
 
 			void wait_for_signal()
 			{
 				std::unique_lock<std::mutex> lock(signal_.mutex);
-				signal_.cond.wait(lock);
+				signal_.cond.wait(lock, [this]{ return signal_.triggered > 0; });
+				--signal_.triggered;
 			}
 
 			void wait_for_finished()
@@ -200,7 +195,7 @@ namespace threads
 								return;
 						}
 					}
-					nana::system::sleep(100);
+					std::this_thread::sleep_for(std::chrono::milliseconds{100});
 				}
 			}
 		private:
@@ -221,13 +216,16 @@ namespace threads
 
 			void _m_suspend(pool_throbj* pto)
 			{
-				pto->thr_state = state::idle;
+				// thr_state is already idle (_m_read()); setting it here again could overwrite the run state
+				// given by push() to this thread in the meantime.
 #if defined(NANA_WINDOWS)
 				::SuspendThread(pto->handle);
 #elif defined(NANA_POSIX)
 				std::unique_lock<std::mutex> lock(pto->wait_mutex);
 				pto->suspended = true;
-				pto->wait_cond.wait(lock);
+				// with a predicate: a spurious wakeup must not return without a task (the thread would finish)
+				pto->wait_cond.wait(lock, [pto]{ return pto->resume_requested; });
+				pto->resume_requested = false;
 				pto->suspended = false;
 #endif
 			}
@@ -245,6 +243,7 @@ namespace threads
 				while(false == pto->suspended)
 					;
 				std::unique_lock<std::mutex> lock(pto->wait_mutex);
+				pto->resume_requested = true;
 				pto->wait_cond.notify_one();
 #endif
 			}
@@ -252,6 +251,7 @@ namespace threads
 			bool _m_read(pool_throbj* pto)
 			{
 				pto->task_ptr = nullptr;
+				bool queue_empty = false;
 				if(runflag_)
 				{
 					std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -260,11 +260,17 @@ namespace threads
 						pto->task_ptr = container_.tasks.front();
 						container_.tasks.pop_front();
 					}
+					else
+					{
+						pto->thr_state = state::idle;	// with the lock: see push()
+						queue_empty = true;
+					}
 				}
 				else
 					return false;
 
-				if(nullptr == pto->task_ptr)
+				// Do not read task_ptr here: once the thread is idle, push() may write it.
+				if(queue_empty)
 				{
 					//The task queue is empty, so that
 					//suspend and wait for a task.
@@ -305,10 +311,14 @@ namespace threads
 
 							if(finished)
 								break;
-							nana::system::sleep(100);
+							std::this_thread::sleep_for(std::chrono::milliseconds{100});
 						}
 
-						//wait till the cond is waiting.
+						// Count the signal, so that it is not lost if wait_for_signal() is not waiting yet.
+						{
+							std::lock_guard<std::mutex> lock(signal_.mutex);
+							++signal_.triggered;
+						}
 						signal_.cond.notify_one();
 						break;
 					}
@@ -343,6 +353,7 @@ namespace threads
 			{
 				std::mutex mutex;
 				std::condition_variable cond;
+				std::size_t triggered{ 0 };	///< signals processed and not yet waited for
 			}signal_;
 
 			struct container
@@ -352,17 +363,10 @@ namespace threads
 			}container_;
 		};//end class impl
 
-#ifndef STD_THREAD_NOT_SUPPORTED
 		pool::pool(unsigned thread_number)
 			: impl_(new impl(thread_number ? thread_number : std::thread::hardware_concurrency()))
 		{
 		}
-#else
-		pool::pool(unsigned thread_number)
-			: impl_(new impl(0))
-		{
-		}
-#endif
 
 		pool::pool(pool&& other)
 			: pool()
@@ -415,6 +419,4 @@ namespace threads
 			impl_->push(task_ptr);
 		}
 	//end class pool
-
-}//end namespace threads
-}//end namespace nana
+}//end namespace nana::threads

@@ -1,7 +1,7 @@
 /**
  *	A Form Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -20,36 +20,33 @@ namespace nana
 {
 	class place;
 
-	namespace drawerbase
+	namespace drawerbase::form
 	{
-		namespace form
+		class trigger: public drawer_trigger
 		{
-			class trigger: public drawer_trigger
-			{
-			public:
-				void attached(widget_reference, graph_reference)	override;
-				void refresh(graph_reference)	override;
-			private:
-				widget*	wd_{nullptr};
-			};
+		public:
+			void attached(widget_reference, graph_reference)	override;
+			void refresh(graph_reference)	override;
+		private:
+			widget*	wd_{nullptr};
+		};
 
-			class form_base
-				: public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
-			{
-			public:
-				form_base(window owner, bool nested, const rectangle&, const appearance&);
-				
-				//place methods
+		class form_base
+			: public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
+		{
+		public:
+			form_base(window owner, bool nested, const rectangle&, const appearance&);
+			
+			//place methods
 
-				place & get_place();
-				void div(std::string div_text);
-				place::field_reference operator[](const char* field_name);
-				void collocate() noexcept;
-			private:
-				std::unique_ptr<place> place_;
-			};
-		}//end namespace form
-	}//end namespace drawerbase
+			place & get_place();
+			void div(std::string div_text);
+			place::field_reference operator[](const char* field_name);
+			void collocate() noexcept;
+		private:
+			std::unique_ptr<place> place_;
+		};
+	}//end namespace drawerbase::form
 
 	/// The form widget represents a popup window.
 	///
@@ -64,7 +61,7 @@ namespace nana
 		using appear = ::nana::appear;
 
 		/// Creates a window form owned by the desktop, at the point and size specified by rect, and with the specified appearance.
-		explicit form(const rectangle& = API::make_center(300, 200), const appearance& = {});	//Default constructor
+		explicit form(const rectangle& = api::make_center(300, 200), const appearance& = {});	//Default constructor
         /// Creates a window always floating above its owner at the point and size specified by rect, with the specified appearance. This window is always floating above its owner.
         explicit form(window owner, const ::nana::size& = { 300, 200 }, const appearance& = {});
         explicit form(window owner, const rectangle&, const appearance& = {});

@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -28,7 +28,7 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/window_manager.hpp>
-#include <nana/system/platform.hpp>
+#include <nana/gui/detail/internal_scope_guard.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #include <errno.h>
 #include <sstream>
@@ -95,52 +95,6 @@ namespace detail
 			return std::string();
 		}
 	//end class conf
-#if 0
-	//class charset_conv
-		charset_conv::charset_conv(const char* tocode, const char* fromcode)
-		{
-			handle_ = ::iconv_open(tocode, fromcode);
-		}
-
-		charset_conv::~charset_conv()
-		{
-			::iconv_close(handle_);
-		}
-
-		std::string charset_conv::charset(const std::string& str) const
-		{
-			if(reinterpret_cast<iconv_t>(-1) == handle_)
-				return std::string();
-
-			char * inbuf = const_cast<char*>(str.c_str());
-			std::size_t inleft = str.size();
-			std::size_t outlen = (inleft * 4 + 4);
-			char * strbuf = new char[outlen + 4];
-			char * outbuf = strbuf;
-			std::size_t outleft = outlen;
-			::iconv(handle_, &inbuf, &inleft, &outbuf, &outleft);
-			std::string rstr(strbuf, outbuf);
-			delete [] strbuf;
-			return rstr;
-		}
-
-		std::string charset_conv::charset(const char* buf, std::size_t len) const
-		{
-			if(reinterpret_cast<iconv_t>(-1) == handle_)
-				return std::string();
-
-			char * inbuf = const_cast<char*>(buf);
-			std::size_t outlen = (len * 4 + 4);
-			char * strbuf = new char[outlen + 4];
-			char * outbuf = strbuf;
-			std::size_t outleft = outlen;
-			::iconv(handle_, &inbuf, &len, &outbuf, &outleft);
-			std::string rstr(strbuf, outbuf);
-			delete [] strbuf;
-			return rstr;
-		}
-	//end class charset_conv
-#endif
 #endif
 
 	//Caret implementation
@@ -198,7 +152,7 @@ namespace detail
 				for(int y = 0; y < static_cast<int>(pxsize.height); ++y)
 					for(int x = 0; x < static_cast<int>(pxsize.width); ++x)
 					{
-						auto px = pxbuf.at({x, y});
+						auto px = pxbuf[{x, y}];
 						px->element.red = ~px->element.red;
 						px->element.green = ~px->element.green;
 						px->element.blue = ~px->element.blue;
@@ -540,6 +494,21 @@ namespace detail
 		}
 	}
 
+	Window platform_spec::xevent_window(const XEvent& evt)
+	{
+		return msg_dispatcher::xevent_window(evt);
+	}
+
+	bool platform_spec::install_xevent_handler(native_window_type wd, std::function<void(nana::x11::xevent*)> fn)
+	{
+		return msg_dispatcher_->xevent_handling(reinterpret_cast<Window>(wd), std::move(fn));
+	}
+
+	void platform_spec::erase_xevent_handler(native_window_type wd)
+	{
+		msg_dispatcher_->erase_xevent_handling(reinterpret_cast<Window>(wd));
+	}
+
 	void platform_spec::lock_xlib()
 	{
 		xlib_locker_.lock();
@@ -868,11 +837,12 @@ namespace detail
 	{
 		platform_scope_guard psg;
 		auto i = caret_holder_.carets.find(wd);
-		if(i != caret_holder_.carets.end())
-		{
-			i->second->reinstate();
-			i->second->pos = pos;
-		}
+		if(i == caret_holder_.carets.end())
+			return;
+
+		i->second->reinstate();
+		i->second->pos = pos;
+
 		auto addr = i->second;
 		if(addr && addr->input_context) {
 			XPoint spot;
@@ -883,7 +853,7 @@ namespace detail
 					XNForeground, 0,
 					XNBackground, 0,
 					(void *)0);
-			::XSetICValues(addr->input_context, XNPreeditAttributes, list, NULL);
+			::XSetICValues(addr->input_context, XNPreeditAttributes, list, nullptr);
 			::XFree(list);
 		}
 	}
@@ -966,7 +936,7 @@ namespace detail
 				xlib_locker_.unlock();
 			}
 			for(int i = 0; i < 5 && (false == caret_holder_.exit_thread); ++i)
-				nana::system::sleep(100);
+				std::this_thread::sleep_for(std::chrono::milliseconds{100});
 		}
 	}
 
@@ -1008,17 +978,62 @@ namespace detail
 
 	void platform_spec::timer_proc(thread_t tid)
 	{
-		std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
-		if(timer_.runner)
 		{
-			timer_.runner->timer_proc(tid);
-			if(timer_.delete_declared)
+			// Same lock order as set_timer() and kill_timer(), which are called by the timer driver
+			// with the internal mutex locked: first the internal mutex, then the timer mutex.
+			::nana::internal_scope_guard internal_lock;
+			std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
+			if(timer_.runner)
 			{
-				delete timer_.runner;
-				timer_.runner = nullptr;
-				timer_.delete_declared = false;
+				timer_.runner->timer_proc(tid);
+				if(timer_.delete_declared)
+				{
+					delete timer_.runner;
+					timer_.runner = nullptr;
+					timer_.delete_declared = false;
+				}
 			}
 		}
+
+
+		std::vector<std::function<void()>> func;
+
+		{
+			platform_scope_guard lock;
+			auto i = affinity_.functions.find(tid);
+			if(i == affinity_.functions.end())
+				return;
+
+			func.swap(i->second);
+
+			affinity_.functions.erase(i);
+		}
+
+		for(auto & fn : func) try{
+			fn();
+		}
+		catch(...)
+		{
+		}
+	}
+
+	void platform_spec::affinity_execute(native_window_type native_window, std::function<void()> fn)
+	{
+		auto & wd_manager = detail::bedrock::instance().wd_manager();
+
+		auto wd = wd_manager.root(native_window);
+		if(!wd) try
+		{
+			fn();
+			return;
+		}
+		catch(...)
+		{
+			return;
+		}
+
+		platform_scope_guard lock;
+		affinity_.functions[wd->thread_id].emplace_back(std::move(fn));
 	}
 
 	void platform_spec::msg_insert(native_window_type wd)
@@ -1159,6 +1174,34 @@ namespace detail
 		xdnd_.dragdrop.erase(i);
 
 		return ddrop;
+	}
+
+	void platform_spec::add_ignore_once(native_window_type wd, int event_type)
+	{
+		platform_scope_guard lock;
+		ignore_once_[wd].push_back(event_type);
+	}
+
+	bool platform_spec::ignore_once(native_window_type wd, int event_type)
+	{
+		bool ignored = false;
+		platform_scope_guard lock;
+
+		auto i = ignore_once_.find(wd);
+		if(i != ignore_once_.end())
+		{
+			auto u = std::find(i->second.cbegin(), i->second.cend(), event_type);
+			if(u != i->second.cend())
+			{
+				ignored = true;
+				i->second.erase(u);
+			}
+
+			if(i->second.empty())
+				ignore_once_.erase(i);
+		}
+
+		return ignored;
 	}
 
 	//_m_msg_filter

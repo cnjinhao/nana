@@ -1,6 +1,6 @@
 /*
 *	A Generic Cloneable Pattern Implementation
-*	Nana C++ Library(http://www.nanapro.org)
+*	Nana C++ Library(https://nana.acemind.cn)
 *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
@@ -114,7 +114,7 @@ namespace nana{ namespace pat{
 		{
 			if(r.cwrapper_)
 			{
-				cwrapper_ = std::move(std::shared_ptr<cloneable_interface>(r.cwrapper_->clone(), detail::cloneable_interface_deleter{}));
+				cwrapper_ = std::shared_ptr<cloneable_interface>(r.cwrapper_->clone(), detail::cloneable_interface_deleter{});
 				fast_ptr_ = reinterpret_cast<base_t*>(cwrapper_->get());
 			}
 		}

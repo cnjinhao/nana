@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,7 +15,6 @@
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/drawer.hpp>
-#include "dynamic_drawing_object.hpp"
 
 #if defined(NANA_X11)
 	#include "../../detail/posix/platform_spec.hpp"
@@ -24,156 +23,156 @@
 namespace nana
 {
 	//class drawer_trigger
-		void drawer_trigger::attached(widget_reference, graph_reference){}
-		void drawer_trigger::detached(){}	//none-const
-		void drawer_trigger::typeface_changed(graph_reference){}
-		void drawer_trigger::refresh(graph_reference){}
+	void drawer_trigger::attached(widget_reference, graph_reference){}
+	void drawer_trigger::detached(){}	//none-const
+	void drawer_trigger::typeface_changed(graph_reference){}
+	void drawer_trigger::refresh(graph_reference){}
 
-		void drawer_trigger::resizing(graph_reference, const arg_resizing&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::resizing));
-		}
+	void drawer_trigger::resizing(graph_reference, const arg_resizing&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::resizing));
+	}
 
-		void drawer_trigger::resized(graph_reference graph, const arg_resized&)
-		{
-			overridden_ |= (1 << static_cast<int>(event_code::resized));
-			this->refresh(graph);
-			detail::bedrock::instance().thread_context_lazy_refresh();
-		}
+	void drawer_trigger::resized(graph_reference graph, const arg_resized&)
+	{
+		overridden_ |= (1 << static_cast<int>(event_code::resized));
+		this->refresh(graph);
+		detail::bedrock::instance().thread_context_lazy_refresh();
+	}
 
-		void drawer_trigger::move(graph_reference, const arg_move&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::move));
-		}
+	void drawer_trigger::move(graph_reference, const arg_move&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::move));
+	}
 
-		void drawer_trigger::click(graph_reference, const arg_click&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::click));
-		}
+	void drawer_trigger::click(graph_reference, const arg_click&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::click));
+	}
 
-		void drawer_trigger::dbl_click(graph_reference, const arg_mouse&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::dbl_click));
-		}
+	void drawer_trigger::dbl_click(graph_reference, const arg_mouse&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::dbl_click));
+	}
 
-		void drawer_trigger::mouse_enter(graph_reference, const arg_mouse&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::mouse_enter));
-		}
+	void drawer_trigger::mouse_enter(graph_reference, const arg_mouse&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::mouse_enter));
+	}
 
-		void drawer_trigger::mouse_move(graph_reference, const arg_mouse&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::mouse_move));
-		}
+	void drawer_trigger::mouse_move(graph_reference, const arg_mouse&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::mouse_move));
+	}
 
-		void drawer_trigger::mouse_leave(graph_reference, const arg_mouse&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::mouse_leave));
-		}
+	void drawer_trigger::mouse_leave(graph_reference, const arg_mouse&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::mouse_leave));
+	}
 
-		void drawer_trigger::mouse_down(graph_reference, const arg_mouse&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::mouse_down));
-		}
+	void drawer_trigger::mouse_down(graph_reference, const arg_mouse&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::mouse_down));
+	}
 
-		void drawer_trigger::mouse_up(graph_reference, const arg_mouse&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::mouse_up));
-		}
+	void drawer_trigger::mouse_up(graph_reference, const arg_mouse&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::mouse_up));
+	}
 
-		void drawer_trigger::mouse_wheel(graph_reference, const arg_wheel&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::mouse_wheel));
-		}
+	void drawer_trigger::mouse_wheel(graph_reference, const arg_wheel&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::mouse_wheel));
+	}
 
-		void drawer_trigger::mouse_dropfiles(graph_reference, const arg_dropfiles&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::mouse_drop));
-		}
+	void drawer_trigger::mouse_dropfiles(graph_reference, const arg_dropfiles&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::mouse_drop));
+	}
 
-		void drawer_trigger::focus(graph_reference, const arg_focus&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::focus));
-		}
+	void drawer_trigger::focus(graph_reference, const arg_focus&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::focus));
+	}
 
-		void drawer_trigger::key_ime(graph_reference, const arg_ime&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::key_ime));
-		}
+	void drawer_trigger::key_ime(graph_reference, const arg_ime&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::key_ime));
+	}
 
-		void drawer_trigger::key_press(graph_reference, const arg_keyboard&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::key_press));
-		}
+	void drawer_trigger::key_press(graph_reference, const arg_keyboard&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::key_press));
+	}
 
-		void drawer_trigger::key_char(graph_reference, const arg_keyboard&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::key_char));
-		}
+	void drawer_trigger::key_char(graph_reference, const arg_keyboard&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::key_char));
+	}
 
-		void drawer_trigger::key_release(graph_reference, const arg_keyboard&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::key_release));
-		}
+	void drawer_trigger::key_release(graph_reference, const arg_keyboard&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::key_release));
+	}
 
-		void drawer_trigger::shortkey(graph_reference, const arg_keyboard&)
-		{
-			overridden_ &= ~(1 << static_cast<int>(event_code::shortkey));
-		}
+	void drawer_trigger::shortkey(graph_reference, const arg_keyboard&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::shortkey));
+	}
 
-		void drawer_trigger::_m_reset_overridden()
-		{
-			overridden_ = 0xFFFFFFFF;
-		}
+	void drawer_trigger::_m_reset_overridden()
+	{
+		overridden_ = 0xFFFFFFFF;
+	}
 
-		bool drawer_trigger::_m_overridden(event_code evt_code) const
-		{
-			return 0 != (overridden_ & (1 << static_cast<int>(evt_code)));
-		}
+	bool drawer_trigger::_m_overridden(event_code evt_code) const
+	{
+		return 0 != (overridden_ & (1 << static_cast<int>(evt_code)));
+	}
 
-		void drawer_trigger::filter_event(const event_code evt_code, const bool bDisabled)
-		{
-			if (bDisabled)
-				evt_disabled_ |= 1 << static_cast<int>(evt_code); // set
-			else
-				evt_disabled_ &= ~(1 << static_cast<int>(evt_code)); // clear
-		}
+	void drawer_trigger::filter_event(const event_code evt_code, const bool bDisabled)
+	{
+		if (bDisabled)
+			evt_disabled_ |= 1 << static_cast<int>(evt_code); // set
+		else
+			evt_disabled_ &= ~(1 << static_cast<int>(evt_code)); // clear
+	}
 
-		void drawer_trigger::filter_event(const std::vector<event_code>& evt_codes, const bool bDisabled)
+	void drawer_trigger::filter_event(const std::vector<event_code>& evt_codes, const bool bDisabled)
+	{
+		for (auto evt_code : evt_codes) 
 		{
-			for (auto evt_code : evt_codes) 
-			{
-				filter_event(evt_code, bDisabled);
-			}
+			filter_event(evt_code, bDisabled);
 		}
+	}
 
-		void drawer_trigger::filter_event(const event_filter_status& evt_all_states)
-		{
-			evt_disabled_ = evt_all_states.evt_disabled_;
-		}
+	void drawer_trigger::filter_event(const event_filter_status& evt_all_states)
+	{
+		evt_disabled_ = evt_all_states.evt_disabled_;
+	}
 
-		bool drawer_trigger::filter_event(const event_code evt_code)
-		{
-			return static_cast<bool>((evt_disabled_ >> static_cast<int>(evt_code)) & 1);
-		}
+	bool drawer_trigger::filter_event(const event_code evt_code)
+	{
+		return static_cast<bool>((evt_disabled_ >> static_cast<int>(evt_code)) & 1);
+	}
 
-		event_filter_status drawer_trigger::filter_event()
-		{
-			return event_filter_status(evt_disabled_);
-		}
+	event_filter_status drawer_trigger::filter_event()
+	{
+		return event_filter_status(evt_disabled_);
+	}
 
-		void drawer_trigger::clear_filter()
-		{
-			for (int i = 0; i < static_cast<int>(nana::event_code::end); i++)
-				filter_event(static_cast<nana::event_code>(i), false);
-		}
+	void drawer_trigger::clear_filter()
+	{
+		for (int i = 0; i < static_cast<int>(nana::event_code::end); i++)
+			filter_event(static_cast<nana::event_code>(i), false);
+	}
 
 	//end class drawer_trigger
 
 	//class event_filter_status
-	event_filter_status::event_filter_status()
+	event_filter_status::event_filter_status():
+		evt_disabled_{0}
 	{
-		evt_disabled_ = 0;
 	}
 
 	event_filter_status::event_filter_status(const event_filter_status& rOther)
@@ -181,9 +180,9 @@ namespace nana
 		this->evt_disabled_ = rOther.evt_disabled_;
 	}
 
-	event_filter_status::event_filter_status(const unsigned evt_disabled_)
+	event_filter_status::event_filter_status(const unsigned evt_disabled)
 	{
-		this->evt_disabled_ = evt_disabled_;
+		this->evt_disabled_ = evt_disabled;
 	}
 
 	bool event_filter_status::operator[](const nana::event_code evt_code) const
@@ -216,8 +215,6 @@ namespace nana
 
 	namespace detail
 	{
-		typedef bedrock bedrock_type;
-
 		//class drawer
 
 		enum{
@@ -230,7 +227,8 @@ namespace nana
 			basic_window*	window_handle{ nullptr };
 			drawer_trigger*	realizer{ nullptr };
 			method_state	mth_state[event_size];
-			std::vector<dynamic_drawing::object*>	draws;
+
+			std::vector<std::pair<std::function<void(paint::graphics&)>, bool>*> draws;	//Drawing function and flag for clearable
 		};
 
 		drawer::drawer()
@@ -240,9 +238,7 @@ namespace nana
 		drawer::~drawer()
 		{
 			for(auto p : data_impl_->draws)
-			{
 				delete p;
-			}
 
 			delete data_impl_;
 		}
@@ -420,53 +416,58 @@ namespace nana
 			return nullptr;
 		}
 
+
+		drawing_handle drawer::drawing(std::function<void(paint::graphics&)>&& fn, bool diehard) noexcept
+		{
+			if (!fn)		// an empty function would throw bad_function_call at the next refresh
+				return nullptr;	// but this will hide a programming error. todo: how to handle this?
+
+			std::pair<std::function<void(paint::graphics&)>, bool>* pdw = nullptr;
+			try {
+				pdw = new std::pair<std::function<void(paint::graphics&)>, bool>(std::move(fn), diehard);
+				data_impl_->draws.emplace_back(pdw);
+				return reinterpret_cast<drawing_handle>(pdw);
+			}
+			catch (...)
+			{
+				delete pdw;
+				return nullptr;
+			}
+		}
+
+		void drawer::erase(drawing_handle dw) noexcept
+		{
+			for (auto i = data_impl_->draws.cbegin(); i != data_impl_->draws.cend(); ++i)
+			{
+				if (reinterpret_cast<drawing_handle>(*i) == dw)
+				{
+					delete (*i);
+					data_impl_->draws.erase(i);
+					return;
+				}
+			}
+		}
+
 		void drawer::clear()
 		{
-			std::vector<dynamic_drawing::object*> then;
-			for (auto p : data_impl_->draws)
+			for (auto i = data_impl_->draws.cbegin(); i != data_impl_->draws.cend();)
 			{
-				if(p->diehard())
-					then.emplace_back(p);
+				if (!(*i)->second)
+				{
+					delete (*i);
+					i = data_impl_->draws.erase(i);
+				}
 				else
-					delete p;
-			}
-
-			then.swap(data_impl_->draws);
-		}
-
-		void* drawer::draw(std::function<void(paint::graphics&)> && f, bool diehard)
-		{
-			if(f)
-			{
-				auto p = new dynamic_drawing::user_draw_function(std::move(f), diehard);
-				data_impl_->draws.emplace_back(p);
-				return (diehard ? p : nullptr);
-			}
-			return nullptr;
-		}
-
-		void drawer::erase(void * p)
-		{
-			if(p)
-			{
-				for (auto i = data_impl_->draws.begin(); i != data_impl_->draws.end(); ++i)
-					if (*i == p)
-					{
-						delete (*i);
-						data_impl_->draws.erase(i);
-						break;
-					}
+					++i;
 			}
 		}
 
 		void drawer::_m_effect_bground_subsequent()
 		{
-			auto & effect = data_impl_->window_handle->effect;
-
 			for (auto * dw : data_impl_->draws)
-				dw->draw(graphics);
+				dw->first(graphics);
 
-
+			auto& effect = data_impl_->window_handle->effect;
 			if (effect.bground)
 			{
 				if (effect.bground_fade_rate >= 0.01)
@@ -474,7 +475,6 @@ namespace nana
 					graphics.blend(::nana::rectangle{ data_impl_->window_handle->other.glass_buffer.size() }, data_impl_->window_handle->other.glass_buffer, {}, 1 - effect.bground_fade_rate);
 				}
 			}
-			
 		}
 
 		drawer::method_state& drawer::_m_mth_state(int pos)

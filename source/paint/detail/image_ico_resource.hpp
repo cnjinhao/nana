@@ -1,7 +1,7 @@
 /*
  *	Icon Resource
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2017 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2017-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,7 +13,7 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_ICO_RESOURCE_INCLUDED
 #define NANA_PAINT_DETAIL_IMAGE_ICO_RESOURCE_INCLUDED
 
-#include <nana/filesystem/filesystem_ext.hpp>
+#include <filesystem>
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/graphics.hpp>
 
@@ -113,12 +113,71 @@ namespace nana{	namespace paint
 #endif			
 			}
 
+			bool save(const std::filesystem::path& p) const override
+			{
+				paint::graphics graph{size()};
+
+				paste(rectangle{ size() }, graph, {});
+
+				graph.save_as_file(to_utf8(p.wstring()).c_str());
+				return true;
+			}
+
+			std::size_t length() const override
+			{
+				return (native_handle_ ? 1 : 0);
+			}
+
+			std::size_t frame() const override
+			{
+				return 0;
+			}
+
+			std::size_t frame_duration() const override
+			{
+				return 0;
+			}
+
+			bool set_frame(std::size_t pos) override
+			{
+				return native_handle_ && (0 == pos);
+			}
+			
 			void* native_handle()
 			{
 				return native_handle_;
 			}
+
+			paint::pixel_buffer& pxbuf() override
+			{
+				auto sz = size();
+				if (!pxbuf_)
+					pxbuf_.open(sz.width, sz.height);
+
+				paint::graphics graph{ size() };
+
+				paste(rectangle{ size() }, graph, {});
+				
+				pxbuf_.open(graph.handle());
+				return pxbuf_;
+			}
+
+			const paint::pixel_buffer& pxbuf() const override
+			{
+				auto sz = size();
+				if (!pxbuf_)
+					pxbuf_.open(sz.width, sz.height);
+
+				paint::graphics graph{ size() };
+
+				paste(rectangle{ size() }, graph, {});
+
+				pxbuf_.open(graph.handle());
+				return pxbuf_;
+			}
 		private:
 			void* native_handle_;
+			mutable paint::pixel_buffer pxbuf_;
 		};//end class image_ico
 	}
 }//end namespace paint
