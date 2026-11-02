@@ -34,21 +34,6 @@ add_library(nana::nana ALIAS nana)
 target_compile_features(nana PUBLIC cxx_std_17)
 # set(CMAKE_CXX_STANDARD 17)
 
-#  need after cxx_std_14 or cxx_std_17 ??
-target_compile_features(nana
-        PUBLIC cxx_nullptr
-        PUBLIC cxx_range_for
-        PUBLIC cxx_lambdas
-        PUBLIC cxx_decltype_auto
-        PUBLIC cxx_defaulted_functions
-        PUBLIC cxx_deleted_functions
-        PUBLIC cxx_auto_type
-        PUBLIC cxx_decltype_incomplete_return_types
-        PUBLIC cxx_defaulted_move_initializers
-        PUBLIC cxx_noexcept
-        PUBLIC cxx_rvalue_references
-        )
-
 ###    collect all source sub-directories in a list to avoid duplication    ###
 
 # By using CMAKE_CURRENT_LIST_DIR here you can compile and consume nana by just:
