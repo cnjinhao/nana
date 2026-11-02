@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 3.12  FATAL_ERROR)
 project(nana VERSION      1.8
         DESCRIPTION "C++ GUI library"
-        HOMEPAGE_URL http://nanapro.org
+        HOMEPAGE_URL https://github.com/cnjinhao/nana
         LANGUAGES CXX         )
 
 #######################     Main setting of Nana targets, sources and installs    #####################

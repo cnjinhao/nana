@@ -22,7 +22,13 @@ Jinhao, [Ariel Viña Rodríguez].
 
 ## Documentation
 
-The best way to get help with Nana library is by visiting https://nana.acemind.cn/documentation
+> **The documentation is being rebuilt.** The old website (nanapro.org, later nana.acemind.cn) is no longer online.
+> Meanwhile, please use:
+> - the comments in the source code, mainly in the headers (`include/nana`);
+> - the [reference generated with Doxygen](https://qpcr4vir.github.io/nana-doxy/html/), for nana 1.7.2 (2019): mostly still
+>   valid, but partly outdated;
+> - the [wiki](https://github.com/cnjinhao/nana/wiki);
+> - the examples of [nana-demo](https://github.com/qPCR4vir/nana-demo).
 
 ## Examples
 
