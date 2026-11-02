@@ -24,6 +24,7 @@ Jinhao, [Ariel Viña Rodríguez].
 
 > **The documentation is being rebuilt.** The websites nanapro.org and nana.acemind.cn are now offline.
 > Meanwhile, please use:
+> - [INSTALL.md](INSTALL.md), to build nana and use it in your project;
 > - the comments in the source code, mainly in the headers (`include/nana`);
 > - the [reference generated with Doxygen](https://qpcr4vir.github.io/nana-doxy/html/), for nana 1.7.2 (2019): mostly still
 >   valid, but partly outdated;
