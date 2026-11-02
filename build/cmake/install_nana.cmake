@@ -22,9 +22,8 @@ if(NANA_CMAKE_INSTALL)
                                            $<INSTALL_INTERFACE:include>  )
 else()
     # this is the prefered method to consume nana with cmake
-    message("You are using nana directly from original sources. (Recommended!) "
-            "If this was not your intention, and what you want is to install precomplied nana first, then "
-            "please tern ON option NANA_CMAKE_INSTALL ")
+    message(STATUS "nana: using nana from its sources (recommended). To install a precompiled nana first, "
+                   "turn ON the option NANA_CMAKE_INSTALL.")
     target_sources(nana PUBLIC ${HEADERS})
     target_include_directories(nana PUBLIC ${NANA_INCLUDE_DIR})
 endif()
