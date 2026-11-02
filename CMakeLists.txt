@@ -19,9 +19,9 @@
 # https://cliutils.gitlab.io/modern-cmake/
 # https://cmake.org/cmake-tutorial/
 # https://cmake.org/cmake/help/v3.12/module/CMakeDependentOption.html?highlight=cmakedependentoption
-# cmake 3.12 have more better modern c++ support
+# cmake 3.16: modern C++ support, and CMAKE_MSVC_RUNTIME_LIBRARY (3.15, policy CMP0091) for the MSVC runtime
 
-cmake_minimum_required(VERSION 3.12  FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16  FATAL_ERROR)
 project(nana VERSION      1.8
         DESCRIPTION "C++ GUI library"
         HOMEPAGE_URL https://github.com/cnjinhao/nana
