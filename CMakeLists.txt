@@ -9,7 +9,7 @@
 #   Frostbane - Add option for compiling a shared library (#263,#265)
 #   Qiangqiang Wu - Add biicode support: todo migrate to https://conan.io/
 #
-# Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
+# Nana uses some build systems: MS-VS solution, MAKE, bakefile, etc. manually optimized.
 # Maybe CMake will be used in the future to generate some of them in the central nana repository.
 # But by now CMake is just one option and all the other build system
 # files/projects distributed are manually writen. This current CMakeList.txt reflect this fact and that is why we don't
