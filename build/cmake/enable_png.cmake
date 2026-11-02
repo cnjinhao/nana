@@ -13,6 +13,10 @@ if(NANA_CMAKE_ENABLE_PNG)
             target_compile_definitions(nana PUBLIC USE_LIBPNG_FROM_OS ${PNG_DEFINITIONS})
             # target_include_directories  (nana SYSTEM   PUBLIC PNG::PNG)    # ??
             # target_compile_definitions  (nana          PUBLIC USE_LIBPNG_FROM_OS)
+        else()
+            # otherwise the build fails later, at png.h
+            message(FATAL_ERROR "nana: NANA_CMAKE_ENABLE_PNG is ON, but libpng was not found. Install it (on Windows "
+                                "with MSVC, for example with vcpkg) or set NANA_CMAKE_ENABLE_PNG=OFF.")
         endif()
     else()
         target_link_libraries(nana PUBLIC png)  # provided by nana?

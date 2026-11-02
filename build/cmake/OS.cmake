@@ -15,16 +15,37 @@ if(WIN32)
             target_compile_options(nana PUBLIC "/MP" )
         endif()
 
+        # Static runtime (/MT, /MTd) by default, for nana and for the programs that use it. For another runtime, set
+        # CMAKE_MSVC_RUNTIME_LIBRARY yourself, or this option OFF.
         if(MSVC_USE_STATIC_RUNTIME)
+            if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+                # a cache variable: it also reaches the directory that added nana with add_subdirectory()
+                set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "MSVC runtime library")
+            endif()
+            # the target nana was created before this file
+            set_target_properties(nana PROPERTIES MSVC_RUNTIME_LIBRARY "${CMAKE_MSVC_RUNTIME_LIBRARY}")
+
+            # A project that requires CMake < 3.15 (policy CMP0091 OLD) has /MD in its flags, and CMAKE_MSVC_RUNTIME_LIBRARY
+            # does not change them: change /MD to /MT in the flags of nana and of the directory that added it.
+            set(nana_runtime_in_flags FALSE)
             foreach(flag
                     CMAKE_C_FLAGS              CMAKE_C_FLAGS_DEBUG             CMAKE_C_FLAGS_RELEASE
                     CMAKE_C_FLAGS_MINSIZEREL   CMAKE_C_FLAGS_RELWITHDEBINFO
                     CMAKE_CXX_FLAGS            CMAKE_CXX_FLAGS_DEBUG           CMAKE_CXX_FLAGS_RELEASE
                     CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
                 if(${flag} MATCHES "/MD")
+                    set(nana_runtime_in_flags TRUE)
                     string(REGEX REPLACE "/MD" "/MT" ${flag} "${${flag}}")
+                    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+                        set(${flag} "${${flag}}" PARENT_SCOPE)
+                    endif()
                 endif()
             endforeach()
+            if(nana_runtime_in_flags)
+                message(WARNING "nana: your project requires a CMake older than 3.15, so its flags select the MSVC runtime. "
+                                "nana changed /MD to /MT in its flags and in those of the directory that added it; other "
+                                "directories keep /MD. Use cmake_minimum_required(VERSION 3.16) or newer.")
+            endif()
         endif()
     endif()
 
