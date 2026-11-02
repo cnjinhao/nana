@@ -1,6 +1,6 @@
 /*
  *	A Content View Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2017-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -90,10 +90,8 @@ namespace skeletons
 
 		void set_wheel_speed(std::function<unsigned()> fn);
 
-		static constexpr unsigned space()
-		{
-			return 16;
-		}
+		unsigned space() const;
+		void space(unsigned);
 	private:
 		implementation* const impl_;
 	};

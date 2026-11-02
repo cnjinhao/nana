@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE or copy at 
@@ -23,18 +23,18 @@
 #include "detail/compset.hpp"
 #include "detail/tree_cont.hpp"
 #include <nana/gui/timer.hpp>
-#include <nana/any.hpp>
 #include <nana/pat/cloneable.hpp>
+#include <any>
 #include <stdexcept>
 
 namespace nana
 {
 	class treebox;
 
-	namespace drawerbase
+	namespace drawerbase::treebox
 	{
-		namespace treebox
-		{
+			using size_type = std::size_t;
+
 			enum class component
 			{
 				begin, expander = begin, crook, icon, text, bground, end
@@ -103,26 +103,24 @@ namespace nana
 			class item_proxy;
 
 			class trigger
-				:public drawer_trigger
+				: public drawer_trigger
 			{
 				class implementation;
 				class item_locator;
 			public:
 				struct treebox_node_type
 				{
-					treebox_node_type();
-					treebox_node_type(std::string);
+					treebox_node_type(std::string = {});
 					treebox_node_type& operator=(const treebox_node_type&);
 
 					::std::string text;
-					nana::any value;
-					bool expanded;
-					bool hidden;
-					checkstate checked;
+					std::any value;
+					bool expanded{ false };
+					bool hidden{ false };
+					bool selected{ false };
+					checkstate checked{ checkstate::unchecked };
 					::std::string img_idstr;
 				};
-
-				struct pseudo_node_type{};
 
 				using tree_cont_type = widgets::detail::tree_cont<treebox_node_type>;
 				using node_type = tree_cont_type::node_type;
@@ -170,10 +168,15 @@ namespace nana
 
 			/// \brief A proxy for accessing the node. The key string is case sensitive.
 			class item_proxy
-				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
+				using iterator_category = std::input_iterator_tag;
+				using value_type = item_proxy;
+				using difference_type = ptrdiff_t;
+				using pointer = item_proxy*;
+				using reference = item_proxy&;
 			public:
 				item_proxy() = default;           ///< The default constructor creates an end iterator.
+				item_proxy(const item_proxy&) = default;
 
 				//Undocumented constructor.
 				item_proxy(trigger*, trigger::node_type*);
@@ -230,15 +233,24 @@ namespace nana
 
 				/// Set the icon, and returns itself..
 				item_proxy& icon(const ::std::string& id);
+#ifdef __cpp_char8_t
+				item_proxy& icon(::std::u8string_view id);
+#endif
 
 				/// Return the text.
 				const ::std::string& text() const;
 
 				/// Set the text, and returns itself.
 				item_proxy& text(const ::std::string&);
+#ifdef __cpp_char8_t
+				item_proxy& text(const ::std::u8string_view);
+#endif
 
 				/// Set a new key, and returns itself..
 				item_proxy& key(const ::std::string& s);
+#ifdef __cpp_char8_t
+				item_proxy& key(std::u8string_view s);
+#endif
 
 				/// Return the key.
 				const ::std::string& key() const;
@@ -263,10 +275,15 @@ namespace nana
 				/// Makes an action for each sub item recursively, returns the item that stops the action where action returns false.
 				item_proxy visit_recursively(std::function<bool(item_proxy)> action);
 
-				bool operator==(const ::std::string& s) const; ///< Compare the text of node with s.
-				bool operator==(const char* s ) const;        ///< Compare the text of node with s.
-				bool operator==(const wchar_t* s ) const;     ///< Compare the text of node with s.
+				/// Compare the text of node with a specified string
+				bool operator==(std::string_view s) const;
 
+				/// Compare the text of node with a specified string
+				bool operator==(std::wstring_view s) const;
+#ifdef __cpp_char8_t
+				/// Compare the text of node with a specified string
+				bool operator==(std::u8string_view s) const;
+#endif
 				/// Behavior of Iterator
 				item_proxy& operator=(const item_proxy&);
 
@@ -297,19 +314,19 @@ namespace nana
 				template<typename T>
 				const T * value_ptr() const
 				{
-					return any_cast<T>(&_m_value());
+					return std::any_cast<T>(&_m_value());
 				}
 
 				template<typename T>
 				T * value_ptr()
 				{
-					return any_cast<T>(&_m_value());
+					return std::any_cast<T>(&_m_value());
 				}
 
 				template<typename T>
 				const T& value() const
 				{
-					auto p = any_cast<T>(&_m_value());
+					auto p = std::any_cast<T>(&_m_value());
 					if(nullptr == p)
 						throw std::runtime_error("treebox::value<T>() Invalid type of value.");
 					return *p;
@@ -318,8 +335,8 @@ namespace nana
 				template<typename T>
 				T& value()
 				{
-					auto p = any_cast<T>(&_m_value());
-					if (nullptr == p)
+					auto p = std::any_cast<T>(&_m_value());
+					if(nullptr == p)
 						throw std::runtime_error("treebox::value<T>() Invalid type of value.");
 					return *p;
 				}
@@ -334,14 +351,13 @@ namespace nana
 				// Undocumented methods for internal use
 				trigger::node_type * _m_node() const;
 			private:
-				nana::any& _m_value();
-				const nana::any& _m_value() const;
+				std::any& _m_value();
+				const std::any& _m_value() const;
 			private:
 				trigger * trigger_{nullptr};
 				trigger::node_type * node_{nullptr};
 			};//end class item_proxy
-		}//end namespace treebox
-	}//end namespace drawerbase
+	}//end namespace drawerbase::treebox
 
     ///  a type of treebox event parameter
 	struct arg_treebox 
@@ -371,7 +387,7 @@ namespace nana
 	}//end namespace drawerbase
 
     /// \brief  Displays a hierarchical list of items, such as the files and directories on a disk.
-    /// See also in [documentation](http://nanapro.org/en-us/documentation/widgets/treebox.htm)
+    /// See also in [documentation](https://nana.acemind.cn/documentation)
     class treebox
 		:public widget_object <category::widget_tag,
 		                        drawerbase::treebox::trigger,
@@ -392,11 +408,6 @@ namespace nana
 
 		/// The default constructor without creating the widget.
 		treebox();
-
-		/// \brief The construct that creates a widget.
-		/// @param wd  A handle to the parent window of the widget being created.
-		/// @param visible  specifying the visibility after creating.
-		treebox(window wd, bool visible);
 
 		/// \brief  The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
@@ -468,10 +479,16 @@ namespace nana
 		/// @param id The name of an icon scheme. If the name is not existing, it creates a new scheme for the name.
 		/// @return The reference of node image scheme corresponding with the specified id.
 		node_image_type& icon(const ::std::string& id);
-
 		void icon_erase(const ::std::string& id);
+#ifdef __cpp_char8_t
+		node_image_type& icon(std::u8string_view id);
+		void icon_erase(std::u8string_view id);
+#endif
 
 		item_proxy find(const ::std::string& keypath);  ///< Find an item through a specified keypath.
+#ifdef __cpp_char8_t
+		item_proxy find(std::u8string_view keypath);
+#endif
 
         /// Inserts a new node to treebox, but if the keypath exists change and returns the existing node.
 		item_proxy insert(const ::std::string& path_key,   ///< specifies the node hierarchy
@@ -483,14 +500,35 @@ namespace nana
                            const ::std::string& key,    ///< specifies the new node
                            ::std::string title   ///< title used for displaying in the new node.
                            );
+#ifdef __cpp_char8_t
+        /// Inserts a new node to treebox, but if the keypath exists change and returns the existing node.
+		item_proxy insert(::std::u8string_view path_key,   ///< specifies the node hierarchy
+                           ::std::u8string_view title      ///< used for displaying
+                           ); 
+
+        /// Inserts a new node to treebox, but if the keypath exists change and returns the existing node.
+		item_proxy insert( item_proxy pos,             ///< the parent item node
+                           ::std::u8string_view key,    ///< specifies the new node
+                           ::std::u8string_view title   ///< title used for displaying in the new node.
+                           );		
+#endif
 
 		item_proxy erase(item_proxy i); ///< Removes the node at i and return the Item proxy following the removed node
 
 		void erase(const ::std::string& keypath); ///< Removes the node by the key path. 
+#ifdef __cpp_char8_t
+		void erase(std::u8string_view keypath);
+#endif
 
 		::std::string make_key_path(item_proxy i, const ::std::string& splitter) const;///<returns the key path
+#ifdef __cpp_char8_t
+		::std::u8string make_key_path(item_proxy i, std::u8string_view splitter) const;///<returns the key path
+#endif
 
 		item_proxy selected() const; ///< returns the selected node
+		void selected(std::vector<treebox::item_proxy>&) const; ///< returns the selected nodes
+
+		void deselect_all();
 
 		/// Scrolls a specified item into view.
 		/**
@@ -514,6 +552,9 @@ namespace nana
 		 * @param enable bool  whether to enable.
 		 */
 		void use_entire_line(bool enable);
+
+		void enable_multiselection(bool enable);
+		void use_select_contracted_parent_node(bool enable);
 
 		/// Return the first node of treebox
 		item_proxy first() const;

@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,10 +16,9 @@
 #define NANA_GUI_DETAIL_BEDROCK_HPP
 #include "general_events.hpp"
 #include "color_schemes.hpp"
+#include "virtual_keyboard.hpp"
 
-namespace nana
-{
-namespace detail
+namespace nana::detail
 {
 	class	element_store;
 
@@ -87,6 +86,9 @@ namespace detail
 		//Closes the windows which are associated with the specified thread. If the given thread_id is 0, it closes all windows
 		void close_thread_window(thread_t thread_id);
 
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		virtual_keyboard& vkeyboard();
+#endif
 	public:
 		//Platform-dependent functions
 		static void delete_platform_assoc(window_platform_assoc*);
@@ -122,8 +124,7 @@ namespace detail
 		struct private_impl;
 		private_impl *impl_;
 	};//end class bedrock
-}//end namespace detail
-}//end namespace nana
+}//end namespace nana::detail
 
 #endif
 

@@ -1,6 +1,6 @@
 /*
  *	A Drawing Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
@@ -33,7 +33,7 @@ namespace nana
   		drawing::drawing(window wd)
 			:handle_(wd)
   		{
-			if (!API::is_window(wd))
+			if (!api::is_window(wd))
 				throw std::invalid_argument("drawing: invalid window parameter");
 
 			if (wd->is_draw_through())
@@ -44,51 +44,56 @@ namespace nana
 
 		bool drawing::empty() const
 		{
-			return API::empty_window(handle_) ||  handle_->root_graph->empty();
+			return api::empty_window(handle_) ||  handle_->root_graph->empty();
 		}
 
 		void drawing::update() const
 		{
-			API::refresh_window(handle_);
+			api::refresh_window(handle_);
 		}
 
 		void drawing::draw(const draw_fn_t& f)
 		{
-			if(API::empty_window(handle_))	return;
-			restrict::get_drawer(handle_).draw(draw_fn_t(f), false);		
+			internal_scope_guard lock;
+			if(api::empty_window(handle_))	return;
+			restrict::get_drawer(handle_).drawing(draw_fn_t(f), false);		
 		}
 
 		void drawing::draw(draw_fn_t&& f)
 		{
-			if(API::empty_window(handle_))	return;
-			restrict::get_drawer(handle_).draw(std::move(f), false);
+			internal_scope_guard lock;
+			if(api::empty_window(handle_))	return;
+			restrict::get_drawer(handle_).drawing(std::move(f), false);
 		}
 
 		drawing::diehard_t drawing::draw_diehard(const draw_fn_t& f)
 		{
-			if(API::empty_window(handle_)) return nullptr;
-			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).draw(draw_fn_t(f), true));
+			internal_scope_guard lock;
+			if(api::empty_window(handle_)) return nullptr;
+			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).drawing(draw_fn_t(f), true));
 		}
 
 		drawing::diehard_t drawing::draw_diehard(draw_fn_t&& f)
 		{
-			if(API::empty_window(handle_))	return nullptr;
-			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).draw(std::move(f), true));
+			internal_scope_guard lock;
+			if(api::empty_window(handle_))	return nullptr;
+			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).drawing(std::move(f), true));
 		}
 
 		void drawing::erase(diehard_t d)
 		{
+			internal_scope_guard lock;
 			//Fixed by Tumiz
 			//https://github.com/cnjinhao/nana/issues/153
-			if(!API::empty_window(handle_))
-				restrict::get_drawer(handle_).erase(d);
+			if(!api::empty_window(handle_))
+				restrict::get_drawer(handle_).erase(reinterpret_cast<drawing_handle>(d));
 		}
 
 		void drawing::clear()
 		{
-			if(API::empty_window(handle_))	return;
+			internal_scope_guard lock;
+			if(api::empty_window(handle_))	return;
 			restrict::get_drawer(handle_).clear();
 		}
 	//end class drawing
 }//end namespace nana
-

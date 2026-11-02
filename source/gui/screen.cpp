@@ -1,6 +1,6 @@
 /*
  *	Screen Informations
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -74,6 +74,7 @@ namespace nana
 	::nana::size screen::desktop_size()
 	{
 #if defined(NANA_WINDOWS)
+		/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 		auto w = static_cast<size::value_type>(::GetSystemMetrics(SM_CXVIRTUALSCREEN));
 		auto h = static_cast<size::value_type>(::GetSystemMetrics(SM_CYVIRTUALSCREEN));
 		return{w, h};
@@ -81,7 +82,7 @@ namespace nana
 		return ::nana::detail::native_interface::primary_monitor_size();
 #endif
 	}
-
+	/// \todo: generalize dpi to v2 awareness 
 	::nana::size screen::primary_monitor_size()
 	{
 		return ::nana::detail::native_interface::primary_monitor_size();
@@ -176,7 +177,7 @@ namespace nana
 	display& screen::from_window(window wd)
 	{
 		::nana::point pos;
-		API::calc_screen_point(wd, pos);
+		api::calc_screen_point(wd, pos);
 		return from_point(pos);
 	}
 

@@ -1,7 +1,7 @@
 ﻿/**
  *	A Textbox Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,7 +17,7 @@
 #include "skeletons/textbase_export_interface.hpp"
 #include "skeletons/text_editor_part.hpp"
 
-#include <nana/optional.hpp>
+#include <optional>
 
 namespace nana
 {
@@ -32,10 +32,8 @@ namespace nana
 		arg_textbox(textbox&, const std::vector<upoint>&);
 	};
 
-	namespace drawerbase
+	namespace drawerbase::textbox
 	{
-		namespace textbox
-		{
 			struct textbox_events
 				: public general_events
 			{
@@ -46,7 +44,7 @@ namespace nana
 
 			class event_agent
 				:	public	widgets::skeletons::textbase_event_agent_interface,
-					public	widgets::skeletons::text_editor_event_interface 
+					public	widgets::skeletons::text_editor_event_interface
 			{
 			public:
 				event_agent(::nana::textbox&, const std::vector<upoint>&);
@@ -86,18 +84,16 @@ namespace nana
 				void key_ime(graph_reference, const arg_ime&)	override;
 				void key_press(graph_reference, const arg_keyboard&)override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
-				void mouse_wheel(graph_reference, const arg_wheel&)	override;
 				void resized(graph_reference, const arg_resized&)	override;
 				void typeface_changed(graph_reference)				override;
 			private:
-				void _m_text_area(unsigned width, unsigned height);
+				void _m_editor_area(unsigned width, unsigned height);
 			private:
 				widget*	widget_;
 				widgets::skeletons::text_editor * editor_;
 				std::unique_ptr<event_agent>	evt_agent_;
 			};
-		}//end namespace textbox
-	}//end namespace drawerbase
+	}//end namespace drawerbase::textbox
 
     /// Allow users to enter and edit text by typing on the keyboard.
 	class textbox
@@ -114,23 +110,12 @@ namespace nana
 
 		/// The default constructor without creating the widget.
 		textbox();
+		textbox(window parent, std::string_view text, bool visible = true);
+		textbox(window parent, std::wstring_view text, bool visible = true);
 
-		/// \brief The construct that creates a widget.
-		/// @param wd  A handle to the parent window of the widget being created.
-		/// @param visible  specifying the visible after creating.
-		textbox(window, bool visible);
-
-		/// \brief The construct that creates a widget with a specified text.
-		/// @param window  A handle to the parent window of the widget being created.
-		/// @param text  the text that will be displayed.
-		/// @param visible  specifying the visible after creating.
-		textbox(window, const std::string& text, bool visible = true);
-
-		/// \brief The construct that creates a widget with a specified text.
-		/// @param window  A handle to the parent window of the widget being created.
-		/// @param text  the text that will be displayed.
-		/// @param visible  specifying the visible after creating.
-		textbox(window, const char* text, bool visible = true);
+#ifdef __cpp_char8_t
+		textbox(window parent, std::u8string_view text, bool visible = true);
+#endif
 
 		/// \brief The construct that creates a widget.
 		/// @param window  A handle to the parent window of the widget being created.
@@ -159,6 +144,9 @@ namespace nana
 		 * @return a reference of *this.
 		 */
 		textbox& reset(const std::string& text = std::string(), bool end_caret = true);      ///< discard the old text and set a new text
+#ifdef __cpp_char8_t
+		textbox& reset(std::u8string_view text, bool end_caret = true);
+#endif
 
 		/// The file of last store operation.
 		path_type filename() const;
@@ -178,9 +166,9 @@ namespace nana
 		/// Read the text from a specified line with a set offset. It returns true for success.
 		bool getline(std::size_t line_index,std::size_t offset,std::string& text) const;
 
-    // Get all text from textbox.
-    // It returns a empty string if failed or the textbox is empty.
-    std::string text() const { return caption(); }
+		// Get all text from textbox.
+		// It returns a empty string if failed or the textbox is empty.
+		std::string text() const { return caption(); }
 
 		/// Read the text from a specified line; returns an empty optional on failure
 		std::optional<std::string> getline(std::size_t pos) const;
@@ -197,11 +185,15 @@ namespace nana
 		upoint caret_pos() const;
 
 		/// Sets the caret position with a text position
-		textbox& caret_pos(const upoint&);
+		textbox& caret_pos(const upoint&, bool scroll_to_caret = true);
 
         /// Appends an string. If `at_caret` is `true`, the string is inserted at the position of caret, otherwise, it is appended at end of the textbox.
 		textbox& append(const std::string& text, bool at_caret);
         textbox& append(const std::wstring& text, bool at_caret);
+#ifdef __cpp_char8_t
+        textbox& append(std::u8string_view text, bool at_caret);
+#endif
+
 		/// Determines whether the text is line wrapped.
 		bool line_wrapped() const;
 		textbox& line_wrapped(bool);
@@ -220,6 +212,9 @@ namespace nana
 		void set_accept(std::function<bool(wchar_t)>);
 
 		textbox& tip_string(::std::string);
+#ifdef __cpp_char8_t
+		textbox& tip_string(std::u8string_view);
+#endif
 
         /// Set a mask character. Text is displayed as mask character if a mask character is set. This is used for hiding some special text, such as password.
 		textbox& mask(wchar_t);
@@ -255,6 +250,12 @@ namespace nana
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::wstring> kw_list);
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8);
 		void erase_keyword(const std::string& kw);
+#ifdef __cpp_char8_t
+		void set_highlight(std::u8string_view name, const ::nana::color& fgcolor, const ::nana::color& bgcolor);
+		void erase_highlight(std::u8string_view name);
+		void set_keywords(std::u8string_view name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::u8string> kw_list);
+		void erase_keyword(std::u8string_view kw);		
+#endif
 
 		/// Sets the text alignment
 		textbox& text_align(::nana::align alignment);
@@ -292,6 +293,12 @@ namespace nana
 
 		/// Returns the number of text lines.
 		std::size_t text_line_count() const noexcept;
+
+		/// Sets the padding area around the content.
+		textbox& padding(unsigned top, unsigned right, unsigned bottom, unsigned left) noexcept;
+
+		// sets whether the focused border is shown
+		void enable_border_focused(bool);
 	protected:
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const noexcept override;

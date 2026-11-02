@@ -6,15 +6,9 @@
 
 #include <nana/audio/detail/audio_stream.hpp>
 
-#if defined(STD_THREAD_NOT_SUPPORTED)
-    #include <nana/std_thread.hpp>
-    #include <nana/std_mutex.hpp>
-    #include <nana/std_condition_variable.hpp>
-#else
-    #include <mutex>
-    #include <condition_variable>
-    #include <thread>
-#endif
+#include <mutex>
+#include <condition_variable>
+#include <thread>
 
 #include <sstream>
 #include <vector>

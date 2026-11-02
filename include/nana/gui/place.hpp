@@ -1,7 +1,7 @@
 /**
  *	An Implementation of Place for Layout
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,10 +15,12 @@
 
 #ifndef NANA_GUI_PLACE_HPP
 #define NANA_GUI_PLACE_HPP
-#include <nana/push_ignore_diagnostic>
-#include <nana/gui/basis.hpp>
+
 #include <memory>
 #include <functional>
+
+#include <nana/push_ignore_diagnostic>
+#include <nana/gui/basis.hpp>
 
 namespace nana
 {
@@ -43,17 +45,17 @@ namespace nana
 		: public detail::place_agent
 	{
 	public:
-		agent(std::function<void(Widget&)> initializer)
+		explicit agent(std::function<void(Widget&)> initializer)
 			: init_(std::move(initializer))
 		{}
 
-		agent(const char* text)
+		explicit agent(const char* text)
 			: text_(text)
 		{
 			throw_not_utf8(text);
 		}
 
-		agent(std::string text, std::function<void(Widget&)> initializer = {})
+		explicit agent(std::string text, std::function<void(Widget&)> initializer = {})
 			: text_(std::move(text)), init_(std::move(initializer))
 		{
 			throw_not_utf8(text_);
@@ -66,7 +68,7 @@ namespace nana
 			ptr->caption(text_);
 			if (init_)
 				init_(*ptr);
-			return std::move(ptr);
+			return ptr;
 		}
 	private:
 		std::string text_;
@@ -82,11 +84,11 @@ namespace nana
 
 		class field_interface
 		{
+        public:
 			field_interface(const field_interface&) = delete;
 			field_interface& operator=(const field_interface&) = delete;
 			field_interface(field_interface&&) = delete;
 			field_interface& operator=(field_interface&&) = delete;
-		public:
 			field_interface() = default;
 			virtual ~field_interface() = default;
 			virtual field_interface& operator<<(const char* label) = 0;
@@ -159,9 +161,9 @@ namespace nana
 		template<typename Panel, typename ...Args>
 		place& dock(const std::string& dockname, const std::string& factory_name, Args&& ... args)
 		{
-			return dock(dockname, factory_name, std::bind([](window parent, Args & ... args)
+			return dock(dockname, factory_name, std::bind([](window parent, Args & ... dock_args)
 			{
-				return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(args)...));
+				return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(dock_args)...));
 			}, std::placeholders::_1, args...));
 		}
 

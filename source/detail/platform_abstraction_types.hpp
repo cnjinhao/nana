@@ -19,10 +19,9 @@ namespace nana
 
 		virtual ~font_interface() = default;
 
-		virtual const std::string& family() const = 0;
-		virtual double size() const = 0;
-		virtual const font_style & style() const = 0;
 		virtual native_font_type native_handle() const = 0;
+
+		virtual const paint::font_info& font_info() const = 0;
 	};
 }
 

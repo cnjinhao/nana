@@ -50,11 +50,11 @@
     <Filter Include="Include\gui\widgets">
       <UniqueIdentifier>{0e6a58ab-652c-45d7-b9aa-8d9f2fa80ea1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Include\paint">
+      <UniqueIdentifier>{fc600cb9-126e-4bda-9ba6-de1915d3b41b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\source\any.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\basic_types.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
@@ -68,9 +68,6 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\internationalization.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\stdc++.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\unicode_bidi.cpp">
@@ -292,6 +289,9 @@
     <ClCompile Include="..\..\source\gui\dragdrop.cpp">
       <Filter>Sources\gui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\virtual_keyboard.cpp">
+      <Filter>Sources\gui\detail</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\nana\gui\widgets\spinbox.hpp">
@@ -411,12 +411,6 @@
     <ClInclude Include="..\..\include\nana\gui\tooltip.hpp">
       <Filter>Include\gui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\nana\gui\wvl.hpp">
-      <Filter>Include\gui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\any.hpp">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\nana\basic_types.hpp">
       <Filter>Include</Filter>
     </ClInclude>
@@ -450,21 +444,6 @@
     <ClInclude Include="..\..\include\nana\key_type.hpp">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\nana\optional.hpp">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\std_condition_variable.hpp">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\std_mutex.hpp">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\std_thread.hpp">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\stdc++.hpp">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\nana\traits.hpp">
       <Filter>Include</Filter>
     </ClInclude>
@@ -476,6 +455,27 @@
     </ClInclude>
     <ClInclude Include="..\..\include\nana\gui\dragdrop.hpp">
       <Filter>Include\gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\font_info.hpp" />
+    <ClInclude Include="..\..\source\paint\detail\image_format_defs.hpp" />
+    <ClInclude Include="..\..\source\paint\detail\image_gif.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\graphics.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\image.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\image_process_interface.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\image_process_selector.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\pixel_buffer.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\text_renderer.hpp">
+      <Filter>Include\paint</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

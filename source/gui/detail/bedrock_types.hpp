@@ -7,6 +7,9 @@
 #include <nana/gui/detail/color_schemes.hpp>
 #include <nana/gui/detail/events_operation.hpp>
 #include <nana/gui/detail/window_manager.hpp>
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+#include <nana/gui/detail/virtual_keyboard.hpp>
+#endif
 #include <set>
 
 namespace nana
@@ -29,6 +32,9 @@ namespace nana
 				native_window_type owner{ nullptr };
 				bool	has_keyboard{ false };
 			}menu;
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+			virtual_keyboard vkeybd;
+#endif
 		};
 
 

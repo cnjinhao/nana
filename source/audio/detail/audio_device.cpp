@@ -3,8 +3,6 @@
 
 #ifdef NANA_ENABLE_AUDIO
 
-#include <nana/system/platform.hpp>
-
 #if defined(NANA_POSIX)
 	#include <pthread.h>
 	#include <unistd.h>
@@ -24,21 +22,25 @@ namespace nana{namespace audio
 #if defined(NANA_WINDOWS)
 		class wave_native
 		{
-			typedef MMRESULT (__stdcall *out_open_t)(LPHWAVEOUT, UINT_PTR, LPWAVEFORMATEX, DWORD_PTR, DWORD_PTR, DWORD);
-			typedef MMRESULT (__stdcall *out_close_t)(HWAVEOUT);
-			typedef MMRESULT (__stdcall *out_op_header_t)(HWAVEOUT, LPWAVEHDR, UINT);
+			using out_open_t = decltype(&waveOutOpen);
+			using out_close_t = decltype(&waveOutClose);
+			using out_op_header_t = decltype(&waveOutWrite);
+
 		public:
-			out_open_t out_open;
-			out_close_t out_close;
-			out_op_header_t out_write;
-			out_op_header_t out_prepare;
-			out_op_header_t out_unprepare;
+			out_open_t out_open = nullptr;
+			out_close_t out_close = nullptr;
+			out_op_header_t out_write = nullptr;
+			out_op_header_t out_prepare = nullptr;
+			out_op_header_t out_unprepare = nullptr;
 
 			wave_native()
 			{
 				HMODULE winmm = ::GetModuleHandleA("Winmm.DLL");
-				if(0 == winmm)
-					winmm = ::LoadLibraryA("Winmm.DLL");
+
+				if(nullptr == winmm)
+					winmm_ = winmm = ::LoadLibraryA("Winmm.DLL");
+				if(nullptr == winmm)
+					return;
 
 				out_open = reinterpret_cast<out_open_t>(::GetProcAddress(winmm, "waveOutOpen"));
 				out_close = reinterpret_cast<out_close_t>(::GetProcAddress(winmm, "waveOutClose"));
@@ -46,6 +48,14 @@ namespace nana{namespace audio
 				out_prepare = reinterpret_cast<out_op_header_t>(::GetProcAddress(winmm, "waveOutPrepareHeader"));
 				out_unprepare = reinterpret_cast<out_op_header_t>(::GetProcAddress(winmm, "waveOutUnprepareHeader"));
 			}
+
+			~wave_native()
+			{
+				if(nullptr != winmm_)
+					FreeLibrary(winmm_);
+			}
+		private:
+			HMODULE winmm_ = nullptr;
 		}wave_native_if;
 #endif
 		//class audio_device
@@ -277,10 +287,10 @@ namespace nana{namespace audio
 			{
 #if defined(NANA_WINDOWS)
 				while(buf_prep_->data_finished() == false)
-					nana::system::sleep(200);
+					std::this_thread::sleep_for(std::chrono::milliseconds{200});
 #elif defined(NANA_LINUX)
 				while(::snd_pcm_state(handle_) == SND_PCM_STATE_RUNNING)
-					nana::system::sleep(200);
+					std::this_thread::sleep_for(std::chrono::milliseconds{200});
 #endif
 			}
 

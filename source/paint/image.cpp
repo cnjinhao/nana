@@ -1,7 +1,7 @@
 /**
  *	Paint Image Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,7 +21,7 @@
 
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
-#include <nana/filesystem/filesystem_ext.hpp>
+#include <filesystem>
 
 #if defined(NANA_ENABLE_JPEG)
 #include "detail/image_jpeg.hpp"
@@ -29,6 +29,10 @@
 
 #if defined(NANA_ENABLE_PNG)
 	#include "detail/image_png.hpp"
+#endif
+
+#if defined(NANA_ENABLE_GIF)
+	#include "detail/image_gif.hpp"
 #endif
 
 #include "detail/image_bmp.hpp"
@@ -46,13 +50,32 @@ namespace paint
 #if defined(NANA_WINDOWS)
 	HICON image_accessor::icon(const nana::paint::image& img)
 	{
+		if (img.empty())
+			return nullptr;
+
 		auto ico_res = dynamic_cast<paint::detail::image_ico_resource*>(img.image_ptr_.get());
 		if (ico_res)
 			return reinterpret_cast<HICON>(ico_res->native_handle());
 
-		auto ico = dynamic_cast<paint::detail::image_ico*>(img.image_ptr_.get());
-		if (ico)
-			return reinterpret_cast<HICON>(ico->native_handle());
+		auto size = img.size();
+		
+		//Construct pixel buffer and swap blue and red channels for CreateIcon
+		std::vector<uint8_t> pixels(size.width * size.height * 4);
+		for (std::size_t i = 0; i < pixels.size(); i += 4)
+		{
+			auto row = (i / 4) / size.height;
+			auto column = (i / 4) % size.width;
+			auto color = img.pxbuf()[row][column];
+
+			pixels[i + 0] = color.element.blue;
+			pixels[i + 1] = color.element.green;
+			pixels[i + 2] = color.element.red;
+			pixels[i + 3] = color.element.alpha_channel;
+		}
+
+		auto icon = CreateIcon(GetModuleHandle(NULL), size.width, size.height, 1, 32, NULL, &pixels[0]);
+		if (icon)
+			return icon;
 
 		return nullptr;
 	}
@@ -78,14 +101,9 @@ namespace paint
 			:	image_ptr_(std::move(r.image_ptr_))
 		{}
 
-		image::image(const std::string& file)
+		image::image(const std::filesystem::path& p)
 		{
-			open(file);
-		}
-
-		image::image(const std::wstring& file)
-		{
-			open(file);
+			open(p);
 		}
 
 		image::~image()
@@ -129,34 +147,23 @@ namespace paint
 					return std::make_shared<detail::image_jpeg>();
 #endif
 				}
+				else if ((std::strncmp("GIF8", buf, 4) == 0) && 'a' == buf[5])
+				{
+#if defined(NANA_ENABLE_GIF)
+					return std::make_shared<detail::image_gif>();
+#endif
+				}
 				else if (*reinterpret_cast<const short*>("BM") == *reinterpret_cast<const short*>(buf))
 					return std::make_shared<detail::image_bmp>();
 				else if (*reinterpret_cast<const short*>("MZ") == *reinterpret_cast<const short*>(buf))
 					return std::make_shared<detail::image_ico_resource>();
-				}
+			}
 
 			return nullptr;
-			}
-
-		bool image::open(const ::std::string& img)
-		{
-			fs::path p(img);
-			image_ptr_.reset();
-
-			std::ifstream file{ p, std::ios::binary };
-			if (file)
-			{
-				char buf[8];
-				if (file.read(buf, 8).gcount() == 8)
-					image_ptr_ = create_image(buf, 8);
-			}
-
-			return (image_ptr_ ? image_ptr_->open(p) : false);
 		}
 
-		bool image::open(const std::wstring& img)
+		bool image::open(const ::std::filesystem::path& p)
 		{
-			fs::path p(img);
 			image_ptr_.reset();
 
 			std::ifstream file{ p, std::ios::binary };
@@ -191,6 +198,12 @@ namespace paint
 		void image::close() noexcept
 		{
 			image_ptr_.reset();
+		}
+
+		/// Saves the image as a Windows bitmap file
+		bool image::save(std::filesystem::path p) const
+		{
+			return image_ptr_->save(p);
 		}
 
 		//Fixed missing noexcept specifier by nabijaczleweli(pr#106)
@@ -234,6 +247,42 @@ namespace paint
 			}
 			else
 				throw std::runtime_error("image is empty");
+		}
+
+		std::size_t image::length() const
+		{
+			return (image_ptr_ ? image_ptr_->length() : 0);
+		}
+
+		std::size_t image::frame() const
+		{
+			return (image_ptr_ ? image_ptr_->frame() : 0);
+		}
+
+		std::size_t image::frame_duration() const
+		{
+			return (image_ptr_ ? image_ptr_->frame_duration() : 0);
+		}
+
+		bool image::set_frame(std::size_t pos)
+		{
+			return (image_ptr_ ? image_ptr_->set_frame(pos) : false);
+		}
+
+		pixel_buffer& image::pxbuf()
+		{
+			if (image_ptr_)
+				return image_ptr_->pxbuf();
+
+			throw std::runtime_error("image is empty");
+		}
+
+		const pixel_buffer& image::pxbuf() const
+		{
+			if (image_ptr_)
+				return image_ptr_->pxbuf();
+
+			throw std::runtime_error("image is empty");
 		}
 	//end class image
 

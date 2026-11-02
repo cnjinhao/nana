@@ -1,7 +1,7 @@
 /**
  *	A float_listbox Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -17,12 +17,12 @@
 #include "widget.hpp"
 #include <vector>
 #include <memory>
+#include <optional>
 
 namespace nana
 {
-	namespace drawerbase{
-		namespace float_listbox
-		{
+	namespace drawerbase::float_listbox
+	{
 			class item_interface
 			{
 			public:
@@ -73,22 +73,23 @@ namespace nana
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
 				void refresh(graph_reference)	override;
+				void mouse_down(graph_reference, const arg_mouse&)	override;
 				void mouse_move(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 			private:
 				class drawer_impl *drawer_;
 			};
-		}
-	}//end namespace drawerbase
+	}//end namespace drawerbase::float_listbox
 
 	class float_listbox
 		: public widget_object<category::root_tag, drawerbase::float_listbox::trigger>
 	{
 		typedef widget_object<category::root_tag, drawerbase::float_listbox::trigger> base_type;
 	public:
-		typedef drawerbase::float_listbox::item_renderer item_renderer;
-		typedef drawerbase::float_listbox::module_def module_type;
-		typedef drawerbase::float_listbox::item_interface item_interface;
+		using item_renderer	=  drawerbase::float_listbox::item_renderer;
+		using module_type	= drawerbase::float_listbox::module_def;
+		using item_interface = drawerbase::float_listbox::item_interface;
+		using size_type = std::size_t;
 
 		/** @brief Constructor
 		 *	@param window	A handle to a window which is a owner of float_listbox
@@ -102,8 +103,14 @@ namespace nana
 		void scroll_items(bool upwards);
 		void move_items(bool upwards, bool circle);
 		void renderer(item_renderer*);
-		std::size_t index() const;
+		size_type index() const;
 		void deselect_on_mouse_leave(bool);
+
+		void button_size(unsigned);
+
+		size_type length() const;
+		std::optional<std::string> text(size_type pos) const;
+		void select(size_type pos);
 	};
 }
 #include <nana/pop_ignore_diagnostic>

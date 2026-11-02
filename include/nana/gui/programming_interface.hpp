@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,6 +17,7 @@
 #include "detail/general_events.hpp"
 #include "detail/color_schemes.hpp"
 #include "detail/widget_content_measurer_interface.hpp"
+#include "detail/virtual_keyboard.hpp"
 #include <nana/paint/image.hpp>
 #include <memory>
 
@@ -24,6 +25,13 @@ namespace nana
 {
 	class drawer_trigger;
 	class widget;
+
+	namespace widgets::skeletons {
+		class text_editor;
+	}
+
+	using keyboard_modes = detail::virtual_keyboard::modes;
+	using keyboard_behaves = detail::virtual_keyboard::behaves;
 
 	namespace dev
 	{
@@ -43,7 +51,7 @@ namespace nana
 		};
 	}
 
-namespace API
+namespace api
 {
 #ifdef NANA_X11
 	//Some platform specific functions for X11
@@ -51,6 +59,10 @@ namespace API
 	{
 		/// Returns the connection to the X server
 		const void* get_display();
+
+		/// Register an event handler
+		bool install_xevent_handler(native_window_type, std::function<void(nana::x11::xevent*)>);
+		void erase_xevent_handler(native_window_type);
 	}
 #endif
 
@@ -68,18 +80,15 @@ namespace API
 	bground_mode effects_bground_mode(window);
 	void effects_bground_remove(window);
 
-	//namespace dev
-	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
+	//The namespace dev defines functions for internal use
 	namespace dev
 	{
-		void affinity_execute(window window_handle, const std::function<void()>&);
-
 		bool set_events(window, const std::shared_ptr<general_events>&);
 
 		template<typename Scheme>
 		std::unique_ptr<Scheme> make_scheme()
 		{
-			return std::unique_ptr<Scheme>{static_cast<Scheme*>(API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>()))};
+			return std::unique_ptr<Scheme>{static_cast<Scheme*>(api::detail::make_scheme(::nana::detail::scheme_factory<Scheme>()))};
 		}
 
 		void set_scheme(window, widget_geometrics*);
@@ -118,6 +127,16 @@ namespace API
 
 		void window_draggable(window, bool enabled);
 		bool window_draggable(window);
+
+		::nana::widgets::skeletons::text_editor* create_text_editor(window);
+		void destroy_text_editor(window);
+
+		std::optional<upoint> caret_position(window);
+
+		upoint	im_input(window, const upoint& insert_pos, const std::wstring&, bool candidate);
+
+		/// Cancel the candidate mode
+		void	im_cancel(window);
 	}//end namespace dev
 
 
@@ -189,6 +208,14 @@ namespace API
 	 * Under Windows, the pragram can display multi-languages correctly, so this function is useless for Windows.
 	 */
 	void font_languages(const std::string& langs);
+#ifdef __cpp_char8_t
+	void font_languages(std::u8string_view langs);
+#endif
+
+	/// Returns the font family names for the specified font file.
+	std::vector<std::string> font_names(std::filesystem::path);
+	void load_font(std::filesystem::path);
+	void unload_font(std::filesystem::path);
 
 	void exit();	    ///< close all windows in current thread
 	void exit_all();	///< close all windows
@@ -201,12 +228,18 @@ namespace API
 					  wchar_t &shortkey,     ///<  the character which indicates a short key.
 					  std::string::size_type *skpos ///< retrieves the shortkey position if it is not a null_ptr;
 					);
+#ifdef __cpp_char8_t
+	std::u8string transform_shortkey_text(std::u8string text, wchar_t& shortkey, std::u8string::size_type* key_pos);
+#endif
+
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
 
 	nana::point	cursor_position();
-	rectangle make_center(unsigned width, unsigned height);           ///< Retrieves a rectangle which is in the center of the screen.
-	rectangle make_center(window, unsigned width, unsigned height);   ///< Retrieves a rectangle which is in the center of the window
+	rectangle make_center(unsigned width, unsigned height) noexcept;           ///< Retrieves a rectangle which is in the center of the screen.
+	rectangle make_center(window, unsigned width, unsigned height) noexcept;   ///< Retrieves a rectangle which is in the center of the window
+	rectangle make_center(const size& sz) noexcept;
+	rectangle make_center(window, const size& sz) noexcept;
 
 	template<typename Widget=::nana::widget, typename EnumFunction>
 	void enum_widgets(window wd, bool recursive, EnumFunction && fn)
@@ -236,6 +269,8 @@ namespace API
 	native_window_type root(window);
 	window	root(native_window_type);                     ///< Retrieves the native window of a Nana.GUI window.
 
+	void enable_double_click(window, bool);
+
 	void fullscreen(window, bool);
 
 	void close_window(window);
@@ -256,9 +291,8 @@ namespace API
 		internal_scope_guard lock;
 		auto * general_evt = detail::get_general_events(wd);
 		if (nullptr == general_evt)
-			throw std::invalid_argument("API::events(): bad parameter window handle, no events object or invalid window handle.");
+			throw std::invalid_argument("api::events(): bad parameter window handle, no events object or invalid window handle.");
 
-#ifdef __cpp_if_constexpr
 		if constexpr(std::is_same_v<event_type, ::nana::general_events>)
 		{
 			return *general_evt;
@@ -267,18 +301,9 @@ namespace API
 		{
 			auto * widget_evt = dynamic_cast<event_type*>(general_evt);
 			if (nullptr == widget_evt)
-				throw std::invalid_argument("API::events(): bad template parameter Widget, the widget type and window handle do not match.");
+				throw std::invalid_argument("api::events(): bad template parameter Widget, the widget type and window handle do not match.");
 			return *widget_evt;
 		}
-#else
-		if (std::is_same<::nana::general_events, event_type>::value)
-			return *static_cast<event_type*>(general_evt);
-
-		auto * widget_evt = dynamic_cast<event_type*>(general_evt);
-		if (nullptr == widget_evt)
-			throw std::invalid_argument("API::events(): bad template parameter Widget, the widget type and window handle do not match.");
-		return *widget_evt;
-#endif
 	}
 
 	template<typename EventArg, typename std::enable_if<std::is_base_of< ::nana::event_arg, EventArg>::value>::type* = nullptr>
@@ -303,9 +328,8 @@ namespace API
 		internal_scope_guard lock;
 		auto * wdg_colors = dev::get_scheme(wd);
 		if (nullptr == wdg_colors)
-			throw std::invalid_argument("API::scheme(): bad parameter window handle, no events object or invalid window handle.");
+			throw std::invalid_argument("api::scheme(): bad parameter window handle, no events object or invalid window handle.");
 
-#ifdef __cpp_if_constexpr
 		if constexpr(std::is_same<::nana::widget_geometrics, scheme_type>::value)
 		{
 			return *static_cast<scheme_type*>(wdg_colors);
@@ -314,18 +338,9 @@ namespace API
 		{
 			auto * comp_wdg_colors = dynamic_cast<scheme_type*>(wdg_colors);
 			if (nullptr == comp_wdg_colors)
-				throw std::invalid_argument("API::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
+				throw std::invalid_argument("api::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
 			return *comp_wdg_colors;
 		}
-#else
-		if (std::is_same<::nana::widget_geometrics, scheme_type>::value)
-			return *static_cast<scheme_type*>(wdg_colors);
-
-		auto * comp_wdg_colors = dynamic_cast<scheme_type*>(wdg_colors);
-		if (nullptr == comp_wdg_colors)
-			throw std::invalid_argument("API::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
-		return *comp_wdg_colors;
-#endif
 	}
 
 	point window_position(window);
@@ -343,6 +358,8 @@ namespace API
 	size window_outline_size(window);
 	void window_outline_size(window, const size&);
 
+	bool window_text_editor_editable(window);
+	::std::optional<rectangle> window_text_editor_rectangle(window wd, bool including_scrollbars);
 	::std::optional<rectangle> window_rectangle(window);
 	bool get_window_rectangle(window, rectangle&);
 	bool track_window_size(window, const size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
@@ -356,10 +373,13 @@ namespace API
 	 */
 	void refresh_window(window window_handle);
 	void refresh_window_tree(window);      ///< Refreshes the specified window and all its children windows, then displays it immediately
-	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
+	void update_window(window, bool now = false);            ///< Copies the off-screen buffer to the screen for immediate display.
 
 	void window_caption(window, const std::string& title_utf8);
 	void window_caption(window, const std::wstring& title);
+#ifdef __cpp_char8_t
+	void window_caption(window, std::u8string_view text);
+#endif
 	::std::string window_caption(window);
 
 	void window_cursor(window, cursor);
@@ -419,8 +439,8 @@ namespace API
 	 */
 	::std::unique_ptr<caret_interface> open_caret(window window_handle, bool disable_throw = false);
 
-	/// Enables that the user can give input focus to the specified window using TAB key.
-	void tabstop(window);
+	/// Determines whether the specified window can get a focus when TAB key is pressed.
+	void tabstop(window window_handle, const bool enable);
 
 	/// Enables or disables a window to receive a key_char event for pressing TAB key.
 	/*
@@ -447,6 +467,7 @@ namespace API
 	bool root_graphics(window, nana::paint::graphics&);
 	bool get_visual_rectangle(window, nana::rectangle&);
 
+	void typeface(window, const nana::paint::font_info&);
 	void typeface(window, const nana::paint::font&);
 	paint::font typeface(window);
 
@@ -468,6 +489,18 @@ namespace API
 
 	void at_safe_place(window, ::std::function<void()>);
 
+	/// Invokes a function in the thread of the specified window
+	/**
+	 * If the calling thread and the window thread is the same thread, it calls fn in current thread. If the calling thread and the
+	 * window thread are different threads, it posts the function to the window thread and returns immediatly.
+	 * @param window_handle The window handle to the thread
+	 * @param post	Indicates the way the invoke the function. If it is true, it posts the fn to the window thread and returns. If it is false,
+	 * 				It sends to the window thread and waits until the function is called.
+	 * @param fn The function
+	 * @return if window_handle is valid, it returns true, otherwise false.
+	 * */
+	bool affinity_execute(window window_handle, bool post, std::function<void()> fn);
+
 	/// Returns a widget content extent size
 	/**
 	 * @param wd A handle to a window that returns its content extent size.
@@ -479,10 +512,33 @@ namespace API
 	 */
 	::std::optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 
+	/// \todo: generalize dpi to v2 awareness
 	unsigned screen_dpi(bool x_requested);
 
+	std::size_t window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
-}//end namespace API
+
+	void keyboard_default_language(const std::string& lang);
+
+	/// Configures the qwerty keyboard for a text editor
+	/**
+	 * @param wd The handle to a text editor window. Such as textbox and combox.
+	 * @param langs The input methods of the specified languages.
+	 * @param behave The behavior of keyboard
+	 * @param mode The mode of keyboard
+	 * @return true if virtual keyboard is enabled and the specified window is a text editor window, false otherwise.
+	 */
+	bool keyboard_qwerty(window wd, std::vector<std::string> langs, keyboard_behaves behave, keyboard_modes mode);
+
+	/// Configures the numeric keyboard. It returns true if virtual keyboard is enabled and
+	/// the specified window is a text editor window, false otherwise.
+	bool keyboard_numeric(window, bool padding);
+
+	drawing_handle drawing(window, std::function<void(paint::graphics&)>) noexcept;
+	void remove_drawing(window, drawing_handle) noexcept;
+}//end namespace api
+
+namespace API = api;
 
 }//end namespace nana
 

@@ -1,22 +1,22 @@
-/*
+/**
  *	Platform Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/native_window_interface.hpp
+ *	@file nana/gui/detail/native_window_interface.hpp
  */
 
 #ifndef NANA_GUI_DETAIL_NATIVE_WINDOW_INTERFACE_HPP
 #define NANA_GUI_DETAIL_NATIVE_WINDOW_INTERFACE_HPP
 
+#include <functional>
+
 #include "../basis.hpp"
 #include <nana/paint/image.hpp>
-
-#include <functional>
 
 namespace nana
 {
@@ -29,11 +29,11 @@ namespace detail
 		{
 			native_window_type native_handle;
 
-			unsigned width;		//client size
-			unsigned height;	//client size
+			unsigned width;		///< client size
+			unsigned height;	///< client size
 
-			unsigned extra_width;	//extra border size, it is useful in Windows, ignore in X11 always 0
-			unsigned extra_height;	//extra border size, it is useful in Windows, ignore in X11 always 0
+			unsigned extra_width;	///< extra border size, it is useful in Windows, ignore in X11 always 0
+			unsigned extra_height;	///< extra border size, it is useful in Windows, ignore in X11 always 0
 		};
 
 		struct frame_extents
@@ -46,10 +46,11 @@ namespace detail
 
 		using native_string_type = ::nana::detail::native_string_type;
 
-		//Execute a function in a thread which is associated with the specified native window.
-		static void affinity_execute(native_window_type, const std::function<void()>&);
+		/// Invokes a function in the thread of the specified window.
+		static void affinity_execute(native_window_type, bool post, std::function<void()>&&);
 
-		static nana::size	primary_monitor_size();
+		static nana::size	primary_monitor_size(); ///< already 'DPI' scaled size
+		/// \todo: generalize dpi to v2 awareness 
 		static rectangle screen_area_from_point(const point&);
 		static window_result create_window(native_window_type, bool nested, const rectangle&, const appearance&);
 		static native_window_type create_child_window(native_window_type, const rectangle&);
@@ -101,6 +102,10 @@ namespace detail
 
 		static native_window_type find_window(int x, int y);
 		static nana::size check_track_size(nana::size sz, unsigned extra_width, unsigned extra_height, bool true_for_max);
+
+		static void start_dpi_awareness(bool aware = false);
+		static std::size_t window_dpi(native_window_type);  ///< if the window is not DPI aware return the system DPI 
+		static std::size_t system_dpi();					///< get the DPI of the main monitor
 	};
 
 

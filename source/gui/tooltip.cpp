@@ -1,7 +1,7 @@
 /*
  *	A Tooltip Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -30,7 +30,7 @@ namespace nana
 				void refresh(graph_reference graph)
 				{
 					graph.rectangle(false, colors::black);
-					graph.rectangle(::nana::rectangle(graph.size()).pare_off(1), true, {0xf0, 0xf0, 0xf0});
+					graph.rectangle(::nana::rectangle(graph.size()).pare_off(1), true, static_cast<color_rgb>(0xf0f0f0));
 				}
 			};
 
@@ -64,7 +64,7 @@ namespace nana
 					:	base_type(nullptr, false, rectangle(), appear::bald<appear::floating>()),
 						duration_(0)
 				{
-					API::take_active(this->handle(), false, nullptr);
+					api::take_active(this->handle(), false, nullptr);
 					label_.create(*this);
 					label_.format(true);
 					label_.transparent(true);
@@ -118,13 +118,18 @@ namespace nana
 					duration_ = d;
 					timer_.reset();
 				}
+
+				virtual window window_handle() const override
+				{
+					return this->handle();
+				}
 			private:
 				void _m_tick()
 				{
 					nana::point pos;
 					if (ignore_pos_)
 					{
-						pos = API::cursor_position();
+						pos = api::cursor_position();
 
 						//The cursor must be stay here for half second.
 						if (pos != pos_)
@@ -156,6 +161,15 @@ namespace nana
 				std::size_t	duration_;
 			};//end class tip_form
 
+			// One controller for all the tooltips: instance() creates it when first needed (a tooltip set or shown); instance(true)
+			// deletes it when no widget has a tooltip and no tip window is alive. table_ keeps the text and the event
+			// handlers of each widget; window_ is the tip window currently shown, if any.
+			// Lifetime of the tip window: show() creates it and sets wait_for_destroy_. When it is destroyed (window_.reset(),
+			// or closed by itself), its destroy handler registers a function at the safe place of the window manager,
+			// which clears wait_for_destroy_ and calls close(); close() may delete the controller. That function uses
+			// this, so the controller must not be deleted while wait_for_destroy_ is set: close() and _m_untip() check it,
+			// and the function deletes the controller later. Deleting it in _m_untip() without the check was a
+			// heap-use-after-free (found in 2026-10 with AddressSanitizer).
 			class controller
 			{
 				struct tip_value
@@ -220,13 +234,22 @@ namespace nana
 
 				void show(const std::string& text, const point* pos, std::size_t duration)
 				{
+					internal_scope_guard lock;
 					if (nullptr == window_ || window_->tooltip_empty())
 					{
 						auto fp = factory();
 
+						wait_for_destroy_ = true;
 						window_ = std::unique_ptr<tooltip_interface, deleter_type>(fp->create(), [fp](tooltip_interface* ti)
 						{
 							fp->destroy(ti);
+						});
+
+						api::events(window_->window_handle()).destroy.connect([this](const arg_destroy& arg) {
+							api::at_safe_place(arg.window_handle, [this] {
+								wait_for_destroy_ = false;
+								this->close();
+								});
 						});
 					}
 
@@ -236,7 +259,7 @@ namespace nana
 					if (pos)
 						window_->tooltip_move(pos_by_screen(*pos, window_->tooltip_size(), true), false);
 					else
-						window_->tooltip_move(API::cursor_position(), true);
+						window_->tooltip_move(api::cursor_position(), true);
 				}
 
 				void close()
@@ -244,7 +267,7 @@ namespace nana
 					window_.reset();
 
 					//Destroy the tooltip controller when there are not tooltips.
-					if (table_.empty())
+					if (table_.empty() && !wait_for_destroy_)
 						instance(true);
 				}
 			private:
@@ -253,10 +276,10 @@ namespace nana
 					auto i = table_.find(wd);
 					if(i != table_.end())
 					{
-						API::umake_event(i->second.evt_msdown);
-						API::umake_event(i->second.evt_msenter);
-						API::umake_event(i->second.evt_msleave);
-						API::umake_event(i->second.evt_destroy);
+						api::umake_event(i->second.evt_msdown);
+						api::umake_event(i->second.evt_msenter);
+						api::umake_event(i->second.evt_msleave);
+						api::umake_event(i->second.evt_destroy);
 
 						table_.erase(i);
 					}
@@ -264,7 +287,10 @@ namespace nana
 					if (table_.empty())
 					{
 						window_.reset();
-						instance(true);
+						// as close(): while the tip window waits for its function at the safe place, that function deletes the
+						// controller (it uses this)
+						if (!wait_for_destroy_)
+							instance(true);
 					}
 				}
 			private:
@@ -274,7 +300,7 @@ namespace nana
 					if (i != table_.end())
 						return i->second;
 
-					auto & events = API::events(wd);
+					auto & events = api::events(wd);
 
 					auto mouse_fn = [this](const arg_mouse& arg)
 					{
@@ -301,6 +327,7 @@ namespace nana
 					return value;
 				}
 			private:
+				bool wait_for_destroy_{ false };	///< a tip window exists or waits for its function at the safe place
 				std::unique_ptr<tooltip_interface, deleter_type> window_;
 				std::map<window, tip_value> table_;
 			};
@@ -312,17 +339,15 @@ namespace nana
 
 		void tooltip::set(window wd, const std::string& text)
 		{
-			if(false == API::empty_window(wd))
-			{
-				internal_scope_guard lock;
+			internal_scope_guard lock;
+			if(api::is_window(wd))
 				ctrl::instance()->set(wd, text);
-			}
 		}
 
 		void tooltip::show(window wd, point pos, const std::string& text, std::size_t duration)
 		{
 			internal_scope_guard lock;
-			API::calc_screen_point(wd, pos);
+			api::calc_screen_point(wd, pos);
 			ctrl::instance()->show(text, &pos, duration);
 		}
 

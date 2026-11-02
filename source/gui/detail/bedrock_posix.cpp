@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -117,17 +117,6 @@ namespace detail
 	//here is the definition of this object
 	bedrock bedrock::bedrock_object;
 
-	Window event_window(const XEvent& event)
-	{
-		switch(event.type)
-		{
-		case MapNotify:
-		case UnmapNotify:
-		case DestroyNotify:
-			return event.xmap.window;
-		}
-		return event.xkey.window;
-	}
 
 	bedrock::bedrock()
 		: pi_data_(new pi_data), impl_(new private_impl)
@@ -435,6 +424,10 @@ namespace detail
 			keysym = keyboard::os_shift; break;
 		case XK_Control_L: case XK_Control_R: //ctrl
 			keysym = keyboard::os_ctrl;	break;
+		case XK_Home:
+			keysym = keyboard::os_home; break;
+		case XK_End:
+			keysym = keyboard::os_end; break;
 		default:
 			do
 			{
@@ -560,7 +553,9 @@ namespace detail
 		static unsigned long	last_mouse_down_time;
 		static basic_window*	last_mouse_down_window;
 
-		auto native_window = reinterpret_cast<native_window_type>(event_window(xevent));
+		auto native_window = reinterpret_cast<native_window_type>(
+				::nana::detail::platform_spec::xevent_window(xevent));
+
 		auto & wd_manager = brock.wd_manager();
 		auto root_runtime = wd_manager.root_runtime(native_window);
 
@@ -610,15 +605,19 @@ namespace detail
 				hovered_wd = nullptr;
 				break;
 			case FocusIn:
+				::nana::detail::platform_spec::instance().ignore_once(native_window, FocusOut);
 				brock.event_focus_changed(msgwnd, native_window, true);
 				break;
 			case FocusOut:
-				if(native_interface::is_window(msgwnd->root))
+				if(!::nana::detail::platform_spec::instance().ignore_once(native_window, FocusOut))
 				{
-					nana::point pos = native_interface::cursor_position();
-					auto recv = native_interface::find_window(pos.x, pos.y);
+					if(native_interface::is_window(msgwnd->root))
+					{
+						nana::point pos = native_interface::cursor_position();
+						auto recv = native_interface::find_window(pos.x, pos.y);
 
-					brock.event_focus_changed(msgwnd, recv, false);
+						brock.event_focus_changed(msgwnd, recv, false);
+					}
 				}
 				break;
 			case ConfigureNotify:
@@ -936,7 +935,7 @@ namespace detail
 
 					if(msgwnd)
 					{
-						arg_keyboard modifiers_status;
+						arg_keyboard modifiers_status{};		// copied below: get_key_state() sets only alt, ctrl, shift
 						brock.get_key_state(modifiers_status);
 
 						KeySym keysym;
@@ -947,22 +946,13 @@ namespace detail
 						XIC input_context = nana::detail::platform_spec::instance().caret_input_context(native_window);
 						if(input_context)
 						{
-							nana::detail::platform_scope_guard psg;
-#if 1	//Utf8
+							nana::detail::platform_scope_guard lock;
 							len = ::Xutf8LookupString(input_context, &xevent.xkey, keybuf, 32, &keysym, &status);
 							if(status == XBufferOverflow)
 							{
 								keybuf = new char[len + 1];
 								len = ::Xutf8LookupString(input_context, &xevent.xkey, keybuf, len, &keysym, &status);
 							}
-#else
-							len = ::XmbLookupString(input_context, &xevent.xkey, keybuf, 32, &keysym, &status);
-							if(status == XBufferOverflow)
-							{
-								keybuf = new char[len + 1];
-								len = ::XmbLookupString(input_context, &xevent.xkey, keybuf, len, &keysym, &status);
-							}
-#endif
 						}
 						else
 						{
@@ -1234,42 +1224,41 @@ namespace detail
 
 		++(context->event_pump_ref_count);
 
-		auto & lock = wd_manager().internal_lock();
-		lock.revert();
-
-		native_window_type owner_native{};
-		basic_window * owner = nullptr;
-		if(condition_wd && is_modal)
 		{
-			native_window_type modal = condition_wd->root;
-			owner_native = native_interface::get_window(modal, window_relationship::owner);
+			internal_revert_guard lock;
+
+			native_window_type owner_native{};
+			basic_window * owner = nullptr;
+			if(condition_wd && is_modal)
+			{
+				native_window_type modal = condition_wd->root;
+				owner_native = native_interface::get_window(modal, window_relationship::owner);
+				if(owner_native)
+				{
+					native_interface::enable_window(owner_native, false);
+					owner = wd_manager().root(owner_native);
+					if(owner)
+						owner->flags.enabled = false;
+				}
+			}
+
+			nana::detail::platform_spec::instance().msg_dispatch(condition_wd ? condition_wd->root : 0);
+
 			if(owner_native)
 			{
-				native_interface::enable_window(owner_native, false);
-				owner = wd_manager().root(owner_native);
 				if(owner)
-					owner->flags.enabled = false;
+					owner->flags.enabled = true;
+				native_interface::enable_window(owner_native, true);
 			}
+
+			//Before exit of pump_event, it should call the remove_trash_handle.
+			//Under Linux, if the windows are closed in other threads, all the widgets handles
+			//will be marked as deleted after exit of the event loop and in other threads. So the
+			//handle should be deleted from trash before exit the pump_event.
+			auto thread_id = ::nana::system::this_thread_id();
+			wd_manager().call_safe_place(thread_id);
+			wd_manager().remove_trash_handle(thread_id);
 		}
-
-		nana::detail::platform_spec::instance().msg_dispatch(condition_wd ? condition_wd->root : 0);
-
-		if(owner_native)
-		{
-			if(owner)
-				owner->flags.enabled = true;
-			native_interface::enable_window(owner_native, true);
-		}
-
-		//Before exit of pump_event, it should call the remove_trash_handle.
-		//Under Linux, if the windows are closed in other threads, all the widgets handles
-		//will be marked as deleted after exit of the event loop and in other threads. So the
-		//handle should be deleted from trash before exit the pump_event.
-		auto thread_id = ::nana::system::this_thread_id();
-		wd_manager().call_safe_place(thread_id);
-		wd_manager().remove_trash_handle(thread_id);
-
-		lock.forward();
 
 		if(0 == --(context->event_pump_ref_count))
 		{

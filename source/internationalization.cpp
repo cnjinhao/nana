@@ -1,13 +1,15 @@
 /*
 *	An Implementation of i18n
-*	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Nana C++ Library(https://nana.acemind.cn)
+*	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
 *	@file: nana/internationalization.cpp
+*	@list of contributions:
+*		AStepaniuk, Added support for comment lines in PO files(PR#619)
 */
 
 #include <nana/push_ignore_diagnostic>
@@ -16,14 +18,7 @@
 #include <nana/gui/programming_interface.hpp>
 #include <unordered_map>
 #include <fstream>
-
-#if defined(STD_THREAD_NOT_SUPPORTED)
-#include <nana/std_mutex.hpp>
-#else
 #include <mutex>
-#endif
-
-
 #include <map>
 
 namespace nana
@@ -41,9 +36,9 @@ namespace nana
 		class tokenizer
 		{
 		public:
-			tokenizer(const std::string& file, bool utf8)
+			tokenizer(const std::filesystem::path& file, bool utf8)
 			{
-				std::ifstream ifs(file.data(), std::ios::binary);
+				std::ifstream ifs(file, std::ios::binary);
 				if (ifs)
 				{
 					ifs.seekg(0, std::ios::end);
@@ -70,6 +65,7 @@ namespace nana
 					return token::eof;
 				str_.clear();
 				_m_eat_ws();
+				_m_eat_comments();
 
 				if (*read_ptr_ == '"')
 				{
@@ -148,6 +144,35 @@ namespace nana
 				read_ptr_ = end_ptr_;
 			}
 
+			void _m_eat_comments()
+			{
+				while (read_ptr_ != end_ptr_ && *read_ptr_ == '#')
+				{
+					_m_eat_line();
+				}
+			}
+
+			void _m_eat_line()
+			{
+				bool line_end_reached = false;
+				for (auto i = read_ptr_; i != end_ptr_; ++i)
+				{
+					switch (*i)
+					{
+					case '\r': case '\n':
+						line_end_reached = true;
+						break;
+					default:
+						if (line_end_reached)
+						{
+							read_ptr_ = i;
+							return;
+						}
+					}
+				}
+				read_ptr_ = end_ptr_;
+			}
+
 		private:
 			std::unique_ptr<char[]> data_;
 			const char * read_ptr_{ nullptr };
@@ -171,7 +196,7 @@ namespace nana
 				table["NANA_BUTTON_CANCEL"] = "Cancel";
 				table["NANA_BUTTON_CANCEL_SHORTKEY"] = "&Cancel";
 				table["NANA_BUTTON_CREATE"] = "Create";
-		
+
 				table["NANA_FILEBOX_BYTES"] = "Bytes";
 				table["NANA_FILEBOX_FILESYSTEM"] = "FILESYSTEM";
 				table["NANA_FILEBOX_FILTER"] = "Filter";
@@ -210,11 +235,11 @@ namespace nana
 			return data_ptr;
 		}
 
-		void load(const std::string& file, bool utf8)
+		void load(const std::filesystem::path& p, bool utf8)
 		{
 			auto impl = std::make_shared<data>();
 
-			tokenizer tknizer(file, utf8);
+			tokenizer tknizer(p, utf8);
 			while (true)
 			{
 				if (token::msgid != tknizer.read())
@@ -318,7 +343,7 @@ namespace nana
 			if (i == mgr.table.end())
 			{
 				auto result = mgr.table.emplace(wd, std::move(eval));
-				result.first->second.destroy = nana::API::events(wd).destroy.connect([wd](const arg_destroy&){
+				result.first->second.destroy = nana::api::events(wd).destroy.connect([wd](const arg_destroy&){
 					auto & eval_mgr = get_eval_manager();
 					std::lock_guard<std::recursive_mutex> lockgd(eval_mgr.mutex);
 
@@ -335,7 +360,7 @@ namespace nana
 			std::lock_guard<std::recursive_mutex> lock(mgr.mutex);
 			for (auto & eval : mgr.table)
 			{
-				nana::API::window_caption(eval.first, eval.second.eval());
+				nana::api::window_caption(eval.first, eval.second.eval());
 			}
 		}
 	}//end namespace internationalization_parts
@@ -345,14 +370,9 @@ namespace nana
 		internationalization_parts::get_data_ptr()->on_missing = std::move(handler);
 	}
 
-	void internationalization::load(const std::string& file)
+	void internationalization::load(const std::filesystem::path& p, bool utf8_format)
 	{
-		internationalization_parts::load(file, false);
-	}
-
-	void internationalization::load_utf8(const std::string& file)
-	{
-		internationalization_parts::load(file, true);
+		internationalization_parts::load(p, utf8_format);
 	}
 
 	std::string internationalization::get(std::string msgid) const
@@ -417,11 +437,6 @@ namespace nana
 				offset += 4;
 		}
 	}
-
-#ifndef __cpp_fold_expressions
-	void internationalization::_m_fetch_args(std::vector<std::string>&)
-	{}
-#endif
 	
 	void internationalization::_m_fetch_args(std::vector<std::string>& v, const char* arg)
 	{
@@ -462,7 +477,7 @@ namespace nana
 	{
 		v.emplace_back(to_utf8(arg));
 	}
-	
+
 	//end class internationalization
 
 
@@ -558,7 +573,7 @@ namespace nana
 
 		internationalization i18n;
 
-		std::string msgstr = i18n._m_get(std::string{msgid_});		
+		std::string msgstr = i18n._m_get(std::string{msgid_});
 		i18n._m_replace_args(msgstr, &arg_strs);
 		return msgstr;
 	}

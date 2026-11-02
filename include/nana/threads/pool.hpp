@@ -1,6 +1,6 @@
 /*
  *	A Thread Pool Implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,14 +17,10 @@
 #include <nana/traits.hpp>
 #include <functional>
 #include <cstddef>
+#include <thread>
 
-#ifndef STD_THREAD_NOT_SUPPORTED
-#	include <thread>
-#endif
-
-namespace nana{
-   /// Some mutex classes for synchronizing.
-namespace threads
+/// Some mutex classes for synchronizing.
+namespace nana::threads
 {    /// A thread pool manages a group threads for a large number of tasks processing.
 	class pool
 	{
@@ -35,7 +31,7 @@ namespace threads
 			const t kind;
 
 			task(t);
-			virtual ~task() = 0;
+			virtual ~task() = default;
 			virtual void run() = 0;
 		};
 
@@ -43,11 +39,12 @@ namespace threads
 		struct task_wrapper
 			: task
 		{
-			typedef Function function_type;
+			using function_type = Function;
+
 			function_type taskobj;
 
-			task_wrapper(const function_type& f)
-				: task(task::general), taskobj(f)
+			task_wrapper(const function_type& f):
+				task(task::general), taskobj(f)
 			{}
 
 			void run()
@@ -62,11 +59,8 @@ namespace threads
 		pool(const pool&) = delete;
 		pool& operator=(const pool&) = delete;
 	public:
-#ifndef STD_THREAD_NOT_SUPPORTED
 		pool(unsigned thread_number = std::thread::hardware_concurrency());    ///< Creates a group of threads.
-#else
-		pool(unsigned thread_number = 0);
-#endif
+
 		pool(pool&&);
 		~pool();    ///< waits for the all running tasks till they are finished and skips all the queued tasks.
 
@@ -129,8 +123,6 @@ namespace threads
 	{
 		return pool_pusher<std::function<void()> >(pobj, std::bind(mf, &obj));
 	}
-
-}//end namespace threads
-}//end namespace nana
+}//end namespace nana::threads
 #endif
 

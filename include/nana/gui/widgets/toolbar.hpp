@@ -1,7 +1,7 @@
 /**
  *	A Toolbar Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -29,10 +29,8 @@ namespace nana
 		arg_toolbar(toolbar&, std::size_t);
 	};
 
-	namespace drawerbase
+	namespace drawerbase::toolbar
 	{
-		namespace toolbar
-		{
 #if 1 //deprecated
 			enum class tool_type
 			{
@@ -133,9 +131,7 @@ namespace nana
 				::nana::toolbar*	widget_;
 				drawer_impl_type*	impl_;
 			};
-
-		}//end namespace toolbar
-	}//end namespace drawerbase
+	}//end namespace drawerbase::toolbar
 
     /// Control bar that contains buttons for controlling
 	class toolbar

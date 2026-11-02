@@ -1,7 +1,7 @@
 /**
  *	A Picture Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -21,10 +21,8 @@ namespace nana
 {
 	class picture;
 
-	namespace drawerbase
+	namespace drawerbase::picture
 	{
-		namespace picture
-		{
 			struct implement;
 
 			class drawer : public drawer_trigger
@@ -39,19 +37,18 @@ namespace nana
 			private:
 				implement * const impl_;
 			};
-		}//end namespace picture
 	}//end namespace drawerbase
 
-       /// Rectangle area for displaying a bitmap file
+       /// Rectangle area for displaying an image
 	class picture
 		: public widget_object<category::widget_tag, drawerbase::picture::drawer>
 	{
 	public:
 		picture() = default;
-		picture(window, bool visible);
 		picture(window, const rectangle& ={}, bool visible = true);
 
-		void load(::nana::paint::image, const rectangle& valid_area = {});
+		bool load(::nana::paint::image, const rectangle& valid_area = {});
+		void clear();
 
 		/// Sets the align of image.
 		void align(align, align_v);

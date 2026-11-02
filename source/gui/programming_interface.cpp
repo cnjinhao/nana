@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -10,6 +10,10 @@
  *	@file: nana/gui/programming_interface.cpp
  *	@author: Jinhao
  */
+
+#include <iostream> // for debugging in make_center
+
+#include <nana/config.hpp>
 
 #include "detail/basic_window.hpp"
 #include <nana/gui/programming_interface.hpp>
@@ -20,8 +24,9 @@
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/gui/detail/events_operation.hpp>
-
+#include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include "../../source/detail/platform_abstraction.hpp"
+#include "../paint/truetype.hpp"
 #ifdef NANA_X11
 #	include "../../source/detail/posix/platform_spec.hpp"
 #endif
@@ -54,7 +59,7 @@ namespace nana
 			}
 		};
 	}
-namespace API
+namespace api
 {
 #ifdef NANA_X11
 	//Some platform specific functions for X11
@@ -66,6 +71,20 @@ namespace API
 			auto & spec = nana::detail::platform_spec::instance();
 			return spec.open_display();			
 		}
+
+		/// Register an event handler
+		bool install_xevent_handler(native_window_type wd, std::function<void(nana::x11::xevent*)> fn)
+		{
+			return nana::detail::platform_spec::instance().install_xevent_handler(wd, std::move(fn));
+		}
+
+		void erase_xevent_handler(native_window_type wd)
+		{
+			nana::detail::platform_spec::instance().erase_xevent_handler(wd);
+		}
+
+		/// Apply the specified xevent handler to a window
+		bool apply_xevent_handler(const std::string& id, native_window_type);
 	}
 #endif
 
@@ -100,7 +119,7 @@ namespace API
 
 				for (auto child : children)
 				{
-					auto widget_ptr = API::get_widget(child);
+					auto widget_ptr = api::get_widget(child);
 					if (!widget_ptr)
 						continue;
 
@@ -176,7 +195,7 @@ namespace API
 			if (fade_rate < 0.01)
 				wd->flags.make_bground_declared = true;
 
-			API::refresh_window(wd);
+			api::refresh_window(wd);
 		}
 	}
 
@@ -201,18 +220,12 @@ namespace API
 		if(is_window(wd))
 		{
 			if(restrict::wd_manager().enable_effects_bground(wd, false))
-				API::refresh_window(wd);
+				api::refresh_window(wd);
 		}
 	}
 
 	namespace dev
 	{
-
-		void affinity_execute(window window_handle, const std::function<void()>& fn)
-		{
-			interface_type::affinity_execute(root(window_handle), fn);
-		}
-
 		bool set_events(window wd, const std::shared_ptr<general_events>& gep)
 		{
 			internal_scope_guard lock;
@@ -277,7 +290,7 @@ namespace API
 				if (wd->other.category == category::flags::root)
 					interface_type::window_caption(wd->root, wd->title);
 
-				refresh_window(wd);
+				restrict::wd_manager().update(wd, true, true);
 			}
 		}
 
@@ -346,7 +359,7 @@ namespace API
 		{
 			internal_scope_guard lock;
 
-			if (bground_mode::basic != API::effects_bground_mode(wd))
+			if (bground_mode::basic != api::effects_bground_mode(wd))
 				return false;
 
 			wd->other.glass_buffer.paste(rectangle{ wd->other.glass_buffer.size() }, graph, 0, 0);
@@ -357,7 +370,7 @@ namespace API
 		{
 			internal_scope_guard lock;
 
-			if (bground_mode::basic != API::effects_bground_mode(wd))
+			if (bground_mode::basic != api::effects_bground_mode(wd))
 				return false;
 			
 			wd->other.glass_buffer.paste(src_r, graph, dst_pt.x, dst_pt.y);
@@ -373,13 +386,8 @@ namespace API
 		{
 			if (shortkey)
 			{
-#ifdef _nana_std_has_string_view
 				auto off_x = (shortkey_position ? graph.text_extent_size(std::string_view{ text.c_str(), shortkey_position }).width : 0);
 				auto key_px = static_cast<int>(graph.text_extent_size(std::wstring_view{ &shortkey, 1 }).width);
-#else
-				auto off_x = (shortkey_position ? graph.text_extent_size(text.c_str(), shortkey_position).width : 0);
-				auto key_px = static_cast<int>(graph.text_extent_size(&shortkey, 1).width);
-#endif
 
 				unsigned ascent, descent, inleading;
 				graph.text_metrics(ascent, descent, inleading);
@@ -408,6 +416,65 @@ namespace API
 			return false;
 		}
 
+		::nana::widgets::skeletons::text_editor* create_text_editor(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd))
+			{
+				delete wd->annex.text_editor;
+				wd->annex.text_editor = nullptr;
+
+				auto scheme = dynamic_cast<nana::widgets::skeletons::text_editor_scheme*>(wd->annex.scheme);
+				if (scheme)
+				{
+					wd->annex.text_editor = new widgets::skeletons::text_editor(wd, wd->drawer.graphics, scheme);
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+					restrict::bedrock.vkeyboard().attach(wd);
+#endif
+					return wd->annex.text_editor;
+				}
+			}
+			return nullptr;
+		}
+
+		void destroy_text_editor(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd))
+			{
+				delete wd->annex.text_editor;
+				wd->annex.text_editor = nullptr;
+			}
+		}
+
+		std::optional<upoint> caret_position(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd) && wd->annex.text_editor)
+				return wd->annex.text_editor->caret();
+			
+			return {};
+		}
+
+		upoint im_input(window wd, const upoint& insert_pos, const std::wstring& str, bool candidate)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd) && wd->annex.text_editor)
+				return wd->annex.text_editor->im_input(insert_pos, str, candidate);
+			return {};
+		}
+
+		/// Cancels the candiate mode
+		/**
+		* Cancels the candidate mode when the virtual keyboard window is closed.
+		*/
+		void im_cancel(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd) && wd->annex.text_editor)
+				wd->annex.text_editor->im_cancel();
+		}
+
 
 	}//end namespace dev
 
@@ -423,6 +490,54 @@ namespace API
 	void font_languages(const std::string& langs)
 	{
 		::nana::platform_abstraction::font_languages(langs);
+	}
+
+#ifdef __cpp_char8_t
+	void font_languages(std::u8string_view sv)
+	{
+		::nana::platform_abstraction::font_languages(to_string(sv));
+	}
+#endif
+
+	std::vector<std::string> font_names(std::filesystem::path p)
+	{
+		nana::paint::detail::truetype_collection ttc{ p };
+
+		std::vector<std::string> names;
+		if (!ttc.empty())
+		{
+			for (std::size_t i = 0; i < ttc.size(); ++i)
+			{
+				auto ttc_opt = ttc.read(i);
+				if (ttc_opt)
+				{
+					auto name = ttc_opt.value().font_family();
+					if (!name.empty())
+						names.push_back(name);
+				}
+			}
+		}
+		
+		if (names.empty())
+		{
+			nana::paint::detail::truetype tt{ p };
+
+			auto name = tt.font_family();
+			if (!name.empty())
+				names.push_back(name);
+		}
+		
+		return names;
+	}
+
+	void load_font(std::filesystem::path p)
+	{
+		platform_abstraction::font_resource(true, p);
+	}
+
+	void unload_font(std::filesystem::path p)
+	{
+		platform_abstraction::font_resource(false, p);
 	}
 
 	//close all windows in current thread
@@ -472,6 +587,34 @@ namespace API
 		return text;
 	}
 
+#ifdef __cpp_char8_t
+	std::u8string transform_shortkey_text(std::u8string text, wchar_t &shortkey, std::u8string::size_type *skpos)
+	{
+		shortkey = 0;
+		std::u8string::size_type off = 0;
+		while(true)
+		{
+			auto pos = text.find_first_of(u8'&', off);
+			if(pos != std::u8string::npos)
+			{
+				text.erase(pos, 1);
+				if((shortkey == 0) && pos < text.length())
+				{
+					shortkey = utf::char_at(reinterpret_cast<const char*>(text.c_str()) + pos, 0, nullptr);
+					if(shortkey == u8'&')	//This indicates the text contains "&&", it means the symbol have to be ignored.
+						shortkey = 0;
+					else if(skpos)
+						*skpos = pos;
+				}
+				off = pos + 1;
+			}
+			else
+				break;
+		}
+		return text;
+	}
+#endif
+
 	bool register_shortkey(window wd, unsigned long key)
 	{
 		return restrict::wd_manager().register_shortkey(wd, key);
@@ -486,25 +629,37 @@ namespace API
 	{
 		return interface_type::cursor_position();
 	}
-
-	::nana::rectangle make_center(unsigned width, unsigned height)
+	/// generalized to dpi awareness v2
+	::nana::rectangle make_center(unsigned width, unsigned height) noexcept
 	{
 		auto screen = interface_type::primary_monitor_size();
+	    if constexpr (dpi_debugging)
+			std::cout << "API::make_center() on screen: (" << screen.width << ", " << screen.height << ") " << std::endl;
 		return{
-			static_cast<int>(width > screen.width ? 0 : (screen.width - width) >> 1),
+			static_cast<int>(width  > screen.width  ? 0 : (screen.width  - width ) >> 1),
 			static_cast<int>(height > screen.height ? 0 : (screen.height - height) >> 1),
 			width, height
 		};
 	}
-
-	::nana::rectangle make_center(window wd, unsigned width, unsigned height)
+	/// \todo: generalize dpi to v2 awareness 
+	::nana::rectangle make_center(window wd, unsigned width, unsigned height) noexcept
 	{
-		nana::rectangle r = make_center(width, height);
+		nana::rectangle r = make_center(width, height); /// \todo: generalize dpi to v2 awareness 
 
-		nana::point pos{ r.x, r.y };
+		auto pos = r.position();
 		calc_window_point(wd, pos);
 		r.position(pos);
 		return r;
+	}
+
+	rectangle make_center(const size & sz) noexcept
+	{
+		return make_center(sz.width, sz.height);
+	}
+
+	rectangle make_center(window wd, const size& sz) noexcept
+	{
+		return make_center(wd, sz.width, sz.height);
 	}
 
 	void window_icon_default(const paint::image& small_icon, const paint::image& big_icon)
@@ -540,7 +695,7 @@ namespace API
 	void enable_dropfiles(window wd, bool enb)
 	{
 		internal_scope_guard lock;
-		auto native_handle = API::root(wd);
+		auto native_handle = api::root(wd);
 		if (native_handle)
 		{
 			wd->flags.dropable = enb;
@@ -644,6 +799,9 @@ namespace API
 		internal_scope_guard lock;
 		if(is_window(wd) && (wd->other.category == category::flags::root))
 		{
+			if(wd->owner)
+				return wd->owner;
+			
 			auto owner = interface_type::get_window(wd->root, window_relationship::owner);
 			if(owner)
 				return restrict::wd_manager().root(owner);
@@ -659,6 +817,7 @@ namespace API
 
 	void umake_event(event_handle eh)
 	{
+		internal_scope_guard lock;
 		restrict::bedrock.evt_operation().erase(eh);
 	}
 
@@ -667,8 +826,16 @@ namespace API
 		internal_scope_guard lock;
 		if(is_window(wd))
 		{
-			return ( (wd->other.category == category::flags::root) ?
-				interface_type::window_position(wd->root) : wd->pos_owner);
+			if(category::flags::root == wd->other.category)
+			{
+				auto pos = interface_type::window_position(wd->root);
+				if(wd->owner)
+					return pos - wd->owner->pos_root;
+
+				return pos;
+			}
+			else
+				return wd->pos_owner;
 		}
 		return nana::point{};
 	}
@@ -755,7 +922,7 @@ namespace API
 	nana::size window_size(window wd)
 	{
 		nana::rectangle r;
-		API::get_window_rectangle(wd, r);
+		api::get_window_rectangle(wd, r);
 		return{ r.width, r.height };
 	}
 
@@ -817,11 +984,41 @@ namespace API
 		}
 	}
 
+	std::optional<rectangle> window_text_editor_rectangle(window wd, bool including_scrollbars)
+	{
+		internal_scope_guard lock;
+		if (is_window(wd) && wd->annex.text_editor)
+			return wd->annex.text_editor->text_area(including_scrollbars);
+
+		return {};
+	}
+
+	bool window_text_editor_editable(window wd)
+	{
+		internal_scope_guard lock;
+		if(is_window(wd) && wd->annex.text_editor)
+			return wd->annex.text_editor->editable();
+
+		return false;
+	}
+
 	std::optional<rectangle> window_rectangle(window wd)
 	{
 		internal_scope_guard lock;
 		if (is_window(wd))
-			return rectangle(wd->pos_owner, wd->dimension);
+		{
+			if(wd->other.category == category::flags::root)
+			{
+				nana::point pt;
+				calc_screen_point(wd, pt);
+				calc_window_point(get_parent_window(wd), pt);
+
+				return rectangle{pt, wd->dimension};
+			}
+			else
+				return rectangle(wd->pos_owner, wd->dimension);
+		}
+
 		return{};
 	}
 
@@ -830,7 +1027,16 @@ namespace API
 		internal_scope_guard lock;
 		if(is_window(wd))
 		{
-			r = rectangle(wd->pos_owner, wd->dimension);
+			if(wd->other.category == category::flags::root)
+			{
+				nana::point pt;
+				calc_screen_point(wd, pt);
+				calc_window_point(get_parent_window(wd), pt);
+
+				r = rectangle{pt, wd->dimension};
+			}
+			else
+				r = rectangle(wd->pos_owner, wd->dimension);
 			return true;
 		}
 		return false;
@@ -883,8 +1089,7 @@ namespace API
 		return (is_window(wd) ? wd->flags.enabled : false);
 	}
 
-	//refresh_window
-	//@brief: Refresh the window and display it immediately.
+	/// Refresh the window and display it immediately.
 	void refresh_window(window wd)
 	{
 		restrict::wd_manager().update(wd, true, false);
@@ -895,11 +1100,13 @@ namespace API
 		restrict::wd_manager().refresh_tree(wd);
 	}
 
-	//update_window
-	//@brief: it displays a window immediately without refreshing.
-	void update_window(window wd)
+	/// displays a window immediately without refreshing.
+	void update_window(window wd, bool now)
 	{
-		restrict::wd_manager().update(wd, false, true);
+		if (now)
+			restrict::wd_manager().update_now(wd);
+		else
+			restrict::wd_manager().update(wd, false, true);
 	}
 
 	void window_caption(window wd, const std::string& title_utf8)
@@ -907,15 +1114,24 @@ namespace API
 		throw_not_utf8(title_utf8);
 		internal_scope_guard lock;
 		if (is_window(wd))
-			wd->widget_notifier->caption(to_nstring(title_utf8));
+			wd->widget_notifier->caption(nana::detail::to_nstring(title_utf8));
 	}
 
 	void window_caption(window wd, const std::wstring& title)
 	{
 		internal_scope_guard lock;
 		if (is_window(wd))
-			wd->widget_notifier->caption(to_nstring(title));
+			wd->widget_notifier->caption(nana::detail::to_nstring(title));
 	}
+
+#ifdef __cpp_char8_t
+	void window_caption(window wd, std::u8string_view text)
+	{
+		internal_scope_guard lock;
+		if (is_window(wd))
+			wd->widget_notifier->caption(nana::detail::to_nstring(text));
+	}
+#endif
 
 	std::string window_caption(window wd)
 	{
@@ -1221,9 +1437,12 @@ namespace API
 		return std::unique_ptr<caret_interface>{ p };
 	}
 
-	void tabstop(window wd)
+	void tabstop(window wd, const bool enable)
 	{
-		restrict::wd_manager().enable_tabstop(wd);
+		if (enable)
+			restrict::wd_manager().enable_tabstop(wd);
+		else
+			restrict::wd_manager().disable_tabstop(wd);
 	}
 
 	//eat_tabstop
@@ -1292,6 +1511,19 @@ namespace API
 			return nana::detail::window_layout::read_visual_rectangle(wd, r);
 		
 		return false;
+	}
+
+	/// \todo: generalize dpi to v2 awareness
+	void typeface(window wd, const nana::paint::font_info& fi)
+	{
+		internal_scope_guard lock;
+		if (is_window(wd))
+		{
+			auto dpi = platform_abstraction::current_dpi();
+			if(0 == dpi)
+				dpi = interface_type::window_dpi(wd->root);
+			typeface(wd, paint::font{fi, dpi});
+		}
 	}
 
 	void typeface(window wd, const nana::paint::font& font)
@@ -1429,6 +1661,16 @@ namespace API
 		restrict::wd_manager().set_safe_place(wd, std::move(fn));
 	}
 
+	bool affinity_execute(window wd, bool post, std::function<void()> fn)
+	{
+		internal_scope_guard lock;
+		if(!is_window(wd))
+			return false;
+
+		interface_type::affinity_execute(wd->root, post, std::move(fn));
+		return true;
+	}
+
 	std::optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)
 	{
 		internal_scope_guard lock;
@@ -1451,10 +1693,19 @@ namespace API
 		
 		return{};
 	}
-
+	/// \todo: generalize dpi to v2 awareness
 	unsigned screen_dpi(bool x_requested)
 	{
 		return ::nana::platform_abstraction::screen_dpi(x_requested);
+	}
+
+	std::size_t window_dpi(window wd)
+	{
+		internal_scope_guard lock;
+		if (is_window(wd))
+			return interface_type::window_dpi(wd->root);
+		
+		return 0;
 	}
 
 	dragdrop_status window_dragdrop_status(::nana::window wd)
@@ -1465,5 +1716,59 @@ namespace API
 
 		return dragdrop_status::not_ready;
 	}
-}//end namespace API
+
+	void keyboard_default_language(const std::string& lang)
+	{
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		internal_scope_guard lock;
+		restrict::bedrock.vkeyboard().default_im_value() = lang;
+#else
+		(void)lang;
+#endif
+	}
+
+	/// Configures the qwerty keyboard for a text editor
+	bool keyboard_qwerty(window wd, std::vector<std::string> langs, keyboard_behaves behave, keyboard_modes mode)
+	{
+		internal_scope_guard lock;
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		return restrict::bedrock.vkeyboard().qwerty(wd, std::move(langs), behave, mode);
+#else
+		(void)wd;
+		(void)langs;
+		(void)behave;
+		(void)mode;
+		return false;
+#endif
+	}
+
+	/// Configures the numeric keyboard.
+	bool keyboard_numeric(window wd, bool padding)
+	{
+		internal_scope_guard lock;
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		return restrict::bedrock.vkeyboard().numeric(wd, padding);
+#else
+		(void)wd;
+		(void)padding;
+		return false;
+#endif	
+	}
+
+	drawing_handle drawing(window wd, std::function<void(paint::graphics&)> fn) noexcept
+	{
+		internal_scope_guard lock;
+		if (!is_window(wd))
+			return nullptr;
+
+		return wd->drawer.drawing(std::move(fn), false);
+	}
+
+	void remove_drawing(window wd, drawing_handle dw) noexcept
+	{
+		internal_scope_guard lock;
+		if (is_window(wd))
+			wd->drawer.erase(dw);
+	}
+}//end namespace api
 }//end namespace nana

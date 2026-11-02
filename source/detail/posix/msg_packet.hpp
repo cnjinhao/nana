@@ -3,7 +3,7 @@
 #include <X11/Xlib.h>
 #include <vector>
 #include <nana/deploy.hpp>
-#include <nana/filesystem/filesystem.hpp>
+#include <filesystem>
 
 namespace nana
 {
@@ -18,7 +18,7 @@ namespace detail
 
 	struct msg_packet_tag
 	{
-		enum class pkt_family{xevent, mouse_drop, cleanup};
+		enum class pkt_family{xevent, mouse_drop};
 		pkt_family kind;
 		union
 		{

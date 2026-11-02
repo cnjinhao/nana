@@ -1,7 +1,7 @@
 /*
 *	Filebox
-*	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+*	Nana C++ Library(https://nana.acemind.cn)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -22,7 +22,7 @@
 #	ifndef NANA_MINGW	//<Shobjidl.h> isn't supported well on MinGW
 #		include <Shobjidl.h>
 #	else
-#		include <Shlobj.h>
+#		include <shlobj.h>
 #	endif
 #elif defined(NANA_POSIX)
 #	include <nana/gui/widgets/label.hpp>
@@ -37,8 +37,6 @@
 #	include <algorithm>
 #	include "../detail/posix/theme.hpp"
 #endif
-
-#include <iostream> //debug
 
 namespace fs = std::filesystem;
 namespace fs_ext = nana::filesystem_ext;
@@ -156,7 +154,7 @@ namespace nana
 	public:
 
 		filebox_implement(window owner, mode dialog_mode, const std::string& title, bool pick_directory, bool allow_multi_select):
-			form(owner, API::make_center(owner, 630, 440)),
+			form(owner, api::make_center(owner, 630, 440)),
 			pick_directory_(pick_directory),
 			mode_(dialog_mode),
 			allow_multi_select_(allow_multi_select)
@@ -203,7 +201,7 @@ namespace nana
 
 			btn_folder_.events().click.connect_unignorable([this](const arg_click&)
 			{
-				form fm(this->handle(), API::make_center(*this, 300, 35));
+				form fm(this->handle(), api::make_center(*this, 300, 35));
 				fm.i18n(i18n_eval("NANA_FILEBOX_NEW_FOLDER_CAPTION"));
 
 				textbox folder(fm, nana::rectangle(5, 5, 160, 25));
@@ -221,7 +219,7 @@ namespace nana
 				{
 					fm.close();
 				});
-				API::modal_window(fm);
+				api::modal_window(fm);
 			});
 
 			tree_.create(*this);
@@ -273,10 +271,10 @@ namespace nana
 				_m_select_file(arg.item);
 			});
 
-			ls_file_.set_sort_compare(0, [](const std::string& a, nana::any* fs_a, const std::string& b, nana::any* fs_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(0, [](const std::string& a, std::any* fs_a, const std::string& b, std::any* fs_b, bool reverse) -> bool
 				{
-					int dira = any_cast<item_fs>(fs_a)->directory ? 1 : 0;
-					int dirb = any_cast<item_fs>(fs_b)->directory ? 1 : 0;
+					int dira = std::any_cast<item_fs>(fs_a)->directory ? 1 : 0;
+					int dirb = std::any_cast<item_fs>(fs_b)->directory ? 1 : 0;
 					if(dira != dirb)
 						return (reverse ? dira < dirb : dira > dirb);
 
@@ -327,19 +325,19 @@ namespace nana
 						return (reverse ? cia > cib : cia < cib);
 					return (reverse ? cia.substr(seek_a) > cib.substr(seek_b) : cia.substr(seek_a) < cib.substr(seek_b));
 				});
-			ls_file_.set_sort_compare(2, [](const std::string& a, nana::any* anyptr_a, const std::string& b, nana::any* anyptr_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(2, [](const std::string& a, std::any* anyptr_a, const std::string& b, std::any* anyptr_b, bool reverse) -> bool
 				{
-					int dir1 = any_cast<item_fs>(anyptr_a)->directory ? 1 : 0;
-					int dir2 = any_cast<item_fs>(anyptr_b)->directory ? 1 : 0;
+					int dir1 = std::any_cast<item_fs>(anyptr_a)->directory ? 1 : 0;
+					int dir2 = std::any_cast<item_fs>(anyptr_b)->directory ? 1 : 0;
 					if(dir1 != dir2)
 						return (reverse ? dir1 < dir2 : dir1 > dir2);
 
 					return (reverse ? a > b : a < b);
 				});
-			ls_file_.set_sort_compare(3, [](const std::string&, nana::any* anyptr_a, const std::string&, nana::any* anyptr_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(3, [](const std::string&, std::any* anyptr_a, const std::string&, std::any* anyptr_b, bool reverse) -> bool
 				{
-					item_fs * fsa = any_cast<item_fs>(anyptr_a);
-					item_fs * fsb = any_cast<item_fs>(anyptr_b);
+					item_fs * fsa = std::any_cast<item_fs>(anyptr_a);
+					item_fs * fsb = std::any_cast<item_fs>(anyptr_b);
 					return (reverse ? fsa->bytes > fsb->bytes : fsa->bytes < fsb->bytes);
 				});
 
@@ -381,7 +379,19 @@ namespace nana
 
 			btn_cancel_.events().click.connect_unignorable([this](const arg_click&)
 			{
-				API::close_window(handle());
+				api::close_window(handle());
+			});
+
+			// As the native file dialogs (Windows, GTK, Qt): Escape cancels, whichever child has the focus,
+			// and the file name box gets the keyboard focus when the dialog is shown.
+			accel_key escape;
+			escape.key = static_cast<char>(keyboard::escape);
+			this->keyboard_accelerator(escape, [this]{ api::close_window(handle()); });
+
+			this->events().expose.connect_unignorable([this](const arg_expose& arg)
+			{
+				if (arg.exposed)
+					tb_file_.focus();
 			});
 
 			selection_.type = kind::none;
@@ -418,37 +428,32 @@ namespace nana
 			def_ext_ = ext;
 		}
 
-		void load_fs(const std::string& init_path, const std::string& init_file)
+		void load_fs(const fs::path& init_path, const fs::path& init_file)
 		{
 			//Simulate the behavior like Windows7's lpstrInitialDir(http://msdn.microsoft.com/en-us/library/windows/desktop/ms646839%28v=vs.85%29.aspx)
 
 			//Phase 1
-			std::string dir;
-
-			auto pos = init_file.find_last_of("\\/");
-			auto filename = (pos != init_file.npos ? init_file.substr(pos + 1) : init_file);
+			fs::path dir;
+			auto filename = init_file.filename();
 
 			if(saved_init_path != init_path)
 			{
-				if(saved_init_path.size() == 0)
+				if(saved_init_path.empty())
 					saved_init_path = init_path;
 
 				//Phase 2: Check whether init_file contains a path
-				if(filename == init_file)
-				{
-					//Phase 3: Check whether init_path is empty
-					if(init_path.size())
-						dir = init_path;
-				}
+				if(!init_file.parent_path().empty())
+					dir = init_file.parent_path();
 				else
-					dir = init_file.substr(0, pos);
+					dir = init_path;
 			}
 			else
 				dir = saved_selected_path;
 
-			_m_enter_folder(dir.size() ? dir : fs_ext::path_user().native());
 
-			tb_file_.caption(filename);
+			_m_enter_folder(dir.empty() ? fs_ext::path_user() : dir);
+
+			tb_file_.caption(filename.u8string());
 		}
 
 		void add_filter(const std::string& desc, const std::string& type)
@@ -595,8 +600,6 @@ namespace nana
 		void _m_load_path(const std::string& path)
 		{
 			addr_.filesystem = path;
-			if(addr_.filesystem.size() && addr_.filesystem[addr_.filesystem.size() - 1] != '/')
-				addr_.filesystem += '/';
 
 			file_container_.clear();
 
@@ -632,9 +635,13 @@ namespace nana
 			std::sort(file_container_.begin(), file_container_.end(), pred_sort_fs());
 		}
 
-		void _m_enter_folder(std::string path)
+		void _m_enter_folder(fs::path p)
 		{
-			if((path.size() == 0) || (path[path.size() - 1] != '/'))
+			if(p.empty())
+				p = "/";
+
+			auto path = p.string();
+			if(path.back() != '/')
 				path += '/';
 
 			auto beg_node = tree_.selected();
@@ -642,6 +649,7 @@ namespace nana
 				beg_node = beg_node.owner();
 
 			auto head = fs_ext::path_user().native();
+
 			if(path.size() >= head.size() && (path.substr(0, head.size()) == head))
 			{//This is HOME
 				path_.caption("HOME");
@@ -715,15 +723,14 @@ namespace nana
 			{
 				file_container_.clear();
 
-				drawing dw{ls_file_};
-				dw.clear();
-				dw.draw([](paint::graphics& graph){
-					std::string text = "Permission denied to access the directory";
-					auto txt_sz = graph.text_extent_size(text);
-					auto sz = graph.size();
+				if (!denied_msg_)		// drawn once, on the list (it was drawn on the form, and never removed)
+					denied_msg_ = ls_file_.drawing([](paint::graphics& graph){
+						std::string text = "Permission denied to access the directory";
+						auto txt_sz = graph.text_extent_size(text);
+						auto sz = graph.size();
 
-					graph.string({static_cast<int>(sz.width - txt_sz.width) / 2, static_cast<int>(sz.height - txt_sz.height) / 2}, text, colors::dark_gray);
-				});
+						graph.string({static_cast<int>(sz.width - txt_sz.width) / 2, static_cast<int>(sz.height - txt_sz.height) / 2}, text, colors::dark_gray);
+					});
 
 				ls_file_.clear();
 			}
@@ -750,7 +757,11 @@ namespace nana
 
 		void _m_list_fs()
 		{
-			drawing{ls_file_}.clear();
+			if (denied_msg_)			// a listed directory removes the "Permission denied" message
+			{
+				api::remove_drawing(ls_file_, denied_msg_);
+				denied_msg_ = nullptr;
+			}
 
 			auto filter = filter_.caption();
 			ls_file_.auto_draw(false);
@@ -858,7 +869,7 @@ namespace nana
 					return;
 				}
 
-				fs::path fspath(fb_.addr_.filesystem + path);
+				fs::path fspath(fb_.addr_.filesystem / path);
 
 				auto fattr = fs::status(fspath);
 				auto ftype = static_cast<fs::file_type>(fattr.type());
@@ -987,7 +998,7 @@ namespace nana
 			item_fs m = _m_item_fs(selected_item);
 			if(m.directory)
 			{
-				_m_enter_folder(addr_.filesystem + m.name + "/");
+				_m_enter_folder(addr_.filesystem / m.name);
 				allow_fall_back_ = true;
 			}
 			else
@@ -1014,7 +1025,11 @@ namespace nana
 				for(auto i = selection_.targets.cbegin(); i != selection_.targets.cend();)
 				{
 					std::filesystem::path p{*i};
+#ifdef __cpp_char8_t
+					if(p.filename().u8string() == to_u8str(mfs.name))
+#else
 					if(p.filename().u8string() == mfs.name)
+#endif
 					{
 						if(!selection_.is_deselect_delayed)
 						{
@@ -1043,7 +1058,11 @@ namespace nana
 					if(!filename_string.empty())
 						filename_string += ' ';
 
+#ifdef __cpp_char8_t
+					filename_string += "\"" + nana::to_string(p.filename().u8string()) + "\"";
+#else
 					filename_string += "\"" + p.filename().u8string() + "\"";
+#endif
 				}
 			}
 
@@ -1131,7 +1150,7 @@ namespace nana
 				}
 
 				if(tar[0] != '/')
-					tar = addr_.filesystem + tar;
+					tar = (addr_.filesystem / tar).string();
 
 				auto fattr = fs::status(tar);
 				auto ftype = static_cast<fs::file_type>(fattr.type());
@@ -1153,8 +1172,6 @@ namespace nana
 					if(!is_dir)
 					{
 						fs::path p{tar};
-						auto p1 = p.filename();
-						auto p2 = p.parent_path().filename();
 						if(allow_fall_back_ && (p.filename() == p.parent_path().filename()))
 						{
 							//fallback check, and redirects to its parent path.
@@ -1284,6 +1301,7 @@ namespace nana
 		button	btn_folder_;
 		treebox tree_;
 		listbox	ls_file_;
+		drawing_handle denied_msg_{ nullptr };	///< "Permission denied" message drawn on ls_file_; removed by _m_list_fs()
 
 		label lb_file_;
 		textbox	tb_file_;
@@ -1300,7 +1318,7 @@ namespace nana
 		std::vector<item_fs> file_container_;
 		struct path_rep
 		{
-			std::string filesystem;
+			std::filesystem::path filesystem;
 		}addr_;
 
 		struct selection_rep
@@ -1310,8 +1328,9 @@ namespace nana
 			bool is_deselect_delayed{ false };
 		}selection_;
 
-		static std::string saved_init_path;
-		static std::string saved_selected_path;
+		static fs::path saved_init_path;
+		static fs::path saved_selected_path;
+
 		nana::detail::theme theme_;
 
 		struct images
@@ -1326,8 +1345,9 @@ namespace nana
 			paint::image pdf;
 		}images_;
 	};//end class filebox_implement
-	std::string filebox_implement::saved_init_path;
-	std::string filebox_implement::saved_selected_path;
+
+	fs::path filebox_implement::saved_init_path;
+	fs::path filebox_implement::saved_selected_path;
 
 #endif
 	//class filebox
@@ -1343,7 +1363,7 @@ namespace nana
 		bool open_or_save;
 
 		bool allow_multi_select;
-		std::string init_file;
+		path_type init_file;
 
 		std::string title;
 		path_type path;
@@ -1396,6 +1416,13 @@ namespace nana
 		impl_->title.swap(s);
 		return *this;
 	}
+#ifdef __cpp_char8_t
+	filebox& filebox::title(std::u8string_view s)
+	{
+		impl_->title = nana::to_string(s);
+		return *this;
+	}
+#endif
 
 	filebox& filebox::init_path(const path_type& p)
 	{
@@ -1406,16 +1433,15 @@ namespace nana
 		return *this;
 	}
 
-	filebox& filebox::init_file(const std::string& ifstr)
+	filebox& filebox::init_file(const path_type& p)
 	{
-		impl_->init_file = ifstr;
+		impl_->init_file = p;
 		return *this;
 	}
 
-	filebox& filebox::add_filter(const std::string& description, const std::string& filetype)
+	filebox& filebox::add_filter(const std::string& description, const std::string& file_type)
 	{
-		implement::filter flt = {description, filetype};
-		impl_->filters.push_back(flt);
+		impl_->filters.emplace_back(implement::filter{description, file_type});
 		return *this;
 	}
 
@@ -1425,6 +1451,20 @@ namespace nana
 			add_filter(f.first, f.second);
 		return *this;
 	}
+
+#ifdef __cpp_char8_t
+	filebox& filebox::add_filter(std::u8string_view description, std::u8string_view file_type)
+	{
+		return add_filter(to_string(description), to_string(file_type));
+	}
+
+	filebox& filebox::add_filter(const std::vector<std::pair<std::u8string_view, std::u8string_view>> &filters)
+	{
+		for (auto &f : filters)
+			add_filter(f.first, f.second);
+		return *this;
+	}
+#endif
 
 	const filebox::path_type& filebox::path() const
 	{
@@ -1436,7 +1476,7 @@ namespace nana
 		std::vector<path_type> targets;
 
 #if defined(NANA_WINDOWS)
-		std::wstring wfile = to_wstring(impl_->init_file);
+		std::wstring wfile = impl_->init_file.wstring();
 		wfile.resize(impl_->allow_multi_select ? (520 + 32*256) : 520);
 
 		OPENFILENAME ofn;
@@ -1445,7 +1485,7 @@ namespace nana
 		internal_scope_guard lock;
 
 		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
+		ofn.hwndOwner = reinterpret_cast<HWND>(api::root(impl_->owner));
 		ofn.lpstrFile = &(wfile[0]);
 		ofn.nMaxFile = static_cast<DWORD>(wfile.size() - 1);
 
@@ -1573,7 +1613,7 @@ namespace nana
 
 		fb.load_fs(impl_->path, impl_->init_file);
 
-		API::modal_window(fb);
+		api::modal_window(fb);
 
 
 		for(auto & f : fb.files())
@@ -1581,7 +1621,11 @@ namespace nana
 
 
 		if(!targets.empty())
+#ifdef __cpp_char8_t
+			impl_->path = nana::to_string(targets.front().parent_path().u8string());
+#else
 			impl_->path = targets.front().parent_path().u8string();
+#endif
 		else
 			impl_->path.clear();
 #endif
@@ -1605,9 +1649,19 @@ namespace nana
 		bool allow_multi_select;
 	};
 
-	folderbox::folderbox(window owner, const path_type& init_path, std::string title)
-		: impl_(new implement{ owner, fs::weakly_canonical(init_path).make_preferred(), title, false})
+	folderbox::folderbox(window owner):
+		impl_(new implement{ owner, {}, {}, false})
 	{}
+
+	folderbox::folderbox(window owner, const path_type& init_path, std::string title):
+		impl_(new implement{ owner, fs::weakly_canonical(init_path).make_preferred(), title, false})
+	{}
+
+#ifdef __cpp_char8_t
+	folderbox::folderbox(window owner, const path_type& init_path, std::u8string_view title):
+		impl_(new implement{ owner, fs::weakly_canonical(init_path).make_preferred(), nana::to_string(title), false})
+	{}
+#endif
 
 
 	folderbox::~folderbox()
@@ -1621,6 +1675,14 @@ namespace nana
 		impl_->title.swap(s);
 		return *this;
 	}
+
+#ifdef __cpp_char8_t
+	folderbox& folderbox::title(std::u8string_view s)
+	{
+		impl_->title = nana::to_string(s);
+		return *this;
+	}
+#endif
 
 
 #ifdef NANA_MINGW
@@ -1665,7 +1727,7 @@ namespace nana
 				fd->SetFolder(init_path);
 
 			fd->SetOptions(FOS_PICKFOLDERS | (impl_->allow_multi_select ? FOS_ALLOWMULTISELECT : 0));
-			fd->Show(reinterpret_cast<HWND>(API::root(impl_->owner))); // the native handle of the parent nana form goes here
+			fd->Show(reinterpret_cast<HWND>(api::root(impl_->owner))); // the native handle of the parent nana form goes here
 
 			::IShellItemArray *sia;
 			if (SUCCEEDED(fd->GetResults(&sia))) // fails if user cancelled
@@ -1700,7 +1762,7 @@ namespace nana
 
 		// https://docs.microsoft.com/en-us/windows/desktop/api/shlobj_core/ns-shlobj_core-_browseinfoa
 		BROWSEINFO brw       = { 0 };
-		brw.hwndOwner        = reinterpret_cast<HWND>(API::root(impl_->owner));
+		brw.hwndOwner        = reinterpret_cast<HWND>(api::root(impl_->owner));
 		brw.pszDisplayName   = display_text; // buffer to receive the display name of the folder selected by the user.
 		brw.lpszTitle        = title.data();
 		brw.ulFlags          = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE; // | BIF_EDITBOX;
@@ -1724,7 +1786,7 @@ namespace nana
 
 		fb.load_fs(impl_->init_path, "");
 
-		API::modal_window(fb);
+		api::modal_window(fb);
 
 		auto path_dirs = fb.files();
 

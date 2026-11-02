@@ -1,7 +1,7 @@
 /**
  *	A Tabbar implementation
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(https://nana.acemind.cn)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,7 +17,7 @@
 
 #include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
-#include <nana/any.hpp>
+#include <any>
 
 namespace nana
 {
@@ -85,10 +85,8 @@ namespace nana
 		mutable bool close_attach_window = true;	///< determines whether to close the attached window. It is ignored if remove is false
 	};
 
-	namespace drawerbase
+	namespace drawerbase::tabbar
 	{
-		namespace tabbar
-		{
 			template<typename T>
 			struct tabbar_events
 				: public general_events
@@ -216,12 +214,12 @@ namespace nana
 				~trigger();
 				void activate(std::size_t);
 				std::size_t activated() const;
-				nana::any& at(std::size_t) const;
-				nana::any& at_no_bound_check(std::size_t) const;
+				std::any& at(std::size_t) const;
+				std::any& at_no_bound_check(std::size_t) const;
 				const pat::cloneable<item_renderer> & ext_renderer() const;
 				void ext_renderer(const pat::cloneable<item_renderer>&);
 				void set_event_agent(event_agent_interface*);
-				void insert(std::size_t, native_string_type&&, nana::any&&);
+				void insert(std::size_t, native_string_type&&, std::any&&);
 				std::size_t length() const;
 				bool close_fly(bool);
 				window attach(std::size_t, window, bool drop_other);
@@ -242,8 +240,8 @@ namespace nana
 			private:
 				layouter * layouter_;
 			};
-		}
-	}//end namespace drawerbase
+	}//end namespace drawerbase::tabbar
+	
     /// Analogous to dividers in a notebook or the labels in a file cabinet
 	template<typename Type>
 	class tabbar
@@ -261,12 +259,6 @@ namespace nana
 			this->get_drawer_trigger().set_event_agent(evt_agent_.get());
 		}
 
-		tabbar(window wd, bool visible)
-			: tabbar()
-		{
-			this->create(wd, rectangle(), visible);
-		}
-
 		tabbar(window wd, const rectangle& r = rectangle(), bool visible = true)
 			: tabbar()
 		{
@@ -280,7 +272,7 @@ namespace nana
 
 		value_type & operator[](std::size_t pos) const
 		{
-			return any_cast<value_type&>(this->get_drawer_trigger().at_no_bound_check(pos));
+			return std::any_cast<value_type&>(this->get_drawer_trigger().at_no_bound_check(pos));
 		}
 
 		void activated(std::size_t pos)                  /// Activates a tab specified by pos.
@@ -295,13 +287,13 @@ namespace nana
 
 		value_type const & at(std::size_t pos) const        /// Returns pos'th element
 		{
-			return any_cast<value_type&>(this->get_drawer_trigger().at(pos));
+			return std::any_cast<value_type&>(this->get_drawer_trigger().at(pos));
 		}
 
 		void close_fly(bool fly)                    /// Draw or not a close button in each tab.
 		{
 			if (this->get_drawer_trigger().close_fly(fly))
-				API::refresh_window(this->handle());
+				api::refresh_window(this->handle());
 		}
 
 		const pat::cloneable<item_renderer>& renderer() const
@@ -320,37 +312,44 @@ namespace nana
 		}
 
 		/// Append a new tab
-		tabbar& append(std::string text, window attach_wd, value_type value = {})  // 2x text convertion. maybe better to duplicate code?
+		tabbar& append(std::string text, window attach_wd, value_type value = {})
 		{
-			return this->append( static_cast<std::wstring&&>(nana::charset(std::move(text), nana::unicode::utf8)), attach_wd, std::move(value));
-		}
-
-		tabbar& append(std::wstring text, window attach_wd, value_type value = {})
-		{
-			if (attach_wd && API::empty_window(attach_wd))
-				throw std::invalid_argument("Appending a tab to a tabbar - error: tabbar.attach: invalid window handle");
-
-			this->get_drawer_trigger().insert(::nana::npos, to_nstring(std::move(text)), std::move(value));
-			if (attach_wd)
-				this->attach(this->get_drawer_trigger().length() - 1, attach_wd);
-			
-			API::update_window(*this);
+			_m_insert(::nana::npos, ::nana::detail::to_nstring(std::move(text)), attach_wd, std::move(value));
 			return *this;
 		}
 
+		/// Append a new tab
+		tabbar& append(std::wstring text, window attach_wd, value_type value = {})
+		{
+			_m_insert(::nana::npos, ::nana::detail::to_nstring(std::move(text)), attach_wd, std::move(value));
+			return *this;
+		}
+#ifdef __cpp_char8_t
+		/// Append a new tab
+		tabbar& append(std::u8string_view text, window attach_wd, value_type value = {})
+		{
+			_m_insert(::nana::npos, ::nana::detail::to_nstring(text), attach_wd, std::move(value));
+			return *this;
+		}
+#endif
+
 		void push_back(std::string text)  /// Append a new item.
 		{
-			this->get_drawer_trigger().insert(::nana::npos, to_nstring(std::move(text)), value_type());
-			API::update_window(*this);
+			_m_insert(::nana::npos, ::nana::detail::to_nstring(std::move(text)), nullptr, {});
 		}
+#ifdef __cpp_char8_t
+		void push_back(std::u8string_view text)
+		{
+			_m_insert(::nana::npos, ::nana::detail::to_nstring(text), nullptr, {});
+		}
+#endif
 
 		void insert(std::size_t pos, std::string text, value_type value = {})
 		{
 			if (pos > length())
 				throw std::out_of_range("tabbar::insert invalid position");
 
-			this->get_drawer_trigger().insert(pos, to_nstring(std::move(text)), std::move(value));
-			API::update_window(*this);
+			_m_insert(pos, ::nana::detail::to_nstring(std::move(text)), nullptr, std::move(value));
 		}
 
 		void insert(std::size_t pos, std::wstring text, value_type value = {})
@@ -358,9 +357,17 @@ namespace nana
 			if (pos > length())
 				throw std::out_of_range("tabbar::insert invalid position");
 
-			this->get_drawer_trigger().insert(pos, to_nstring(std::move(text)), std::move(value));
-			API::update_window(*this);
+			_m_insert(pos, ::nana::detail::to_nstring(std::move(text)), nullptr, std::move(value));
 		}
+#ifdef __cpp_char8_t
+		void insert(std::size_t pos, std::u8string_view text, value_type value = {})
+		{
+			if (pos > length())
+				throw std::out_of_range("tabbar::insert invalid position");
+
+			_m_insert(pos, ::nana::detail::to_nstring(text), nullptr, std::move(value));
+		}		
+#endif
 
 		/// Attach a window to a specified tab. When the tab is activated, tabbar shows the attached window. 
 		/**
@@ -371,7 +378,7 @@ namespace nana
 		 */
 		window attach(std::size_t pos, window attach_wd, bool drop_other = true)
 		{
-			if (attach_wd && API::empty_window(attach_wd))
+			if (attach_wd && api::empty_window(attach_wd))
 				throw std::invalid_argument("tabbar.attach: invalid window handle");
 
 			return this->get_drawer_trigger().attach(pos, attach_wd, drop_other);
@@ -401,17 +408,35 @@ namespace nana
 		void toolbox(kits kit, bool enable)
 		{
 			if (this->get_drawer_trigger().toolbox(kit, enable))
-				API::refresh_window(this->handle());
+				api::refresh_window(this->handle());
 		}
 
-		void text(std::size_t pos, const std::string& str) /// Sets the title of the specified item, If pos is invalid, the method throws an std::out_of_range object.
+		void text(std::size_t pos, const std::string& s) /// Sets the title of the specified item, If pos is invalid, the method throws an std::out_of_range object.
 		{
-			this->get_drawer_trigger().text(pos, to_nstring(str));
+			this->get_drawer_trigger().text(pos, ::nana::detail::to_nstring(s));
 		}
+#ifdef __cpp_char8_t
+		void text(std::size_t pos, std::u8string_view s)
+		{
+			this->get_drawer_trigger().text(pos, ::nana::detail::to_nstring(s));
+		}
+#endif
 
 		std::string text(std::size_t pos) const /// Returns a title of a specified item, If pos is invalid, the method throws a std::out_of_range object.
 		{
 			return to_utf8(this->get_drawer_trigger().text(pos));
+		}
+	private:
+		void _m_insert(std::size_t pos, detail::native_string_type&& title, window attach_wd, value_type&& value)
+		{
+			if (attach_wd && api::empty_window(attach_wd))
+				throw std::invalid_argument("Appending a tab to a tabbar - error: tabbar.attach: invalid window handle");
+
+			this->get_drawer_trigger().insert(pos, std::move(title), std::move(value));
+			if (attach_wd)
+				this->attach(this->get_drawer_trigger().length() - 1, attach_wd);
+			
+			api::update_window(*this);			
 		}
 	private:
 		std::unique_ptr<drawerbase::tabbar::event_agent<value_type, drawerbase::tabbar::trigger> > evt_agent_;
@@ -468,8 +493,8 @@ namespace nana
 		void attach(std::size_t pos, window);
 		window attach(std::size_t pos) const;
 
-		void push_back(std::string text, ::nana::any par = {});
-		void push_front(std::string text, ::nana::any par = {});
+		void push_back(std::string text, std::any par = {});
+		void push_front(std::string text, std::any par = {});
 
 		std::size_t selected() const;
 		void erase(std::size_t pos, bool close_attached = true);

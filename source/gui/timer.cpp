@@ -1,6 +1,6 @@
 /*
  *	A Timer Implementation
- *  Nana C++ Library(http://www.nanapro.org)
+ *  Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -18,12 +18,7 @@
 #include <nana/gui/timer.hpp>
 #include <map>
 #include <memory>
-
-#if defined(STD_THREAD_NOT_SUPPORTED)
-    #include <nana/std_mutex.hpp>
-#else
-    #include <mutex>
-#endif
+#include <mutex>
 
 #if defined(NANA_WINDOWS)
 #include <windows.h>

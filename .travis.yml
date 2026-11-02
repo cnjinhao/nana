@@ -8,11 +8,11 @@ cache:
 
 matrix:
   include:
-    - env: CXX=g++-8
+    - env: CXX=g++-9
       addons:
         apt:
           packages:
-            - g++-8
+            - g++-9
             - libjpeg8-dev
             - libpng-dev
             - libasound2-dev

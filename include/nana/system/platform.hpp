@@ -1,6 +1,6 @@
 /*
  *	A platform API implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -19,11 +19,6 @@ namespace nana
 {
 namespace system
 {
-	//sleep
-	//@brief: suspend current thread for a specified milliseconds.
-	//its precision is depended on hardware.
-	void sleep(unsigned milliseconds);
-
 	//this_thread_id
 	//@brief: get the identifier of calling thread.
 	thread_t this_thread_id();

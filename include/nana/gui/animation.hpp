@@ -1,6 +1,6 @@
 /*
  *	An Animation Implementation
- *	Nana C++ Library(http://www.nanapro.org)
+ *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -21,9 +21,11 @@
 
 namespace nana
 {
-	class animation;
+	class [[deprecated("Deprecated in 1.8")]] animation;
         /// Holds the frames and frame builders. Have reference semantics for efficiency.
-	class frameset
+
+
+	class [[deprecated("Deprecated in 1.8")]] frameset
 	{
 		friend class animation;
 	public:
@@ -31,14 +33,14 @@ namespace nana
 		using framebuilder = std::function<bool(std::size_t pos, paint::graphics&, nana::size&)>;
 	public:
 		frameset();
-		void push_back(paint::image);        ///< Inserts frames at the end.
+		void push_back(paint::image, std::size_t duration = 0);	///< Inserts frames at the end.
 		void push_back(framebuilder fb, std::size_t length);  ///< Inserts a framebuilder and the number of frames that it generates.
 	private:
 		struct impl;
 		std::shared_ptr<impl> impl_;
 	};
             /// Easy way to display an animation or create an animated GUI
-	class animation
+	class [[deprecated("Deprecated in 1.8")]] animation
 	{
 		struct branch_t
 		{
@@ -60,6 +62,7 @@ namespace nana
 		animation& operator=(animation&&);
 
 		void push_back(frameset frms);
+		void push_back(paint::image, std::size_t duration = 0);
 
 		void looped(bool enable);       ///< Enables or disables the animation repeating playback.
 
