@@ -12,12 +12,13 @@
 #ifndef NANA_GUI_PLACE_PARTS_HPP
 #define NANA_GUI_PLACE_PARTS_HPP
 
+#include <stdexcept>
+#include <deque>
+
 #include <nana/gui/widgets/form.hpp>
 #include <nana/gui/widgets/tabbar.hpp>
 #include <nana/gui/element.hpp>
 #include <nana/paint/text_renderer.hpp>
-#include <stdexcept>
-#include <deque>
 
 namespace nana
 {
@@ -475,28 +476,29 @@ namespace nana
 			}moves_;
 		};//class dockarea
 
-		/// \todo: generalize dpi to v2 awareness
+		/// \todo: eliminate this ?!
 		struct display_metrics
 		{
-			std::size_t dpi;
+			std::size_t dpi{96u};
 			double font_px{ 0 };
 
-			display_metrics(window wd) :
-				dpi(api::window_dpi(wd))
+			display_metrics(window wd)  /// \todo: dpi to_system_px?: dpi(api::window_dpi(wd))
 			{
-				auto font_info = api::typeface(wd).info();
+				auto font_info = api::typeface(wd).info();    // ask dinamicaly and not keee here?
 				if (font_info)
-					font_px = font_info->size_pt * dpi / 72;
+					font_px = (font_info->size_pt * dpi) / 72.0;
 			}
 		};
 
-		//number_t is used for storing a number type variable
-		//such as integer, real and percent. Essentially, percent is a typo of real.
+		/// storing a number type variable, such as integer, real and percent, where essentially, percent is a type of real.
 		class number_t
 		{
 		public:
 			enum class kind{ none, integer, real, percent };
-			enum class units{medium, px, em};
+			enum class units{ medium, ///< scalable?    Copilot: The default unit, it is used for the value of margin, padding, and gap.
+				              px,     ///< fixed in px? Copilot: The pixel unit,   it is used for the value of width, height, and size.
+				              em      ///< in font px?  Copilot: The em unit,      it is used for the value of font-size.
+			                };
 
 			number_t()
 			{
@@ -543,12 +545,12 @@ namespace nana
 					return 0;
 				}
 				
-				if (to_system_px)
+				if (to_system_px) /// \todo: eliminate ?
 				{
 					switch (unit_)
 					{
 					case units::medium:
-						return val * dm.dpi / 96;
+						return val; /// \todo: ? * dm.dpi / 96;
 					case units::px:
 						return val;
 					case units::em:
@@ -562,9 +564,9 @@ namespace nana
 					case units::medium:
 						return val;
 					case units::px:
-						return val * 96 / dm.dpi;
+						return val; /// \todo: ? * 96 / dm.dpi;
 					case units::em:
-						return val * dm.font_px * 96 / dm.dpi;
+						return val * dm.font_px; /// \todo: ? * 96 / dm.dpi;
 					}
 				}
 				return 0;
@@ -584,7 +586,7 @@ namespace nana
 					return px;
 				}
 
-				return get_value(0, dm, to_system_px);
+				return get_value(0, dm, to_system_px);    /// \todo: to_system_px?
 			}
 
 			int integer() const noexcept
@@ -766,27 +768,27 @@ namespace nana
 
 					if (0 == it)	//top
 					{
-						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height), dm, true));
+						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height), dm, true));  /// \todo: dpi to_system_px?
 						r.y += px;
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != ib)	//bottom
 					{
-						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height), dm, true));
+						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height), dm, true));  /// \todo: dpi to_system_px?
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != il)	//left
 					{
-						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width), dm, true));
+						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width), dm, true));  /// \todo: dpi to_system_px?
 						r.x += px;
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 
 					if (-1 != ir)	//right
 					{
-						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width), dm, true));
+						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width), dm, true));  /// \todo: dpi to_system_px?
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 				}

@@ -79,12 +79,12 @@ namespace nana{	namespace paint
 			return true;
 		}
 	public:
-		const drawable_type drawable; //Attached handle
+		const drawable_type   drawable; //Attached handle
 		const nana::rectangle valid_r;
-		const nana::size pixel_size;
-		pixel_color_t * raw_pixel_buffer{ nullptr };
-		const std::size_t bytes_per_line;
-		bool	alpha_channel{false};
+		const nana::size      pixel_size;
+		pixel_color_t *       raw_pixel_buffer{ nullptr };
+		const std::size_t     bytes_per_line;
+		bool	              alpha_channel{false};
 #if defined(NANA_X11)
 		struct x11_members
 		{
@@ -95,32 +95,33 @@ namespace nana{	namespace paint
 
 		struct image_processor_tag
 		{
-			paint::image_process::stretch_interface * stretch_receptacle{nullptr};
-			paint::image_process::stretch_interface * const * stretch;
-			paint::image_process::alpha_blend_interface * alpha_blend_receptacle{nullptr};
+			paint::image_process::stretch_interface             * stretch_receptacle    {nullptr};
+			paint::image_process::stretch_interface     * const * stretch;
+			paint::image_process::alpha_blend_interface         * alpha_blend_receptacle{nullptr};
 			paint::image_process::alpha_blend_interface * const * alpha_blend;
-			paint::image_process::blend_interface * blend_receptacle{nullptr};
-			paint::image_process::blend_interface * const * blend;
-			paint::image_process::line_interface * line_receptacle{nullptr};
-			paint::image_process::line_interface * const * line;
-			paint::image_process::blur_interface * blur_receptacle{nullptr};
-			paint::image_process::blur_interface * const * blur;
+			paint::image_process::blend_interface               * blend_receptacle      {nullptr};
+			paint::image_process::blend_interface       * const * blend;
+			paint::image_process::line_interface                * line_receptacle       {nullptr};
+			paint::image_process::line_interface        * const * line;
+			paint::image_process::blur_interface                * blur_receptacle       {nullptr};
+			paint::image_process::blur_interface        * const * blur;
 
 			image_processor_tag()
 			{
 				auto & provider = detail::image_process_provider::instance();
-				stretch = provider.stretch();
+				stretch     = provider.stretch();
 				alpha_blend = provider.alpha_blend();
-				blend = provider.blend();
-				line = provider.line();
-				blur = provider.blur();
+				blend       = provider.blend();
+				line        = provider.line();
+				blur        = provider.blur();
 			}
+
 		}img_pro;
 
 		pixel_buffer_storage(std::size_t width, std::size_t height)
 			:	drawable(nullptr),
 				valid_r(0, 0, static_cast<unsigned>(width), static_cast<unsigned>(height)),
-				pixel_size(static_cast<unsigned>(width), static_cast<unsigned>(height)),
+				pixel_size   (static_cast<unsigned>(width), static_cast<unsigned>(height)),
 				bytes_per_line(width * sizeof(pixel_color_t))
 		{
 			_m_alloc();
@@ -559,24 +560,25 @@ namespace nana{	namespace paint
 
 	bool pixel_buffer::open(drawable_type drawable, const nana::rectangle & want_rectangle)
 	{
-		auto sz = nana::paint::detail::drawable_size(drawable);
+		auto sz = nana::paint::detail::drawable_size(drawable);    
 		if(want_rectangle.x >= static_cast<int>(sz.width) || want_rectangle.y >= static_cast<int>(sz.height))
 			return false;
 
 		auto want_r = want_rectangle;
-		if(want_r.width == 0) want_r.width = sz.width - want_r.x;
+		if(want_r.width  == 0) want_r.width  = sz.width  - want_r.x;
 		if(want_r.height == 0) want_r.height = sz.height - want_r.y;
 
 		::nana::rectangle r;
 		if (false == overlap(::nana::rectangle{ sz }, want_r, r))
 			return false;
+
 #if defined(NANA_WINDOWS)
 		BITMAPINFO bmpinfo;
 		assign_windows_bitmapinfo({want_r.width, want_r.height}, bmpinfo);
 
 		bool need_dup = (r.width != sz.width || r.height != sz.height);
 
-		HDC context = drawable->context;
+		HDC    context = drawable->context;
 		HBITMAP pixmap = drawable->pixmap;
 
 		HBITMAP orig_bmp = nullptr;
@@ -845,7 +847,8 @@ namespace nana{	namespace paint
 	pixel_color_t pixel_buffer::pixel(int x, int y) const
 	{
 		auto sp = storage_.get();
-		if(sp && 0 <= x && x < static_cast<int>(sp->pixel_size.width) && 0 <= y && y < static_cast<int>(sp->pixel_size.height))
+		if(sp && 0 <= x && x < static_cast<int>(sp->pixel_size.width ) 
+		      && 0 <= y && y < static_cast<int>(sp->pixel_size.height))
 			return *reinterpret_cast<const pixel_color_t*>(reinterpret_cast<const char*>(sp->raw_pixel_buffer + x) + y * sp->bytes_per_line);
 
 		return pixel_color_t();

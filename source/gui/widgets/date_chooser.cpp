@@ -87,8 +87,8 @@ namespace nana
 			}
 			else if (tfid == transform_action::to_leave)
 			{
-				nana::paint::graphics dzbuf(newbuf.size());
-				nana::paint::graphics nzbuf(newbuf.size());
+				nana::paint::graphics dzbuf(newbuf.size(), newbuf.get_dpi());
+				nana::paint::graphics nzbuf(newbuf.size(), newbuf.get_dpi());
 
 				nana::rectangle r;
 				for (std::size_t i = 1; i < duration.count; ++i)
@@ -122,8 +122,8 @@ namespace nana
 			}
 			else if (tfid == transform_action::to_enter)
 			{
-				nana::paint::graphics dzbuf(newbuf.size());
-				nana::paint::graphics nzbuf(newbuf.size());
+				nana::paint::graphics dzbuf(newbuf.size(), newbuf.get_dpi());
+				nana::paint::graphics nzbuf(newbuf.size(), newbuf.get_dpi());
 
 				nana::rectangle r;
 				for (std::size_t i = 1; i < duration.count; ++i)
@@ -533,7 +533,7 @@ namespace nana
 
 					_m_calc_basis(graph, refpos);
 
-					nana::paint::graphics gbuf({ width, graph.height() - 2 - topbar_height });
+					nana::paint::graphics gbuf({ width, graph.height() - 2 - topbar_height }, graph.get_dpi());
 					gbuf.rectangle(true, { 0xf0, 0xf0, 0xf0 });
 
 					switch (page)
@@ -555,13 +555,13 @@ namespace nana
 				nana::point refpos(1, static_cast<int>(topbar_height)+1);
 				nana::rectangle r(0, 0, graph.width() - 2, graph.height() - 2 - topbar_height);
 
-				nana::paint::graphics dirtybuf({ r.width, r.height });
+				nana::paint::graphics dirtybuf({ r.width, r.height }, graph.get_dpi());
 				dirtybuf.bitblt(r, graph, refpos);
 
 				trace_.clear_logic_pos();
 				render(graph);
 
-				nana::paint::graphics gbuf({ r.width, r.height });
+				nana::paint::graphics gbuf({ r.width, r.height }, graph.get_dpi());
 				gbuf.bitblt(r, graph, refpos);
 
 				perf_transform_helper(window_handle, transf, graph, dirtybuf, gbuf, refpos, duration_);

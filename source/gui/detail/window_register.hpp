@@ -1,10 +1,23 @@
+/**
+ *	window_register Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file nana/source/gui/detail/window_register.hpp
+ */
+
 #ifndef NANA_WINDOW_REGISTER_HEADER_INCLUDED
 #define NANA_WINDOW_REGISTER_HEADER_INCLUDED
 
-#include "basic_window.hpp"
 #include <set>
 #include <vector>
 #include <algorithm> //std::find
+
+#include "basic_window.hpp"
 
 namespace nana
 {
@@ -101,8 +114,8 @@ namespace nana
 				return nana::npos;
 			}
 		private:
-			char bitmap_[CacheSize];
-			size_type seq_[CacheSize];
+			char       bitmap_[CacheSize];
+			size_type     seq_[CacheSize];
 			pair_type * addr_;
 		};
 

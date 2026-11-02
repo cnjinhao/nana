@@ -25,8 +25,8 @@
 
 
 #ifndef NANA_dpi_aware  // uncomment your option: true to try experimental DPI aware nana
-    #define NANA_dpi_aware false
-	//#define NANA_dpi_aware true 
+    //#define NANA_dpi_aware false
+	#define NANA_dpi_aware true 
 #endif // NANA_dpi_aware 
 inline bool config_dpi_aware = NANA_dpi_aware;
 

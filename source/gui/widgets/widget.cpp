@@ -1,12 +1,12 @@
-/*
+/**
  *	The fundamental widget class implementation
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/widget.cpp
+ *	@file nana/gui/widgets/widget.cpp
  */
 
 #include <nana/gui/widgets/widget.hpp>
@@ -20,8 +20,6 @@ namespace nana
 		void set_eval(window, i18n_eval&&);
 	}
 
-	//class widget
-	//@brief:The definition of class widget
 		class widget::inner_widget_notifier : public detail::widget_notifier_interface
 		{
 		public:

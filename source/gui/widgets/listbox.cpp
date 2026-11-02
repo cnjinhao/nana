@@ -2481,7 +2481,7 @@ namespace nana
 			{
 				unsigned max_font_px = 0;
 
-				paint::graphics graph{ size{ 1, 1 } };
+				paint::graphics graph{ size{ 1, 1 }, this->graph->get_dpi() };
 				for (auto & col : this->header.cont())
 				{
 					if (!col.visible())
@@ -2866,7 +2866,7 @@ namespace nana
 			if (graph->empty())
 			{
 				//Creates a helper if widget graph is empty(when its size is 0).
-				graph_helper.reset(new paint::graphics{ nana::size{ 5, 5 } });
+				graph_helper.reset(new paint::graphics( nana::size( 5, 5 ), api::window_dpi(this->widget_->handle() )));
 				graph_helper->typeface(ess_->graph->typeface());
 				graph = graph_helper.get();
 			}
@@ -2909,7 +2909,7 @@ namespace nana
             if (graph->empty())
             {
                 //Creates a helper if widget graph is empty(when its size is 0).
-                graph_helper.reset(new paint::graphics{ nana::size{ 5, 5 } });
+                graph_helper.reset(new paint::graphics( nana::size{ 5, 5 } , ess_->graph->get_dpi()));
                 graph_helper->typeface(ess_->graph->typeface());
                 graph = graph_helper.get();
             }
@@ -3538,7 +3538,7 @@ namespace nana
 
 				if(api::dev::copy_transparent_background(essence_->listbox_ptr->handle(), column_r, graph, column_r.position()))
 				{
-					paint::graphics grad_graph{column_r.dimension()};
+					paint::graphics grad_graph{column_r.dimension(), graph.get_dpi()};
 					grad_graph.gradual_rectangle(rectangle{column_r.dimension()}, bgcolor.blend(colors::white, 0.1), bgcolor.blend(colors::black, 0.1), true);
 
 					graph.blend(column_r, grad_graph, {}, 0.8);
@@ -3596,7 +3596,7 @@ namespace nana
 				if (&essence_->header.at(0, true) == &col)
 					crp.margin = essence_->header.margin();
 
-				paint::graphics fl_graph({ col.width_px + crp.margin, crp.height });
+				paint::graphics fl_graph({ col.width_px + crp.margin, crp.height }, this->essence_->graph->get_dpi() );
 
 				fl_graph.typeface(essence_->graph->typeface());
 
@@ -3781,7 +3781,7 @@ namespace nana
 							static_cast<size::value_type>(std::abs(essence_->mouse_selection.begin_position.y - essence_->mouse_selection.end_position.y))
 					};
 
-					paint::graphics box_graph{ box_size };
+					paint::graphics box_graph{ box_size, essence_->graph->get_dpi() };
 					box_graph.rectangle(true, essence_->scheme_ptr->selection_box.get_color().blend(colors::white, 0.6));
 					box_graph.rectangle(false, essence_->scheme_ptr->selection_box.get_color());
 

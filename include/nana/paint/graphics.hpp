@@ -1,4 +1,4 @@
-/*
+/**
  *	Paint Graphics Implementation
  *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
@@ -7,27 +7,27 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/graphics.hpp
+ *	@file nana/paint/graphics.hpp
  */
 
 #ifndef NANA_PAINT_GRAPHICS_HPP
 #define NANA_PAINT_GRAPHICS_HPP
 
+#include <filesystem>
 #include <memory>
+#include <optional>
+#include <string_view>
 
 #include "../basic_types.hpp"
 #include "../gui/basis.hpp"
-#include <filesystem>
-#include <string_view>
 #include "detail/ptdefs.hpp"
-
-#include <optional>
 
 
 namespace nana
 {
 	namespace paint
 	{
+		/// functions to create and set/get properties of fonts
 		class font
 		{
 			friend class graphics;
@@ -36,30 +36,30 @@ namespace nana
 
 			using font_style = ::nana::detail::font_style;
 
-			font();
-			font(drawable_type);
-			font(const font&);
+			font();					 ///< use the application default font
+			font(drawable_type src); ///< extract the font of the drawable_type. Warnnig: assign only from fonts with the expected target dpi.
+			font(const font&);       ///< Warnnig: copy only from fonts with the expected target dpi.
 
 			/// \todo: generalize dpi to v2 awareness
 
 			/// creates a font object.
 			/// @param info Specifies the font family, size and styles.
 			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
-			font(const font_info& info, std::size_t dpi = 0);
+			font(const font_info& info, int dpi = 0);
 
 			/// creates a font object.
 			/// @param name The font family.
 			/// @param size_pt The font size.
 			/// @param fs The font style.
 			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
-			font(const ::std::string& name, double size_pt, const font_style& fs = {}, std::size_t dpi = 0);
+			font(const ::std::string& name, double size_pt, const font_style& fs = {}, int dpi = 0);
 
-			/// creates a font object with a truetype font file.
+			/// creates a font object from a TrueType font file.
 			/// @param size_pt The font size.
 			/// @param truetype The path to a truetype font file
 			/// @param fs The font style.
 			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.
-			font(double size_pt, const path_type& truetype, const font_style& fs = {}, std::size_t dpi = 0);
+			font(double size_pt, const path_type& truetype, const font_style& fs = {}, int dpi = 0);
 
 			~font();
 			bool empty() const;
@@ -69,10 +69,13 @@ namespace nana
 
 			/// Returns font size, in point.
 			/**
-			* @param fixed Indicates whether to return a fixed font size. If this parameter is false, the method may return zero for default system font size. If the parameter is true, the method returns a fixed size of default font size if the font size that assigned by constructor is zero.
+			* @param fixed Indicates whether to return a fixed font size. If this parameter is false, 
+			*        the method may return zero for default system font size. If the parameter is true, 
+			*        the method returns a fixed size of default font size if the font size that assigned by constructor is zero.
+			* @param dpi Specifies the DPI for de-scaling the size to user-side, 0 indicates the system DPI.
 			* @return The font size, in point.
 			*/
-			double size(bool fixed = false) const;
+			double size(bool fixed = false, int dpi = 0) const;
 
 			bool bold() const;
 			unsigned weight() const;
@@ -86,7 +89,7 @@ namespace nana
 
 			std::optional<font_info> info() const;
 
-			font& operator=(const font&);
+			font& operator=(const font&);			 ///< Warnnig: assign only from fonts with the expected target dpi.
 			bool operator==(const font&) const;
 			bool operator!=(const font&) const;
 		private:
@@ -105,8 +108,8 @@ namespace nana
 		class graphics
 		{
 		public:
-			graphics();
-			graphics(const ::nana::size&);                 ///< size in pixel
+			explicit graphics(int dpi = 0);
+			graphics(const ::nana::size& sz, int dpi );//= 96                 ///< size in pixel
 			graphics(const graphics&);      ///< the resource is not copyed, the two graphics objects refer to the *SAME* resource
 			graphics& operator=(const graphics&);
 
@@ -115,7 +118,7 @@ namespace nana
 
 			~graphics();
 
-			bool changed() const;           ///< Returns true if the graphics object is operated
+			bool changed() const;           ///< Returns true if the graphics object is operated  \todo: not used ??
 			bool empty() const;             ///< Returns true if the graphics object does not refer to any resource.
 			explicit operator bool() const noexcept;
 
@@ -129,15 +132,17 @@ namespace nana
 			/**
 			 * @param sz The dimension of the graphics to be requested. If sz is empty, it performs as release().
 			 */
-			void make(const ::nana::size& sz);
-			void resize(const ::nana::size&);
-			void typeface(const font&);						///< Selects a specified font type into the graphics object.
+			void make(const ::nana::size& sz);  ///\todo take dpi 
+			void resize(const ::nana::size&);  ///\todo take dpi 
+			void set_dpi(int dpi);
+			int  get_dpi() const;
+			void typeface(const font&);			///< Selects a specified font type into the graphics object.  \todo: dpi?
 			font typeface() const;
 
-			::nana::size text_extent_size(std::string_view text) const;
-			::nana::size text_extent_size(std::wstring_view text) const;
+			::nana::size text_extent_size(std::string_view text) const;  ///< dpi unscaled: user-side
+			::nana::size text_extent_size(std::wstring_view text) const;  ///< dpi unscaled: user-side
 #ifdef __cpp_char8_t
-			::nana::size text_extent_size(std::u8string_view text) const;
+			::nana::size text_extent_size(std::u8string_view text) const;  ///< dpi unscaled: user-side
 #endif
 
 			///Only supports the wide string, because it is very hard to specify the begin and end position in a UTF-8 string.
@@ -150,36 +155,45 @@ namespace nana
 			 */
 			std::unique_ptr<unsigned[]> glyph_pixels(std::wstring_view text) const;
 
-			::nana::size	bidi_extent_size(std::string_view utf8_text) const;
-			::nana::size	bidi_extent_size(std::wstring_view text) const;
+			::nana::size	bidi_extent_size(std::string_view utf8_text) const; ///< unscaled: user-side
+			::nana::size	bidi_extent_size(std::wstring_view text) const; ///< unscaled: user-side
 #ifdef __cpp_char8_t
-			::nana::size 	bidi_extent_size(std::u8string_view text) const;
+			::nana::size 	bidi_extent_size(std::u8string_view text) const; ///< unscaled: user-side
 #endif
 
 			bool text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const;
 
 			void line_begin(int x, int y);
 
-			void bitblt(int x, int y, const graphics& source);     ///<   Transfers the source to the specified point.
-			void bitblt(const ::nana::rectangle& r_dst, native_window_type src);  ///< Transfers the color data corresponding to r_dst from the src window to this graphics.
-			void bitblt(const ::nana::rectangle& r_dst, native_window_type src, const point& p_src);  ///< Transfers the color data corresponding to r_dst from the src window at point p_src to this graphics.
-			void bitblt(const ::nana::rectangle& r_dst, const graphics& src);     ///< Transfers the color data corresponding to r_dst from the src graphics to this graphics.
-			void bitblt(const ::nana::rectangle& r_dst, const graphics& src, const point& p_src);///< Transfers the color data corresponding to r_dst from the src graphics at point p_src to this graphics.
+
+			/// \todo: how to manage scaling here?? stretch if dpi_src != dpi_dst ??
+
+			//                             to       ,                      from
+			void bitblt(                int x, int y,  const graphics&    src                    ); ///< Transfers the whole source to the specified point.
+			void bitblt(const nana::rectangle& r_dst,  const graphics&    src                    ); ///< Transfers the color data corresponding to r_dst from the src graphics to this graphics.
+			void bitblt(const nana::rectangle& r_dst,  const graphics&    src, const point& p_src); ///< Transfers the color data corresponding to r_dst from the src graphics at point p_src to this graphics.
+            void bitblt(const nana::rectangle& r_dst,  native_window_type src                    ); ///< Transfers to r_dst of this graphics from the src window the corresponding color data \todo
+			void bitblt(const nana::rectangle& r_dst,  native_window_type src, const point& p_src); ///< Transfers the color data corresponding to r_dst from the src window at point p_src to this graphics.
+
+			//                         from           ,          to                     
+			void paste(                                graphics& dst, int x, int y) const;  ///< Paste the whole graphics object into the dest at (x, y)
+			void paste(const ::nana::rectangle& r_src, graphics& dst, int x, int y) const;  ///< Paste  r_src of graphics object into the dest at (x, y)
+
+			//                                 to                                             ,      from
+			void paste(native_window_type dst, const ::nana::rectangle& r_dst                 , int sx, int sy) const;  ///< Paste the graphics object into a platform-dependent window at (x, y)
+			void paste(native_window_type dst, int dx, int dy, unsigned width, unsigned height, int sx, int sy) const;
+			void paste(     drawable_type dst, int  x, int  y                                                 ) const;
+
+			//                          from           ,           to                     
+			void stretch(const ::nana::rectangle& src_r, graphics& dst, const ::nana::rectangle& dst_r) const;
+			void stretch(                                graphics& dst, const ::nana::rectangle& dst_r) const;
 
 			void blend(const ::nana::rectangle& r, const ::nana::color&, double fade_rate);
 			void blend(const ::nana::rectangle& blend_r, const graphics& blend_graph, const point& blend_graph_point, double fade_rate);///< blends with the blend_graph.
 
 			void blur(const ::nana::rectangle& r, std::size_t radius);      ///< Blur process.
 
-			void paste(graphics& dst, int x, int y) const;    ///< Paste the graphics object into the dest at (x, y)
-			void paste(native_window_type dst, const ::nana::rectangle&, int sx, int sy) const;  ///< Paste the graphics object into a platform-dependent window at (x, y)
-			void paste(native_window_type dst, int dx, int dy, unsigned width, unsigned height, int sx, int sy) const;
-			void paste(drawable_type dst, int x, int y) const;
-			void paste(const ::nana::rectangle& r_src, graphics& dst, int x, int y) const;
 			void rgb_to_wb(bool skip_transparent_pixels = false);   ///< Transform a color graphics into black&white.
-
-			void stretch(const ::nana::rectangle& src_r, graphics& dst, const ::nana::rectangle& r) const;
-			void stretch(graphics& dst, const ::nana::rectangle&) const;
 
 			void flush();
 

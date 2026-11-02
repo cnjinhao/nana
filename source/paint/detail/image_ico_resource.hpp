@@ -115,7 +115,7 @@ namespace nana{	namespace paint
 
 			bool save(const std::filesystem::path& p) const override
 			{
-				paint::graphics graph{size()};
+				paint::graphics graph{size(), 96};
 
 				paste(rectangle{ size() }, graph, {});
 
@@ -154,7 +154,7 @@ namespace nana{	namespace paint
 				if (!pxbuf_)
 					pxbuf_.open(sz.width, sz.height);
 
-				paint::graphics graph{ size() };
+				paint::graphics graph{ size(), 96 };  /// \todo:  96? it should be replaced by a DPI value.??
 
 				paste(rectangle{ size() }, graph, {});
 				
@@ -168,7 +168,7 @@ namespace nana{	namespace paint
 				if (!pxbuf_)
 					pxbuf_.open(sz.width, sz.height);
 
-				paint::graphics graph{ size() };
+				paint::graphics graph{ size() , 96 };  /// \todo:  96? it should be replaced by a DPI value.??
 
 				paste(rectangle{ size() }, graph, {});
 

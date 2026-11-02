@@ -235,7 +235,7 @@ namespace nana
 	{
 		event_code evt_code; ///< what kind of mouse event?
 		::nana::window window_handle;  ///< A handle to the event window
-		::nana::point pos;   ///< cursor position in the event window
+		::nana::point pos;   ///< cursor position in the event window, dpi user-side coordinate
 		::nana::mouse button;	///< indicates a button which triggers the event
 
 		bool left_button;	///< true if mouse left button is pressed

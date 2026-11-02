@@ -120,7 +120,7 @@ namespace nana
 				impl_->attr.pushed = pshd;
 				if(false == pshd)
 				{
-					if (api::find_window(api::cursor_position()) == impl_->wdg->handle())
+					if (api::find_window_cursor() == impl_->wdg->handle())
 						impl_->attr.e_state = element_state::hovered;
 					else
 						impl_->attr.e_state = element_state::normal;

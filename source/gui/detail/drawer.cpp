@@ -15,6 +15,7 @@
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/drawer.hpp>
+#include "../../detail/platform_abstraction.hpp"
 
 #if defined(NANA_X11)
 	#include "../../detail/posix/platform_spec.hpp"
@@ -231,8 +232,9 @@ namespace nana
 			std::vector<std::pair<std::function<void(paint::graphics&)>, bool>*> draws;	//Drawing function and flag for clearable
 		};
 
-		drawer::drawer()
-			: data_impl_{ new data_implement }
+		drawer::drawer(int dpi)
+			: graphics{ dpi },
+			  data_impl_{ new data_implement }
 		{}
 
 		drawer::~drawer()
@@ -246,6 +248,7 @@ namespace nana
 		void drawer::bind(basic_window* cw)
 		{
 			data_impl_->window_handle = cw;
+			graphics.set_dpi(cw->dpi);
 		}
 
 		void drawer::typeface_changed()
@@ -621,7 +624,7 @@ namespace nana
 		{
 			wd->flags.action_before = wd->flags.action;
 
-			auto r = visual;
+			auto r = visual;  /// \todo: dpi scale to SS
 			r.pare_off(-static_cast<int>(weight()));
 			rectangle good_r;
 			if (overlap(r, rectangle{ wd->root_graph->size() }, good_r))
@@ -630,6 +633,11 @@ namespace nana
 					(good_r.right() > visual.right()) || (good_r.bottom() > visual.bottom()))
 				{
 					auto graph = wd->root_graph;
+
+					// untransform r and good_r to the System-side dpi before creating a pixel buffer
+					platform_abstraction::untransform_dpi(r     , graph->get_dpi());
+					platform_abstraction::untransform_dpi(good_r, graph->get_dpi());
+
 					nana::paint::pixel_buffer pixbuf(graph->handle(), r);
 
 					pixel_argb_t px0, px1, px2, px3;

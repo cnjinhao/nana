@@ -406,7 +406,7 @@ namespace nana
 				return sp;
 			}
 
-			//Parses unit. It returns unit string and modifies the sp to the next character of unit string if it parses successfully.
+			/// Parses unit, It returns unit string and modifies the sp to the next character of unit string if it parses successfully.
 			std::string _m_unit(const char*& sp) noexcept
 			{
 				auto const start = sp;
@@ -948,7 +948,7 @@ namespace nana
 							else
 							{
 								double precise_px = 0;
-								fv += gap_value.get_value(100, 0, precise_px, dm, false);
+								fv += gap_value.get_value(100, 0, precise_px, dm, false);  /// \todo: dpi to_system_px?
 							}
 						}
 
@@ -1087,7 +1087,7 @@ namespace nana
 
 			if (!div->min_px.empty())
 			{
-				auto v = div->min_px.get_value(static_cast<int>(area_px), dm);
+				auto v = div->min_px.get_value(static_cast<int>(area_px), dm);  /// \todo: dpi to_system_px?
 
 				if ((weight_floor > 0) && (v < weight_floor))
 					v = weight_floor;
@@ -1100,7 +1100,7 @@ namespace nana
 
 			if (!div->max_px.empty())
 			{
-				auto v = div->max_px.get_value(static_cast<int>(area_px), dm);
+				auto v = div->max_px.get_value(static_cast<int>(area_px), dm);  /// \todo: dpi to_system_px?
 				if (px > v)
 					return v;
 			}
@@ -1205,9 +1205,9 @@ namespace nana
 			rectangle_rotator area(vert, area_margined);
 			auto area_px = area.w();
 
-			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px, dm); // fixed pixels and number of adjustable items
+			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px, dm); // fixed pixels and number of adjustable items,   /// \todo: dpi to_system_px?
 
-			double adjustable_px = _m_revise_adjustable(fa, area_px, dm); // amount of pixels for each adjustable item 
+			double adjustable_px = _m_revise_adjustable(fa, area_px, dm); // amount of pixels for each adjustable item   /// \todo: dpi to_system_px?
 
 			double position = area.x();
 			std::vector<division*> delay_collocates;
@@ -1232,7 +1232,7 @@ namespace nana
 					else
 						child_px = adjustable_px;
 
-					child_px = limit_px(child, child_px, area_px, dm);
+					child_px = limit_px(child, child_px, area_px, dm);  /// \todo: dpi to_system_px?
 
 					auto npx = static_cast<unsigned>(child_px);
 					precise_px = child_px - npx;
@@ -1241,7 +1241,7 @@ namespace nana
 				else
 				{
 					// the child weight is a fixed value, therefore, the 1st parameter of get_value is useless.
-					child_px = static_cast<unsigned>(child->weight.get_value(0, dm));
+					child_px = static_cast<unsigned>(child->weight.get_value(0, dm));  /// \todo: dpi to_system_px?
 				}
 
 				//Use 'endpos' to calc width is to avoid deviation
@@ -1348,7 +1348,7 @@ namespace nana
 				auto count = field->elements.size();
 				for (decltype(count) i = 0; i < count; ++i)
 				{
-					auto fa = _m_calc_fa(arrange_.at(i), area_px, precise_px, dm);
+					auto fa = _m_calc_fa(arrange_.at(i), area_px, precise_px, dm);  /// \todo: dpi to_system_px?
 
 					//The fit-content element is like a fixed element
 					if (fit_policy::none != this->fit)
@@ -1366,7 +1366,7 @@ namespace nana
 
 					if (i + 1 < count)
 					{
-						fa = _m_calc_fa(gap.at(i), area_px, precise_px, dm);
+						fa = _m_calc_fa(gap.at(i), area_px, precise_px, dm);  /// \todo: dpi to_system_px?
 						result.first += fa.first;
 						//fa.second is ignored for gap, because the it has not the adjustable gap.
 					}
@@ -1380,7 +1380,7 @@ namespace nana
 					continue;
 
 				if (!child->weight.empty())
-					children_fixed_px += child->weight.get_value(area_px, dm);
+					children_fixed_px += child->weight.get_value(area_px, dm);  /// \todo: dpi to_system_px?
 				else
 					++result.second;
 			}
@@ -1454,7 +1454,7 @@ namespace nana
 					   max_px = std::numeric_limits<double>::lowest();
 
 				if (!child->min_px.empty())
-					min_px = child->min_px.get_value(static_cast<int>(area_px), dm);
+					min_px = child->min_px.get_value(static_cast<int>(area_px), dm);   /// \todo: dpi to_system_px?
 
 				auto weight_floor = (this->kind_of_division == kind::arrange ? child->run_.weight_floor.first : child->run_.weight_floor.second);
 				if ((weight_floor > 0) && (min_px < weight_floor))
@@ -1467,7 +1467,7 @@ namespace nana
 				}
 
 				if (!child->max_px.empty())
-					max_px = child->max_px.get_value(static_cast<int>(area_px), dm);
+					max_px = child->max_px.get_value(static_cast<int>(area_px), dm);  /// \todo: dpi to_system_px?
 
 				if (min_px >= 0 && max_px >= 0 && min_px > max_px)
 				{
@@ -1838,14 +1838,14 @@ namespace nana
 
 						auto left_px = std::clamp(static_cast<int>(left_pixels_) + delta, 0, total_pixels);
 
-						auto area_px = rectangle_rotator(vert, div_owner->margin_area(dm)).w();
+						auto area_px = rectangle_rotator(vert, div_owner->margin_area(dm)).w();   /// \todo: dpi to_system_px?
 						double imd_rate = 100.0 / area_px;
-						left_px = static_cast<int>(limit_px(leaf_left, left_px, area_px, dm));
+						left_px = static_cast<int>(limit_px(leaf_left, left_px, area_px, dm));  /// \todo: dpi to_system_px?
 						leaf_left->weight.assign_percent(imd_rate * left_px);
 
 						auto right_px = std::clamp(static_cast<int>(right_pixels_) - delta, 0, total_pixels);
 
-						right_px = static_cast<int>(limit_px(leaf_right, right_px, area_px, dm));
+						right_px = static_cast<int>(limit_px(leaf_right, right_px, area_px, dm));  /// \todo: dpi to_system_px?
 						leaf_right->weight.assign_percent(imd_rate * right_px);
 
 						pause_move_collocate_ = true;
@@ -1865,8 +1865,8 @@ namespace nana
 				events.mouse_move.connect_unignorable(grab_fn);
 			}
 
-			const place_parts::display_metrics dm{ wd };
-			auto limited_range = _m_update_splitter_range(dm);
+			const place_parts::display_metrics dm{ wd };  /// \todo: dpi to_system_px?
+			auto limited_range = _m_update_splitter_range(dm);  /// \todo: dpi to_system_px?
 
 			if (!init_weight_.empty())
 			{
@@ -1877,7 +1877,7 @@ namespace nana
 				rectangle_rotator left(vert, leaf_left->field_area);
 				rectangle_rotator right(vert, leaf_right->field_area);
 				auto area_px = right.right() - left.x();
-				auto right_px = static_cast<int>(limit_px(leaf_right, init_weight_.get_value(area_px, dm), static_cast<unsigned>(area_px), dm));
+				auto right_px = static_cast<int>(limit_px(leaf_right, init_weight_.get_value(area_px, dm), static_cast<unsigned>(area_px), dm));  /// \todo: dpi to_system_px?
 
 				//New position of splitter
 				const auto pos = std::clamp(static_cast<int>(area_px - right_px - splitter_px), limited_range.x(), limited_range.right());
@@ -2075,7 +2075,7 @@ namespace nana
 		{
 			const bool vert = (cursor::size_ns == splitter_cursor_);
 
-			rectangle_rotator area(vert, div_owner->margin_area(dm));
+			rectangle_rotator area(vert, div_owner->margin_area(dm));  /// \todo: dpi to_system_px?
 
 			auto leaf_left = _m_leaf(true);
 			auto leaf_right = _m_leaf(false);
@@ -2088,16 +2088,16 @@ namespace nana
 			int endpos = right_base;
 
 			if (!leaf_left->min_px.empty())
-				pos += static_cast<int>(leaf_left->min_px.get_value(area.w(), dm));
+				pos += static_cast<int>(leaf_left->min_px.get_value(area.w(), dm));  /// \todo: dpi to_system_px?
 
 			if (!leaf_left->max_px.empty())
-				endpos = left_base + static_cast<int>(leaf_left->max_px.get_value(area.w(), dm));
+				endpos = left_base + static_cast<int>(leaf_left->max_px.get_value(area.w(), dm));  /// \todo: dpi to_system_px?
 
 			if (!leaf_right->min_px.empty())
-				endpos = (std::min)(right_base - static_cast<int>(leaf_right->min_px.get_value(area.w(), dm)), endpos);
+				endpos = (std::min)(right_base - static_cast<int>(leaf_right->min_px.get_value(area.w(), dm)), endpos);  /// \todo: dpi to_system_px?
 
 			if (!leaf_right->max_px.empty())
-				pos = (std::max)(right_base - static_cast<int>(leaf_right->max_px.get_value(area.w(), dm)), pos);
+				pos = (std::max)(right_base - static_cast<int>(leaf_right->max_px.get_value(area.w(), dm)), pos);  /// \todo: dpi to_system_px?
 
 			area.x_ref() = pos;
 			area.w_ref() = unsigned(endpos - pos + splitter_px);
@@ -2514,7 +2514,7 @@ namespace nana
 				double weight;
 				if (!child->weight.empty())
 				{
-					weight = child->weight.get_value(is_vert ? room.height : room.width, dm);
+					weight = child->weight.get_value(is_vert ? room.height : room.width, dm); /// \todo: dpi to_system_px?
 					if (weight > room_px)
 						weight = room_px;
 				}
@@ -2652,7 +2652,7 @@ namespace nana
 				if (child->display)
 				{
 					div = child.get();
-					div->field_area = this->margin_area(dm);
+					div->field_area = this->margin_area(dm);  
 					div->collocate(wd);
 					break;
 				}
@@ -3045,7 +3045,7 @@ namespace nana
 			//2, max >= min
 			if (min_px.is_negative()) min_px.reset();
 			if (max_px.is_negative()) max_px.reset();
-			if ((!min_px.empty()) && (!max_px.empty()) && (min_px.get_value(100, dm) > max_px.get_value(100, dm))) //use a fixed dpi value for comparing two values.
+			if ((!min_px.empty()) && (!max_px.empty()) && (min_px.get_value(100, dm) > max_px.get_value(100, dm))) //use a fixed dpi value for comparing two values. /// \todo: dpi to_system_px?
 			{
 				min_px.reset();
 				max_px.reset();
@@ -3058,10 +3058,10 @@ namespace nana
 				div->max_px = max_px;
 
 			// use a fixed dpi for comparing values
-			if ((!min_px.empty()) && (!weight.empty()) && (weight.get_value(100, dm) < min_px.get_value(100, dm)))
+			if ((!min_px.empty()) && (!weight.empty()) && (weight.get_value(100, dm) < min_px.get_value(100, dm))) /// \todo: dpi to_system_px?
 				weight.reset();
 
-			if ((!max_px.empty()) && (!weight.empty()) && (weight.get_value(100, dm) > max_px.get_value(100, dm)))
+			if ((!max_px.empty()) && (!weight.empty()) && (weight.get_value(100, dm) > max_px.get_value(100, dm))) /// \todo: dpi to_system_px?
 				weight.reset();
 
 			if (!weight.empty())

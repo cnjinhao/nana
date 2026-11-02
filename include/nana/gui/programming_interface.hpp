@@ -1,4 +1,4 @@
-/*
+/**
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(https://nana.acemind.cn)
  *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
@@ -7,11 +7,14 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/programming_interface.hpp
+ *	@file nana/gui/programming_interface.hpp
  */
 
 #ifndef NANA_GUI_PROGRAMMING_INTERFACE_HPP
 #define NANA_GUI_PROGRAMMING_INTERFACE_HPP
+
+#include <memory>
+
 #include <nana/config.hpp>
 #include "effects.hpp"
 #include "detail/general_events.hpp"
@@ -19,7 +22,6 @@
 #include "detail/widget_content_measurer_interface.hpp"
 #include "detail/virtual_keyboard.hpp"
 #include <nana/paint/image.hpp>
-#include <memory>
 
 namespace nana
 {
@@ -361,7 +363,7 @@ namespace api
 	bool window_text_editor_editable(window);
 	::std::optional<rectangle> window_text_editor_rectangle(window wd, bool including_scrollbars);
 	::std::optional<rectangle> window_rectangle(window);
-	bool get_window_rectangle(window, rectangle&);
+	bool get_window_rectangle(window, rectangle& r_in_parent);        ///< the window rectangle in parent coordinates
 	bool track_window_size(window, const size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
 	void window_enabled(window, bool);
 	bool window_enabled(window);
@@ -474,7 +476,9 @@ namespace api
 	bool calc_screen_point(window, point&);   ///<Converts window coordinates to screen coordinates
 	bool calc_window_point(window, point&);   ///<Converts screen coordinates to window coordinates.
 
-	window find_window(const nana::point& mspos);
+	window find_window_from_system_screen_point(const nana::point& system_screen_point); ///<Finds a window from the LOW LEVEL system screen point.
+	window find_window_cursor();             ///<Finds a window which the cursor is over.
+	window find_window_cursor(point&);       ///<Finds a window which the cursor is over pointint point to window coordinates.
 
 	bool is_window_zoomed(window, bool ask_for_max);  ///<Tests a window whether it is maximized or minimized.
 
@@ -512,10 +516,9 @@ namespace api
 	 */
 	::std::optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 
-	/// \todo: generalize dpi to v2 awareness
-	unsigned screen_dpi(bool x_requested);
+	int screen_dpi(bool x_requested = true);   ///< unused ?
 
-	std::size_t window_dpi(window);
+	int window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
 
 	void keyboard_default_language(const std::string& lang);

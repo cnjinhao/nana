@@ -13,7 +13,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
       # we are in /home/runner/work/nana/nana
-      - run: git clone --depth=1 --branch=develop https://github.com/qPCR4vir/nana-demo.git nana-demo
+      - run: git clone --depth=1 --branch=dev_dpi_system https://github.com/qPCR4vir/nana-demo.git nana-demo
         working-directory: ../
       - run: mkdir nana-demo-build
         working-directory: ../

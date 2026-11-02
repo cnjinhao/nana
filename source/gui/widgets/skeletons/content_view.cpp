@@ -1,4 +1,4 @@
-/*
+/**
 *	A Content View Implementation
 *	Nana C++ Library(https://nana.acemind.cn)
 *	Copyright(C) 2017-2020 Jinhao(cnjinhao@hotmail.com)
@@ -7,13 +7,14 @@
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/widgets/skeletons/content_view.hpp
-*	@author: Jinhao
+*	@file nana/gui/widgets/skeletons/content_view.hpp
+*	@author Jinhao
 */
+
+#include <algorithm>
 
 #include "content_view.hpp"
 #include <nana/gui/widgets/scroll.hpp>
-#include <algorithm>
 
 namespace nana {
 	namespace widgets {
