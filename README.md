@@ -22,7 +22,14 @@ Jinhao, [Ariel Viña Rodríguez].
 
 ## Documentation
 
-The best way to get help with Nana library is by visiting https://nana.acemind.cn/documentation
+> **The documentation is being rebuilt.** The websites nanapro.org and nana.acemind.cn are now offline.
+> Meanwhile, please use:
+> - [INSTALL.md](INSTALL.md), to build nana and use it in your project;
+> - the comments in the source code, mainly in the headers (`include/nana`);
+> - the [reference generated with Doxygen](https://qpcr4vir.github.io/nana-doxy/html/), for nana 1.7.2 (2019): mostly still
+>   valid, but partly outdated;
+> - the [wiki](https://github.com/cnjinhao/nana/wiki);
+> - the examples of [nana-demo](https://github.com/qPCR4vir/nana-demo).
 
 ## Examples
 
@@ -49,16 +56,18 @@ The examples of [nana-demo](https://github.com/qPCR4vir/nana-demo) are also the 
 and pull request. nana-demo also has interaction tests (`InteractionTests/`), which drive the widgets with the real mouse
 and keyboard (X11 and Windows).
 
-## Sending a Pull Request ?
+## Sending a Pull Request
 
-This project encourage you to contribute through sending a pull request! There is a simple rule: please **don't** directly commit your contributions to the **master** branch. According to your commits, please choose the **hotfixes** branch or the **develop** branch. Thank you!
+Contributions are welcome! Please send your pull request to:
+* **master**, for nana 1.8;
+* **nana-1.7**, only for fixes of nana 1.7 (the last version before C++17).
 
-## Introduction to the Repository
+Please keep each pull request small, about one fix or feature. Thank you!
 
-There are two main branches with an infinite lifetime:
-* **master** is the main branch and it is marked as every version release.
-* **develop** is also another main branch where the source code reflects a state with the lastest delivered developement changes for the next release.
+## Branches
 
-Other branches:
-* **features** are used to develop new features for the upcoming or a distant future release. Feature branches are named as 'feature-FEATURENAME'.
-* **hotfix** is meant to prepare for a new release, and fixes some bugs from the corresponding tag on the master branch.
+* **master**: the current version, nana 1.8. Releases are tags on this branch.
+* **nana-1.7**: maintenance of nana 1.7.
+* **[dev_dpi_system](https://github.com/cnjinhao/nana/tree/dev_dpi_system)**: experimental support of DPI scaling (work in
+  progress, kept up to date with master).
+* Other branches are for work in progress on new features.

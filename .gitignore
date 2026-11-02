@@ -51,3 +51,6 @@ cmake_install.cmake
 *.opendb
 .vscode
 .vs
+
+# Visual Studio "Open Folder" with CMake
+out/

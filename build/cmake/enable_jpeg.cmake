@@ -12,6 +12,10 @@ if(NANA_CMAKE_ENABLE_JPEG)
             target_include_directories(nana PUBLIC  ${JPEG_INCLUDE_DIRS})
             target_link_libraries     (nana PUBLIC  ${JPEG_LIBRARIES})
             target_compile_definitions(nana PUBLIC  USE_LIBJPEG_FROM_OS)
+        else()
+            # otherwise the build fails later, at jpeglib.h
+            message(FATAL_ERROR "nana: NANA_CMAKE_ENABLE_JPEG is ON, but libjpeg was not found. Install it (on Windows "
+                                "with MSVC, for example with vcpkg) or set NANA_CMAKE_ENABLE_JPEG=OFF.")
         endif()
     else()
         target_compile_definitions(nana PUBLIC -ljpeg)

@@ -9,7 +9,7 @@
 #   Frostbane - Add option for compiling a shared library (#263,#265)
 #   Qiangqiang Wu - Add biicode support: todo migrate to https://conan.io/
 #
-# Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
+# Nana uses some build systems: MS-VS solution, MAKE, etc. manually optimized.
 # Maybe CMake will be used in the future to generate some of them in the central nana repository.
 # But by now CMake is just one option and all the other build system
 # files/projects distributed are manually writen. This current CMakeList.txt reflect this fact and that is why we don't
@@ -19,12 +19,12 @@
 # https://cliutils.gitlab.io/modern-cmake/
 # https://cmake.org/cmake-tutorial/
 # https://cmake.org/cmake/help/v3.12/module/CMakeDependentOption.html?highlight=cmakedependentoption
-# cmake 3.12 have more better modern c++ support
+# cmake 3.16: modern C++ support, and CMAKE_MSVC_RUNTIME_LIBRARY (3.15, policy CMP0091) for the MSVC runtime
 
-cmake_minimum_required(VERSION 3.12  FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16  FATAL_ERROR)
 project(nana VERSION      1.8
         DESCRIPTION "C++ GUI library"
-        HOMEPAGE_URL http://nanapro.org
+        HOMEPAGE_URL https://github.com/cnjinhao/nana
         LANGUAGES CXX         )
 
 #######################     Main setting of Nana targets, sources and installs    #####################
@@ -33,21 +33,6 @@ add_library(nana)
 add_library(nana::nana ALIAS nana)
 target_compile_features(nana PUBLIC cxx_std_17)
 # set(CMAKE_CXX_STANDARD 17)
-
-#  need after cxx_std_14 or cxx_std_17 ??
-target_compile_features(nana
-        PUBLIC cxx_nullptr
-        PUBLIC cxx_range_for
-        PUBLIC cxx_lambdas
-        PUBLIC cxx_decltype_auto
-        PUBLIC cxx_defaulted_functions
-        PUBLIC cxx_deleted_functions
-        PUBLIC cxx_auto_type
-        PUBLIC cxx_decltype_incomplete_return_types
-        PUBLIC cxx_defaulted_move_initializers
-        PUBLIC cxx_noexcept
-        PUBLIC cxx_rvalue_references
-        )
 
 ###    collect all source sub-directories in a list to avoid duplication    ###
 
