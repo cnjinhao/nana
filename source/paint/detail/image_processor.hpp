@@ -604,7 +604,7 @@ namespace detail
 						auto px = linepix;
 
 						sum_r = int(px->element.red) * radius_plus_one;
-						sum_g = int(px->element.blue) * radius_plus_one;
+						sum_g = int(px->element.green) * radius_plus_one;
 						sum_b = int(px->element.blue) * radius_plus_one;
 
 						auto radius_px_end = px + radius_plus_one;

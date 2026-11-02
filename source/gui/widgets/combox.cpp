@@ -201,33 +201,33 @@ namespace nana
 					{
 						editor_->editable(enb, false);
 						editor_->show_caret(enb);
-						if (!enb)
+						editor_->customized_renderers().background = [this, enb](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
 						{
-							editor_->customized_renderers().background = [this](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
+							auto clr_from = this->widget_ptr()->bgcolor();
+							auto clr_to = clr_from.blend(colors::white, .1);
+
+							int pare_off_px = 1;
+							if (element_state::pressed == state_.button_state)
 							{
-								auto clr_from = colors::button_face_shadow_start;
-								auto clr_to = colors::button_face_shadow_end;
+								pare_off_px = 2;
+								std::swap(clr_from, clr_to);
+							}
 
-								int pare_off_px = 1;
-								if (element_state::pressed == state_.button_state)
-								{
-									pare_off_px = 2;
-									std::swap(clr_from, clr_to);
-								}
-
+							if(!enb)
 								graph.gradual_rectangle(::nana::rectangle(graph.size()).pare_off(pare_off_px), clr_from, clr_to, true);
-								if (API::is_transparent_background(this->widget_ptr()->handle()))
+							else
+								graph.rectangle(::nana::rectangle(::nana::size{image_pixels_+5, graph.height()}).pare_off(pare_off_px), 
+									true, this->widget_ptr()->bgcolor());
+
+							if (API::is_transparent_background(this->widget_ptr()->handle()))
+							{
+								paint::graphics trns_graph{ graph.size() };
+								if (API::dev::copy_transparent_background(this->widget_ptr()->handle(), trns_graph))
 								{
-									paint::graphics trns_graph{ graph.size() };
-									if (API::dev::copy_transparent_background(this->widget_ptr()->handle(), trns_graph))
-									{
-										graph.blend(rectangle{ trns_graph.size() }, trns_graph, {}, 0.5);
-									}
+									graph.blend(rectangle{ trns_graph.size() }, trns_graph, {}, 0.5);
 								}
-							};
-						}
-						else
-							editor_->customized_renderers().background = nullptr;
+							}
+						};
 
 						editor_->enable_background(enb);
 						editor_->enable_background_counterpart(!enb);
@@ -567,7 +567,7 @@ namespace nana
 						}
 					}
 
-					nana::point pos((image_pixels_ - imgsz.width) / 2 + 2, (vpix - imgsz.height) / 2 + 2);
+					nana::point pos((image_pixels_ - imgsz.width) / 2 + 2, (widget_ptr()->size().height - imgsz.height) / 2);
 					img.stretch(::nana::rectangle{ img.size() }, *graph_, nana::rectangle(pos, imgsz));
 				}
 			private:

@@ -54,7 +54,8 @@ namespace nana
 
 				virtual ~item_renderer() = default;
 				virtual void image(bool enabled, unsigned pixels) = 0;
-				virtual void render(widget_reference, graph_reference, const nana::rectangle&, const item_interface*, state_t) = 0;
+				virtual void background(widget_reference, graph_reference) = 0;
+				virtual void item(widget_reference, graph_reference, const nana::rectangle&, const item_interface*, state_t) = 0;
 				virtual unsigned item_pixels(graph_reference) const = 0;
 			};
 
@@ -102,6 +103,7 @@ namespace nana
 		void move_items(bool upwards, bool circle);
 		void renderer(item_renderer*);
 		std::size_t index() const;
+		void deselect_on_mouse_leave(bool);
 	};
 }
 #include <nana/pop_ignore_diagnostic>

@@ -70,13 +70,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2017;$(IncludePath)</IncludePath>
     <OutDir>../bin/</OutDir>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2017;$(IncludePath)</IncludePath>
     <OutDir>../bin/</OutDir>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
@@ -85,13 +85,13 @@
     <OutDir>../bin/</OutDir>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2017;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>../bin/</OutDir>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2017;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
