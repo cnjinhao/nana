@@ -8,7 +8,7 @@
 > documentation and this README are being updated. nana 1.7, the last version before C++17, continues in the branch
 > [`nana-1.7`](https://github.com/cnjinhao/nana/tree/nana-1.7).
 
-Nana is a C++ standard-like GUI library designed to allow developers to easily create cross-platform GUI applications with modern C++ style. Currently it is regularly tested on Linux(X11) and Windows, and experimentally on macOS and FreeBSD. The [nana repository](https://github.com/cnjinhao/nana) contains the entire source of the library. You can browse the source code and submit your pull request for contributing.
+Nana is a [C++ standard-like GUI library](https://github.com/cnjinhao/nana/wiki/Primary-and-Secondary-Goals) designed to allow developers to easily create cross-platform GUI applications with modern C++ style. Currently it is regularly tested on Linux(X11) and Windows, and experimentally on macOS and FreeBSD. The [nana repository](https://github.com/cnjinhao/nana) contains the entire source of the library. You can browse the source code and submit your pull request for contributing.
 
 ## License
 
@@ -16,7 +16,7 @@ Nana is licensed under the [Boost Software License](http://www.boost.org/LICENSE
 
 ## Members
 
-Jinhao, [Ariel Viña Rodríguez].
+[Jinhao](https://github.com/cnjinhao), [Ariel Viña Rodríguez].
 
 [Ariel Viña Rodríguez]: http://qpcr4vir.github.io/
 
@@ -33,7 +33,7 @@ Jinhao, [Ariel Viña Rodríguez].
 
 ## Examples
 
-Here are some examples to give you an idea how to use the Nana C++ Library.
+Here is an example to give you an idea of how to use the Nana C++ Library.
 
 ### Create a window
 
@@ -55,6 +55,10 @@ The examples of [nana-demo](https://github.com/qPCR4vir/nana-demo) are also the 
 `-DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON` each one is registered in CTest, and the CI builds and runs them on every push
 and pull request. nana-demo also has interaction tests (`InteractionTests/`), which drive the widgets with the real mouse
 and keyboard (X11 and Windows).
+
+Before a release, the tests are also run with sanitizers (AddressSanitizer, UndefinedBehaviorSanitizer, ThreadSanitizer)
+on Linux and Windows, and the code is checked with static analyzers (clang-tidy, cppcheck, GCC `-fanalyzer`, MSVC
+`/analyze`).
 
 ## Sending a Pull Request
 
